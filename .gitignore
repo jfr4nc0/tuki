@@ -7,6 +7,16 @@
 *.obj
 *.elf
 
+# Eclipse
+*.cproject
+*.project
+
+# Log
+*.log
+
+# Configuraciones
+*.xml
+
 # Linker output
 *.ilk
 *.map
@@ -41,6 +51,13 @@
 *.su
 *.idb
 *.pdb
+
+# Debug folders
+/kernel/Debug/
+/consola/Debug/
+/cpu/Debug/
+/file_system/Debug/
+/memoria/Debug/
 
 # Kernel Module Compile Results
 *.mod*
