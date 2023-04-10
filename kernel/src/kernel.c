@@ -1,4 +1,4 @@
-#include "server.h"
+#include "kernel.h"
 
 int main(void) {
 	logger = log_create("server.log", "Servidor", 1, LOG_LEVEL_DEBUG);

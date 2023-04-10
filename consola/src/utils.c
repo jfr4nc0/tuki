@@ -1,4 +1,4 @@
-#include "utils.h"
+#include "../include/utils.h"
 
 
 // TODO: Ver de mover esto a la carpeta shared
@@ -77,7 +77,7 @@ t_paquete* crear_super_paquete(void)
 	//me falta un malloc!
 	t_paquete* paquete;
 
-	//descomentar despues de arreglar
+	//TODO: descomentar despues de arreglar
 	//paquete->codigo_operacion = PAQUETE;
 	//crear_buffer(paquete);
 	return paquete;
@@ -125,11 +125,14 @@ void liberar_conexion(int socket_cliente)
 
 //////////////////
 
-if (argc<2) {
-		printf(BAD_REQUEST, ": Enviar dos parametros (pathConfig y pathInstrucciones) \n");
-		printf("Parametros enviados: %d\n", argc);
-		for(int i=0; i<argc; i++) {
-			printf("%s\n", argv[i]);
-		}
-		return EXIT_FAILURE;
+int validarArgumentos(int argc, char** argv) {
+	if (argc<2) {
+			printf(": Enviar dos parametros (pathConfig y pathInstrucciones) \n");
+			printf("Parametros enviados: %d\n", argc);
+			for(int i=0; i<argc; i++) {
+				printf("%s\n", argv[i]);
+			}
+			return EXIT_FAILURE;
 	}
+	return EXIT_SUCCESS;
+}

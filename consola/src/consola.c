@@ -1,9 +1,13 @@
-#include "./include/client.h"
+#include "../include/consola.h"
+#include "utils.c"
+#include "../../shared/src/funciones.c"
 
 int main(int argc, char** argv)
 {
 	// Comentar este if si se quiere tomar los valores por defecto
-	validarArgumentos(argc, argv);
+	if (validarArgumentos(argc, argv) == EXIT_FAILURE) {
+		return EXIT_FAILURE;
+	}
 
 	// Se setean los parametros que se pasan, con poner valores por defecto
 	char* pathConfig = argv[1] ? argv[1] : DEFAULT_CONFIG_PATH;
@@ -11,7 +15,6 @@ int main(int argc, char** argv)
 	char* pathLog = argv[3] ?  argv[3] : DEFAULT_LOG_PATH;
 
 	int conexion;
-	char* clave;
 
 	t_log* logger;
 	t_config* config;
@@ -19,7 +22,7 @@ int main(int argc, char** argv)
 	logger = iniciar_logger(pathLog);
 	config = iniciar_config(pathConfig);
 
-	FILE *instrucciones = fopen(NOMBRE_ARCHIVO, MODO_LECTURA_ARCHIVO);
+	FILE *instrucciones = fopen(pathInstrucciones, MODO_LECTURA_ARCHIVO);
 	char bufer[LONGITUD_MAXIMA_CADENA];
 	while (fgets(bufer, LONGITUD_MAXIMA_CADENA, instrucciones)) {
 		 // Removemos el salto de linea
@@ -28,10 +31,10 @@ int main(int argc, char** argv)
 	 }
 
 	// Creamos una conexión hacia el servidor
-	// conexion = armar_conexion(config, logger);
+	conexion = armar_conexion(config, logger);
 
 	// Armamos y enviamos el paquete
-	// paquete(conexion);
+	paquete(conexion);
 
 	terminar_programa(conexion, logger, config);
 }

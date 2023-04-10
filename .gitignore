@@ -58,6 +58,7 @@
 /cpu/Debug/
 /file_system/Debug/
 /memoria/Debug/
+/Debug/
 
 # Kernel Module Compile Results
 *.mod*
