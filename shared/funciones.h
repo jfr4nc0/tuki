@@ -8,6 +8,9 @@
 #include <commons/config.h>
 #include <readline/readline.h>
 
+extern t_log* logger;
+
+// Client
 t_log* iniciar_logger(char*);
 t_config* iniciar_config(char*);
 void leer_consola(t_log*);
@@ -23,3 +26,11 @@ void enviar_paquete(t_paquete* paquete, int socket_cliente);
 void liberar_conexion(int socket_cliente);
 void eliminar_paquete(t_paquete* paquete);
 int validarArgumentos(int argc, char** argv);
+void* recibir_buffer(int*, int);
+
+// server
+int iniciar_servidor(void);
+int esperar_cliente(int);
+t_list* recibir_paquete(int);
+void recibir_mensaje(int);
+int recibir_operacion(int);

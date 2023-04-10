@@ -1,6 +1,7 @@
 #include "../include/consola.h"
+
+#include "../../shared/src/funcionesCliente.c"
 #include "utils.c"
-#include "../../shared/src/funciones.c"
 
 int main(int argc, char** argv)
 {
