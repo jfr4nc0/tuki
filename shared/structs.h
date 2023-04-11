@@ -1,6 +1,6 @@
-#ifndef UTILS_GLOBAL_H_
+#ifndef STRUCTS_GLOBAL_H_
 
-	#define UTILS_GLOBAL_H_
+	#define STRUCTS_GLOBAL_H_
 
 	typedef enum
 	{

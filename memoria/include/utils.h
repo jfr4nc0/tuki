@@ -1,5 +1,6 @@
-#ifndef UTILS_CONSOLA_H_
-	#define UTILS_CONSOLA_H_
+#ifndef UTILS_H_
+	#define UTILS_H_
+
 
 	#define DEFAULT_CONFIG_PATH "kernel_conexion.config"
 	#define DEFAULT_INSTRUCCIONES_PATH "instrucciones.txt"
@@ -15,7 +16,4 @@
 	#include<commons/log.h>
 	#include "../../shared/funcionesCliente.h"
 	#include "../../shared/constantes.h"
-
-//int validarArgumentos(int, char**);
-
 #endif

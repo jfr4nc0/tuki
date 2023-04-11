@@ -6,7 +6,10 @@
 #include <string.h>
 #include <commons/log.h>
 #include "utils.h"
+#include "../../shared/src/funcionesServidor.c"
 
 void iterator(char* value);
+
+extern t_log* logger;
 
 #endif /* SERVER_H_ */

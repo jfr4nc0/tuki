@@ -1,5 +1,4 @@
-#include "../funciones.h"
-#include "../constantes.h"
+#include "../funcionesServidor.h"
 
 int iniciar_servidor(void)
 {

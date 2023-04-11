@@ -1,35 +1,37 @@
-#include "cpu.h"
+#include "../include/cpu.h"
 
-int main(void) {
-	logger = log_create("server.log", "Servidor", 1, LOG_LEVEL_DEBUG);
+#include "../../shared/src/funcionesCliente.c"
+#include "utils.c"
 
-	int server_fd = iniciar_servidor();
-	log_info(logger, "Servidor listo para recibir al cliente");
-	int cliente_fd = esperar_cliente(server_fd);
+int main(int argc, char** argv)
+{
 
-	t_list* lista;
-	while (1) {
-		int cod_op = recibir_operacion(cliente_fd);
-		switch (cod_op) {
-		case MENSAJE:
-			recibir_mensaje(cliente_fd);
-			break;
-		case PAQUETE:
-			lista = recibir_paquete(cliente_fd);
-			log_info(logger, "Me llegaron los siguientes valores:\n");
-			list_iterate(lista, (void*) iterator);
-			break;
-		case -1:
-			log_error(logger, "el cliente se desconecto. Terminando servidor");
-			return EXIT_FAILURE;
-		default:
-			log_warning(logger,"Operacion desconocida. No quieras meter la pata");
-			break;
-		}
-	}
-	return EXIT_SUCCESS;
-}
+	// Se setean los parametros que se pasan, con poner valores por defecto
+	char* pathConfig = argv[1] ? argv[1] : DEFAULT_CONFIG_PATH;
+	char* pathInstrucciones = argv[2] ? argv[2] : DEFAULT_INSTRUCCIONES_PATH;
+	char* pathLog = argv[3] ?  argv[3] : DEFAULT_LOG_PATH;
 
-void iterator(char* value) {
-	log_info(logger,"%s", value);
+	int conexion;
+
+	t_log* logger;
+	t_config* config;
+
+	logger = iniciar_logger(pathLog);
+	config = iniciar_config(pathConfig);
+
+	FILE *instrucciones = fopen(pathInstrucciones, MODO_LECTURA_ARCHIVO);
+	char bufer[LONGITUD_MAXIMA_CADENA];
+	while (fgets(bufer, LONGITUD_MAXIMA_CADENA, instrucciones)) {
+		 // Removemos el salto de linea
+		 strtok(bufer, "\n");
+		 printf("La línea es: '%s'\n", bufer);
+	 }
+
+	// Creamos una conexión hacia el servidor
+	conexion = armar_conexion(config, logger);
+
+	// Armamos y enviamos el paquete
+	paquete(conexion);
+
+	terminar_programa(conexion, logger, config);
 }

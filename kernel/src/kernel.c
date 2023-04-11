@@ -1,10 +1,10 @@
-#include "kernel.h"
+#include "./../include/kernel.h"
 
 int main(void) {
-	logger = log_create("server.log", "Servidor", 1, LOG_LEVEL_DEBUG);
+	logger = log_create("../logs/kernel.log", "Kernel", 1, LOG_LEVEL_DEBUG);
 
 	int server_fd = iniciar_servidor();
-	log_info(logger, "Servidor listo para recibir al cliente");
+	log_info(logger, "Kernel listo para recibir al cliente: ", "CONSOLA", ENTER);
 	int cliente_fd = esperar_cliente(server_fd);
 
 	t_list* lista;
@@ -16,7 +16,7 @@ int main(void) {
 			break;
 		case PAQUETE:
 			lista = recibir_paquete(cliente_fd);
-			log_info(logger, "Me llegaron los siguientes valores:\n");
+			log_info(logger, "Me llegaron los siguientes valores:", ENTER);
 			list_iterate(lista, (void*) iterator);
 			break;
 		case -1:
