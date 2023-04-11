@@ -1,3 +1,10 @@
+# Settings
+/.settings/
+/cpu/.settings/
+/kernel/.settings/
+/memoria/.settings/
+/fileSystem/.settings/
+
 # Prerequisites
 *.d
 
@@ -59,6 +66,7 @@
 /file_system/Debug/
 /memoria/Debug/
 /Debug/
+/fileSystem/Debug/
 
 # Kernel Module Compile Results
 *.mod*

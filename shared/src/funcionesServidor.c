@@ -1,5 +1,7 @@
 #include "../funcionesServidor.h"
 
+t_log* logger;
+
 int iniciar_servidor(void)
 {
 	int socket_servidor;

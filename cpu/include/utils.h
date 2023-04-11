@@ -1,11 +1,6 @@
 #ifndef UTILS_H_
 	#define UTILS_H_
 
-
-	#define DEFAULT_CONFIG_PATH "kernel_conexion.config"
-	#define DEFAULT_INSTRUCCIONES_PATH "instrucciones.txt"
-	#define DEFAULT_LOG_PATH "logs/cpu.log"
-
 	#include<stdio.h>
 	#include<stdlib.h>
 	#include<signal.h>
