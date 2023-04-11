@@ -29,5 +29,5 @@ Se trata de conectar los siguientes ![modulos](https://github.com/sisoputnfrba/t
 ## Build
 Buildear los modulos:
 ```bash
-sudo ./consola "RUTA_CONFIG" "RUTA_INSTRUCCIONES
+sudo ./consola "RUTA_CONFIG" "RUTA_INSTRUCCIONES" -lcommons -lreadline
 ```
