@@ -1,6 +1,4 @@
-
 <h1 align="center"> Sistemas Operativos - TUKI </h1>
-![instructions](https://github.com/sisoputnfrba/tp-2023-1c-KernelPanic/blob/main/leave_instructions.png)
 
 ## Indice
 - [Integrantes](#integrantes-equipo-kernel)
