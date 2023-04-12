@@ -1,21 +1,24 @@
 #ifndef KERNEL_H_
 	#define KERNEL_H_
 
+// Externas
 	#include<stdio.h>
 	#include<stdlib.h>
 	#include<string.h>
 	#include<sys/socket.h>
 	#include<unistd.h>
 	#include<netdb.h>
-	#include<commons/log.h>
 	#include<commons/collections/list.h>
 	#include<assert.h>
 
+// Internas
 	#include "utils.h"
+	#include "funciones.h"
+	#include "constantes.h"
+	#include "../../shared/constantes.h"
 	#include "../../shared/src/funcionesServidor.c"
-
-	void iterator(char* value);
+	#include "../../shared/structs.h"
 
 	extern t_log* logger;
 
-#endif /* SERVER_H_ */
+#endif

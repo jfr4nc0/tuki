@@ -20,7 +20,7 @@ int main(int argc, char** argv)
 	conexion = armar_conexion(config, logger);
 
 	// Armamos y enviamos el paquete
-	paquete(conexion);
+	paquete(conexion, logger);
 
 	terminar_programa(conexion, logger, config);
 }

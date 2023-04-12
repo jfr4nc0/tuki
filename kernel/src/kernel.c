@@ -3,10 +3,11 @@
 t_log* logger;
 
 int main(void) {
-	logger = log_create("../logs/kernel.log", "Kernel", 1, LOG_LEVEL_DEBUG);
+	logger = log_create(LOG_PATH_KERNEL, MODULO_KERNEL, MOSTRAR_OCULTAR_MENSAJES_LOG_KERNEL, LOG_LEVEL_KERNEL);
 
 	int server_fd = iniciar_servidor();
-	log_info(logger, "Kernel listo para recibir al cliente: ", "CONSOLA", ENTER);
+	log_info(logger, I__SERVER_READY, MODULO_CONSOLA, ENTER);
+
 	int cliente_fd = esperar_cliente(server_fd);
 
 	t_list* lista;
@@ -22,10 +23,10 @@ int main(void) {
 			list_iterate(lista, (void*) iterator);
 			break;
 		case -1:
-			log_error(logger, "el cliente se desconecto. Terminando servidor");
+			log_info(logger, I__DESCONEXION_CLIENTE);
 			return EXIT_FAILURE;
 		default:
-			log_warning(logger,"Operacion desconocida. No quieras meter la pata");
+			log_warning(logger,"Operacion desconocida.");
 			break;
 		}
 	}

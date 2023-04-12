@@ -2,17 +2,17 @@
 #include "../constantes.h"
 #include<readline/readline.h>
 
-void paquete(int conexion)
+void paquete(int conexion, t_log* logger)
 {
 	t_paquete* paquete;
 	char* lineaPaquete;
 
 	if(!(paquete = crear_paquete())) {
-		printf(E__PAQUETE_CREATE);
+		log_error(logger, E__PAQUETE_CREATE);
 	}
 
 	// Leemos y esta vez agregamos las lineas al paquete
-	printf("Los siguientes valores que ingreses se enviaran al servidor, ingrese enter para terminar de ingresar valores\n");
+	printf("Los siguientes valores que ingreses se enviaran al servidor, ingrese enter para terminar de ingresar valores", ENTER);
 
 	while(1) {
 		lineaPaquete = readline(SIGN_CONSOLA);
@@ -32,10 +32,10 @@ int armar_conexion(t_config* config, t_log* logger)
 	char* ip = config_get_string_value(config, "IP");
 	char* puerto = config_get_string_value(config, "PUERTO");
 
-	log_info(logger, "Estableciendo conexion con valores:", ENTER);
+	log_info(logger, I__ESTABLECIENDO_CONEXION, ENTER);
 	log_info(logger, "ip %s, puerto %s\n", ip, puerto);
 
-	return crear_conexion(ip, puerto);
+	return crear_conexion(ip, puerto, logger);
 }
 
 
@@ -104,7 +104,7 @@ void* serializar_paquete(t_paquete* paquete, int bytes)
 	return magic;
 }
 
-int crear_conexion(char *ip, char* puerto)
+int crear_conexion(char *ip, char* puerto, t_log* logger)
 {
 	struct addrinfo hints;
 	struct addrinfo *server_info;
@@ -116,14 +116,16 @@ int crear_conexion(char *ip, char* puerto)
 
 	getaddrinfo(ip, puerto, &hints, &server_info);
 
-	// Ahora vamos a crear el socket.
+	// Vamos a crear el socket.
 	int socket_cliente = socket(server_info->ai_family,
             server_info->ai_socktype,
             server_info->ai_protocol);
 
 	// Ahora que tenemos el socket, vamos a conectarlo
 	if (connect(socket_cliente, server_info->ai_addr, server_info->ai_addrlen) == -1) {
-		printf("error al conectar\n");
+		log_error(logger, E__CONEXION_CREATE, ENTER);
+	}else {
+		log_info(logger, I__CONEXION_CREATE, ENTER);
 	}
 
 	freeaddrinfo(server_info);
