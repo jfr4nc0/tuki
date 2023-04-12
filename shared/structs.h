@@ -2,6 +2,27 @@
 #define STRUCTS_GLOBAL_H_
 
 // Este struct op_code va a tener los comandos
+typedef enum
+{
+	MENSAJE,
+	PAQUETE
+}op_code;
+
+typedef struct
+{
+	int size;
+	void* stream;
+}t_buffer;
+
+typedef struct
+{
+	op_code codigo_operacion;
+	t_buffer* buffer;
+}t_paquete;
+
+#endif
+
+
 
 // TODO: Idea de como separar comandos, o quiza convenga todos separados
 /*
@@ -19,23 +40,3 @@ MOV_IN BX 120
 CREATE_SEGMENT 1 128
 DELETE_SEGMENT 1
 */
-
-	typedef enum
-	{
-		MENSAJE,
-		PAQUETE
-	}op_code;
-
-	typedef struct
-	{
-		int size;
-		void* stream;
-	}t_buffer;
-
-	typedef struct
-	{
-		op_code codigo_operacion;
-		t_buffer* buffer;
-	}t_paquete;
-
-#endif

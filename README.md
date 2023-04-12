@@ -1,11 +1,11 @@
 <h1 align="center"> Sistemas Operativos - TUKI </h1>
 
 ## Indice
-- [Integrantes](#integrantes-equipo-kernel)
+- [Integrantes](#integrantes-equipo-kernel-panic)
 - [TP Consigna](#tp-consigna)
 - [Build](#build) 
 
-## Integrantes equipo Kernel
+## Integrantes equipo Kernel Panic
 * [Francisca Maria Olaciregui Bonilla](https://www.github.com/folaciregui)
 
 * [Sofia Marques Gomez](https://www.github.com/smarquesgomez)

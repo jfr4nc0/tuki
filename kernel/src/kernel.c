@@ -1,4 +1,6 @@
-#include "./../include/kernel.h"
+#include "../include/kernel.h"
+#include "../../shared/src/funcionesServidor.c"
+#include "../../shared/src/funcionesCliente.c"
 
 t_log* logger;
 
