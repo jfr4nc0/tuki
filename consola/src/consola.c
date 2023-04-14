@@ -51,7 +51,6 @@ void ejecutarInstrucciones(char* pathInstrucciones, int conexionKernel, t_log* l
 	char instruccion[LONGITUD_MAXIMA_CADENA];
 	while (fgets(instruccion, LONGITUD_MAXIMA_CADENA, instrucciones)) {
 		strtok(instruccion, "\n"); // Removemos el salto de linea
-		printf("La instruccion es: '%s'\n", instruccion); // TODO: borrar, es solo para ver si funciona
 		enviar_mensaje(instruccion, conexionKernel);
 	}
 }
