@@ -16,7 +16,6 @@
 // Internas
 #include "structs.h"
 
-
 t_log* iniciar_logger(char*);
 t_config* iniciar_config(char*);
 void leer_consola(t_log*);
@@ -31,5 +30,6 @@ void agregar_a_paquete(t_paquete*, void*, int);
 void enviar_paquete(t_paquete*, int);
 void liberar_conexion(int);
 void eliminar_paquete(t_paquete*);
+int armar_conexion(t_config*, char*, t_log*);
 
 #endif

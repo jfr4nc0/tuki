@@ -1,5 +1,4 @@
 #ifndef CONSTANTES_GLOBALES_H_
-
 #define CONSTANTES_GLOBALES_H_
 
 
@@ -7,7 +6,8 @@
 /////////////////////////////////////////////////////////
 
 // Configuracion General
-#define LONGITUD_MAXIMA_CADENA 1000
+#define LONGITUD_MAXIMA_CADENA 			1000
+#define PATH_DEFAULT_CONEXION_KERNEL 	"../kernel_conexion.config"
 
 // TODO: Borrar
 #define IP "127.0.0.1"
@@ -37,7 +37,13 @@
 // CONSTANTES
 #define MODO_LECTURA_ARCHIVO 	"r"
 #define MODULO_CONSOLA			"CONSOLA"
+#define MODULO_CPU              "CPU"
+#define MODULO_MEMORIA          "MEMORIA"
+#define MODULO_FILE_SYSTEM		"FILE_SYSTEM"
 #define MODULO_KERNEL			"KERNEL"
+
+#define IP_CONFIG 				"IP_"
+#define PUERTO_CONFIG 			"PUERTO_"
 
 // INFO MENSAJES
 #define I__CONEXION_CREATE			"Conexion creada"
@@ -50,6 +56,7 @@
 #define E__ARCHIVO_CREATE	"Error al crear/leer archivo"
 #define E__BAD_REQUEST 		"BAD REQUEST"
 #define E__CONEXION_CREATE	"Error al crear conexion"
+#define E__CONEXION_CONNECT	"Error al conectar conexion"
 #define E__LOGGER_CREATE 	"No se pudo crear logger"
 #define E__PAQUETE_CREATE	"Error al crear paquete"
 

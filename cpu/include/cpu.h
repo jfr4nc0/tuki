@@ -11,6 +11,6 @@
 
 	#include "utils.h"
 	#include "constantes.h"
-	#include "../../shared/src/funcionesCliente.c"
+	#include "../../shared/src/funciones.c"
 
 #endif

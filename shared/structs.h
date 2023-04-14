@@ -22,8 +22,6 @@ typedef struct
 
 #endif
 
-
-
 // TODO: Idea de como separar comandos, o quiza convenga todos separados
 /*
 F_WRITE ARCHIVO 4 4 	F_READ ARCHIVO 16 4  	-> Comando Archivo INT INT
