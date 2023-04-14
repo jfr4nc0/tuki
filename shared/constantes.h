@@ -17,7 +17,7 @@
 #define LOG_LEVEL_CONSOLA                           LOG_LEVEL_INFO
 #define LOG_LEVEL_CPU                               LOG_LEVEL_INFO
 #define LOG_LEVEL_FILE_SYSTEM                       LOG_LEVEL_INFO
-#define LOG_LEVEL_KERNEL                            LOG_LEVEL_DEBUG
+#define LOG_LEVEL_KERNEL                            LOG_LEVEL_TRACE
 #define LOG_LEVEL_MEMORIA                           LOG_LEVEL_INFO
 
 #define MOSTRAR_OCULTAR_MENSAJES_LOG_CONSOLA        1
@@ -44,19 +44,24 @@
 #define IP_CONFIG 				"IP_"
 #define PUERTO_CONFIG 			"PUERTO_"
 
+// DEBUG MENSAJES
+#define D__ESTABLECIENDO_CONEXION   "Estableciendo conexion"
+#define D__CONFIG_CREADO            "Config creado"
+#define D__LOG_CREADO               "Log creado"
+
 // INFO MENSAJES
 #define I__CONEXION_CREATE          "Conexion creada"
-#define I__ESTABLECIENDO_CONEXION   "Estableciendo conexion"
 #define I__DESCONEXION_CLIENTE      "El cliente se desconecto. Terminando servidor"
 #define I__SERVER_READY             "Servidor listo para recibir al cliente: "
 
 
-// ERROR MESSAGES
+// ERROR MENSAJES
 #define E__ARCHIVO_CREATE   "Error al crear/leer archivo"
 #define E__BAD_REQUEST 	    "BAD REQUEST"
 #define E__CONEXION_CREATE  "Error al crear conexion"
 #define E__CONEXION_CONNECT "Error al conectar conexion"
 #define E__LOGGER_CREATE    "No se pudo crear logger"
+#define E__CONFIG_CREATE    "No se pudo crear config"
 #define E__PAQUETE_CREATE   "Error al crear paquete"
 
 #endif

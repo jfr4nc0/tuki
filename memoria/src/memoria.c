@@ -14,7 +14,7 @@ int main(int argc, char** argv)
 	t_config* config;
 
 	logger = iniciar_logger(pathLog);
-	config = iniciar_config(pathConfig);
+	config = iniciar_config(pathConfig, logger);
 
 	// Creamos una conexión hacia el servidor
 	conexion = armar_conexion(config, MODULO_MEMORIA, logger);

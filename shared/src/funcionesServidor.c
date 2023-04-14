@@ -3,8 +3,8 @@
 int iniciar_servidor(t_config* config, char* modulo)
 {
 	int socket_servidor;
-	char* ip = extraerDeConfig(config, IP_CONFIG, modulo);
-	char* puerto = extraerDeConfig(config, PUERTO_CONFIG, modulo);
+	char* ip = extraerDeConfig(config, IP_CONFIG, modulo, logger);
+	char* puerto = extraerDeConfig(config, PUERTO_CONFIG, modulo, logger);
 
 	struct addrinfo hints, *servinfo;
 
@@ -27,7 +27,6 @@ int iniciar_servidor(t_config* config, char* modulo)
 	listen(socket_servidor, SOMAXCONN);
 
 	freeaddrinfo(servinfo);
-	log_trace(logger, modulo, " servidor listo para escuchar");
 
 	return socket_servidor;
 }

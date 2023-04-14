@@ -16,19 +16,14 @@
 // Internas
 #include "structs.h"
 
-t_log* iniciar_logger(char*);
-t_config* iniciar_config(char*);
-void leer_consola(t_log*);
-void paquete(int, t_log*);
-void terminar_programa(int, t_log*, t_config*);
 
+void paquete(int, t_log*);
 int crear_conexion(char*, char*, t_log*);
 void enviar_mensaje(char*, int);
 t_paquete* crear_paquete(void);
 t_paquete* crear_super_paquete(void);
 void agregar_a_paquete(t_paquete*, void*, int);
 void enviar_paquete(t_paquete*, int);
-void liberar_conexion(int);
 void eliminar_paquete(t_paquete*);
 int armar_conexion(t_config*, char*, t_log*);
 

@@ -9,19 +9,18 @@ int main(int argc, char** argv)
 	// Se setean los parametros que se pasan, con poner valores por defecto
 	char* pathConfig = argv[1] ? argv[1] : PATH_DEFAULT_CONEXION_KERNEL;
 	char* pathInstrucciones = argv[2] ? argv[2] : DEFAULT_INSTRUCCIONES_PATH;
-	char* pathLog = argv[3] ?  argv[3] : DEFAULT_LOG_PATH; // TODO: Esto puede borrarse
 
 	int conexionKernel;
 	t_log* logger;
 	t_config* config;
 
-	logger = iniciar_logger(pathLog);
-	config = iniciar_config(pathConfig);
+	logger = iniciar_logger(DEFAULT_LOG_PATH);
+	config = iniciar_config(pathConfig, logger);
 
 	// Creamos una conexión hacia kernel
 	conexionKernel = armar_conexion(config, MODULO_KERNEL, logger);
 
-	ejecutarInstrucciones(pathInstrucciones, conexionKernel, logger);
+	enviarInstrucciones(pathInstrucciones, conexionKernel, logger);
 
 	terminar_programa(conexionKernel, logger, config);
 }
@@ -46,11 +45,12 @@ int validarArgumentos(int argc, char** argv) {
 	return EXIT_SUCCESS;
 }
 
-void ejecutarInstrucciones(char* pathInstrucciones, int conexionKernel, t_log* logger) {
+void enviarInstrucciones(char* pathInstrucciones, int conexionKernel, t_log* logger) {
 	FILE *instrucciones = fopen(pathInstrucciones, MODO_LECTURA_ARCHIVO);
 	char instruccion[LONGITUD_MAXIMA_CADENA];
 	while (fgets(instruccion, LONGITUD_MAXIMA_CADENA, instrucciones)) {
 		strtok(instruccion, "\n"); // Removemos el salto de linea
 		enviar_mensaje(instruccion, conexionKernel);
+		log_debug(logger, instruccion);
 	}
 }

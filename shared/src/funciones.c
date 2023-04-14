@@ -5,14 +5,16 @@
 
 t_log* logger;
 
-char* extraerDeConfig(t_config* config, char* valor, char* modulo) {
+char* extraerDeConfig(t_config* config, char* valor, char* modulo, t_log* logger) {
 	char* valorModuloConfig = concatenarStrings(valor, modulo);
 
 	if(config_has_property(config, valorModuloConfig)) {
-		return config_get_string_value(config, valorModuloConfig);
+		char* valor = config_get_string_value(config, valorModuloConfig);
+		log_trace(logger, "Se obtuvo el valor -> %s. En el archivo de configuracion %s (%s)\n", valor, config->path, valorModuloConfig);
+		return valor;
 	}
 
-	printf("No se pudo encontrar en el archivo de configuracion -> %s El valor -> %s/n", config, valorModuloConfig);
+	log_warning(logger, "No se pudo encontrar en el archivo de configuracion (%s), el valor -> %s\n", config->path, valorModuloConfig);
 
 	return EMPTY_STRING;
 }
@@ -40,24 +42,26 @@ t_log* iniciar_logger(char* pathLog)
 		printf(E__LOGGER_CREATE, ENTER);
 		exit(1);
 	}
+	log_debug(logger, D__LOG_CREADO, "-> ", pathLog, ENTER);
 	return logger;
 }
 
-t_config* iniciar_config(char* pathConfig)
+t_config* iniciar_config(char* pathConfig, t_log* logger)
 {
 	t_config* nuevo_config;
 	if ((nuevo_config = config_create(pathConfig)) == NULL) {
-		printf(E__LOGGER_CREATE, ENTER);
+		log_error(logger, E__CONFIG_CREATE, ENTER);
 		exit(1);
 	}
 
+	log_debug(logger, D__CONFIG_CREADO, "-> ", pathConfig, ENTER);
 	return nuevo_config;
 }
 
 void leer_consola(t_log* logger)
 {
-	printf("Los siguientes valores que ingresen se guardaran en el log, ingrese un enter para terminar de ingresar valores\n");
-	char* linea;
+    printf("Los siguientes valores que ingresen se guardaran en el log, ingrese un enter para terminar de ingresar valores\n");
+    char* linea;
 
 // Por ahora no se usa la siguiente linea, Si se va a usar fijarse si es necesario agregar el include #include <readline/readline.h>
 	/*

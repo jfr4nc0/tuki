@@ -2,6 +2,6 @@
 #define CONSOLA_FUNCIONES_H_
 
 int validarArgumentos(int, char**);
-void ejecutarInstrucciones(char*, int, t_log*);
+void enviarInstrucciones(char*, int, t_log*);
 
 #endif

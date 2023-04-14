@@ -37,11 +37,10 @@ void eliminar_paquete(t_paquete* paquete)
 
 int armar_conexion(t_config* config, char* modulo, t_log* logger)
 {
-	char* ip = extraerDeConfig(config, IP_CONFIG, modulo);
-	char* puerto = extraerDeConfig(config, PUERTO_CONFIG, modulo);
+	char* ip = extraerDeConfig(config, IP_CONFIG, modulo, logger);
+	char* puerto = extraerDeConfig(config, PUERTO_CONFIG, modulo, logger);
 
-	log_info(logger, I__ESTABLECIENDO_CONEXION, ENTER);
-	log_info(logger, "ip %s, puerto %s del %s\n", ip, puerto, modulo);
+	log_debug(logger, D__ESTABLECIENDO_CONEXION, ENTER);
 
 	return crear_conexion(ip, puerto, logger);
 }
