@@ -1,6 +1,5 @@
 #include "../funcionesCliente.h"
 
-///// CLiente
 void paquete(int conexion, t_log* logger)
 {
 	t_paquete* paquete;
@@ -157,5 +156,3 @@ void enviar_paquete(t_paquete* paquete, int socket_cliente)
 	free(a_enviar);
 }
 
-
-/////////////////////////////////////////

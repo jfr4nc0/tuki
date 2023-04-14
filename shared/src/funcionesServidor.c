@@ -1,7 +1,5 @@
 #include "../funcionesServidor.h"
 
-// SERVIDOR
-
 int iniciar_servidor(t_config* config, char* modulo)
 {
 	int socket_servidor;
@@ -99,4 +97,3 @@ t_list* recibir_paquete(int socket_cliente)
 	free(buffer);
 	return valores;
 }
-////

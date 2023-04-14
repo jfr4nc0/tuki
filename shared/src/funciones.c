@@ -5,7 +5,6 @@
 
 t_log* logger;
 
-////// PARA AMBAS
 char* extraerDeConfig(t_config* config, char* valor, char* modulo) {
 	char* valorModuloConfig = concatenarStrings(valor, modulo);
 
@@ -91,7 +90,3 @@ void liberar_conexion(int socket_cliente)
 {
 	close(socket_cliente);
 }
-/////////
-
-
-
