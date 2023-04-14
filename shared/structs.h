@@ -1,7 +1,6 @@
 #ifndef STRUCTS_GLOBAL_H_
 #define STRUCTS_GLOBAL_H_
 
-// Este struct op_code va a tener los comandos
 typedef enum
 {
 	MENSAJE,
