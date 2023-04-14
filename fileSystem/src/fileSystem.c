@@ -1,6 +1,6 @@
 #include "../include/fileSystem.h"
 
-#include "../../shared/src/funcionesCliente.c"
+#include "../../shared/src/funciones.c"
 #include "utils.c"
 
 int main(int argc, char** argv)
@@ -16,7 +16,7 @@ int main(int argc, char** argv)
 	config = iniciar_config(pathConfig);
 
 	// Creamos una conexión hacia el servidor
-	conexion = armar_conexion(config, logger);
+	conexion = armar_conexion(config, MODULO_FILE_SYSTEM, logger);
 
 	// Armamos y enviamos el paquete
 	paquete(conexion, logger);

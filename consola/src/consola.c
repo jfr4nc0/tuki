@@ -1,5 +1,5 @@
 #include "../include/consola.h"
-#include "../../shared/src/funcionesCliente.c"
+#include "../../shared/src/funciones.c"
 
 int main(int argc, char** argv)
 {
@@ -7,11 +7,11 @@ int main(int argc, char** argv)
     validarArgumentos(argc, argv);
 
 	// Se setean los parametros que se pasan, con poner valores por defecto
-	char* pathConfig = argv[1] ? argv[1] : DEFAULT_CONFIG_PATH;
+	char* pathConfig = argv[1] ? argv[1] : PATH_DEFAULT_CONEXION_KERNEL;
 	char* pathInstrucciones = argv[2] ? argv[2] : DEFAULT_INSTRUCCIONES_PATH;
-	char* pathLog = argv[3] ?  argv[3] : DEFAULT_LOG_PATH;
+	char* pathLog = argv[3] ?  argv[3] : DEFAULT_LOG_PATH; // TODO: Esto puede borrarse
 
-	int conexion;
+	int conexionKernel;
 	t_log* logger;
 	t_config* config;
 
@@ -19,15 +19,11 @@ int main(int argc, char** argv)
 	config = iniciar_config(pathConfig);
 
 	// Creamos una conexión hacia kernel
-	conexion = armar_conexion(config, logger);
+	conexionKernel = armar_conexion(config, MODULO_KERNEL, logger);
 
-	ejecutarInstrucciones(pathInstrucciones, logger);
+	ejecutarInstrucciones(pathInstrucciones, conexionKernel, logger);
 
-
-	// Armamos y enviamos el paquete
-	paquete(conexion, logger);
-
-	terminar_programa(conexion, logger, config);
+	terminar_programa(conexionKernel, logger, config);
 }
 
 
@@ -50,11 +46,12 @@ int validarArgumentos(int argc, char** argv) {
 	return EXIT_SUCCESS;
 }
 
-void ejecutarInstrucciones(char* pathInstrucciones, t_log* logger) {
+void ejecutarInstrucciones(char* pathInstrucciones, int conexionKernel, t_log* logger) {
 	FILE *instrucciones = fopen(pathInstrucciones, MODO_LECTURA_ARCHIVO);
-	char bufer[LONGITUD_MAXIMA_CADENA];
-	while (fgets(bufer, LONGITUD_MAXIMA_CADENA, instrucciones)) {
-		strtok(bufer, "\n"); // Removemos el salto de linea
-		printf("La línea es: '%s'\n", bufer);
+	char instruccion[LONGITUD_MAXIMA_CADENA];
+	while (fgets(instruccion, LONGITUD_MAXIMA_CADENA, instrucciones)) {
+		strtok(instruccion, "\n"); // Removemos el salto de linea
+		printf("La instruccion es: '%s'\n", instruccion); // TODO: borrar, es solo para ver si funciona
+		enviar_mensaje(instruccion, conexionKernel);
 	}
 }

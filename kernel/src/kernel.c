@@ -1,14 +1,16 @@
 #include "../include/kernel.h"
-#include "../../shared/src/funcionesServidor.c"
-#include "../../shared/src/funcionesCliente.c"
+#include "../../shared/src/funciones.c"
 
 t_log* logger;
 
-int main(void) {
-	logger = log_create(LOG_PATH_KERNEL, MODULO_KERNEL, MOSTRAR_OCULTAR_MENSAJES_LOG_KERNEL, LOG_LEVEL_KERNEL);
+int main(int argc, char** argv) {
+	char* pathConfig = argv[1] ? argv[1] : PATH_DEFAULT_CONEXION_KERNEL;
+	logger = log_create(PATH_LOG_KERNEL, MODULO_KERNEL, MOSTRAR_OCULTAR_MENSAJES_LOG_KERNEL, LOG_LEVEL_KERNEL);
+	t_config* config = iniciar_config(PATH_CONFIG_KERNEL);
+	t_config* configConexionKernel = iniciar_config(pathConfig);
 
-	int server_fd = iniciar_servidor();
-	log_info(logger, I__SERVER_READY, MODULO_CONSOLA, ENTER);
+	int server_fd = iniciar_servidor(configConexionKernel, MODULO_KERNEL);
+	log_info(logger, I__SERVER_READY, MODULO_KERNEL, ENTER);
 
 	int cliente_fd = esperar_cliente(server_fd);
 

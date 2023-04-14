@@ -9,7 +9,7 @@
 	#include<netdb.h>
 	#include<string.h>
 	#include<commons/log.h>
-	#include "../../shared/funcionesCliente.h"
+	#include "../../shared/funciones.h"
 	#include "../../shared/constantes.h"
 	#include "constantes.h"
 	#include "utils.h"

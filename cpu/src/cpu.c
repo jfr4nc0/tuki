@@ -16,7 +16,7 @@ int main(int argc, char** argv)
 	logger = iniciar_logger(pathLog);
 
 	// Creamos una conexión hacia el servidor
-	conexion = armar_conexion(config, logger);
+	conexion = armar_conexion(config, MODULO_CPU, logger);
 
 	// Armamos y enviamos el paquete
 	paquete(conexion, logger);
