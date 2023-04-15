@@ -17,14 +17,14 @@ SHARED = $(shell find ./shared/bin/*.o)
 BINS = $(SRC:%.c=./obj/*.o)
 
 build: makefolder makeshared $(BIN)
-	$(foreach MODULO, $(MODULOS), gcc -o consola.out main.c
+    $(foreach MODULO, $(MODULOS), gcc -o consola.out main.c
 
 ./bin/%.o: ./src/%.c
-	gcc -c ./src/%.c -o ./bin/%.c
-	
-	
-# Funciones	
+    gcc -c ./src/%.c -o ./bin/%.c
+    
+    
+# Funciones    
 makefolder:
-	if [ ! -d ./bin ]; then mkdir bin; fi
+    if [ ! -d ./bin ]; then mkdir bin; fi
 makeshared:
-	make -C ./shared
+    make -C ./shared

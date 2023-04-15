@@ -21,4 +21,7 @@
 
 extern t_log* logger;
 
+
+int procesar_instrucciones(int, t_log*);
+
 #endif
