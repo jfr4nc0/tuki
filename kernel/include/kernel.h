@@ -22,6 +22,6 @@
 extern t_log* logger;
 
 
-int procesarInstrucciones(int, t_log*);
+int procesar_instrucciones(int, t_log*);
 
 #endif

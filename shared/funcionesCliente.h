@@ -19,7 +19,7 @@
 
 void paquete(int, t_log*);
 int crear_conexion(char*, char*, t_log*);
-void enviar_mensaje(char*, int);
+void enviar_mensaje(char*, int, t_log*);
 t_paquete* crear_paquete(void);
 t_paquete* crear_super_paquete(void);
 void agregar_a_paquete(t_paquete*, void*, int);

@@ -19,6 +19,17 @@ typedef struct
 	t_buffer* buffer;
 }t_paquete;
 
+/* TODO: Hacer enum para iniciar_log
+enum modulos {
+	CONSOLA = ENUM_CONSOLA,
+	CPU = ENUM_CPU,
+	FILE_SYSTEM = ENUM_FILE_SYSTEM,
+	KERNEL = ENUM_KERNEL,
+	MEMORIA = ENUM_MEMORIA
+};
+*/
+
+
 #endif
 
 // TODO: Idea de como separar comandos, o quiza convenga todos separados

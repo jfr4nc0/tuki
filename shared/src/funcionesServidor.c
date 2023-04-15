@@ -3,8 +3,8 @@
 int iniciar_servidor(t_config* config, char* modulo)
 {
 	int socket_servidor;
-	char* ip = extraerDeConfig(config, IP_CONFIG, modulo, logger);
-	char* puerto = extraerDeConfig(config, PUERTO_CONFIG, modulo, logger);
+	char* ip = extrar_de_config(config, IP_CONFIG, modulo, logger);
+	char* puerto = extrar_de_config(config, PUERTO_CONFIG, modulo, logger);
 
 	struct addrinfo hints, *servinfo;
 

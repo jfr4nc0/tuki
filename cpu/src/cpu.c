@@ -13,10 +13,10 @@ int main(int argc, char** argv)
 	t_log* logger;
 	t_config* config;
 
-	logger = iniciar_logger(pathLog);
+	logger = iniciar_logger(pathLog, ENUM_CPU);
 
 	// Creamos una conexión hacia el servidor
-	conexion = armar_conexion(config, MODULO_CPU, logger);
+	conexion = armar_conexion(config, CPU, logger);
 
 	// Armamos y enviamos el paquete
 	paquete(conexion, logger);

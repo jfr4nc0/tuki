@@ -14,11 +14,11 @@ int main(int argc, char** argv)
 	t_log* logger;
 	t_config* config;
 
-	logger = iniciar_logger(DEFAULT_LOG_PATH);
+	logger = iniciar_logger(DEFAULT_LOG_PATH, ENUM_CONSOLA);
 	config = iniciar_config(pathConfig, logger);
 
 	// Creamos una conexión hacia kernel
-	conexionKernel = armar_conexion(config, MODULO_KERNEL, logger);
+	conexionKernel = armar_conexion(config, KERNEL, logger);
 
 	enviarInstrucciones(pathInstrucciones, conexionKernel, logger);
 
@@ -50,7 +50,6 @@ void enviarInstrucciones(char* pathInstrucciones, int conexionKernel, t_log* log
 	char instruccion[LONGITUD_MAXIMA_CADENA];
 	while (fgets(instruccion, LONGITUD_MAXIMA_CADENA, instrucciones)) {
 		strtok(instruccion, "\n"); // Removemos el salto de linea
-		enviar_mensaje(instruccion, conexionKernel);
-		log_debug(logger, instruccion);
+		enviar_mensaje(instruccion, conexionKernel, logger);
 	}
 }

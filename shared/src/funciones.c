@@ -5,8 +5,8 @@
 
 t_log* logger;
 
-char* extraerDeConfig(t_config* config, char* valor, char* modulo, t_log* logger) {
-	char* valorModuloConfig = concatenarStrings(valor, modulo);
+char* extrar_de_config(t_config* config, char* valor, char* modulo, t_log* logger) {
+	char* valorModuloConfig = concatenar_strings(valor, modulo);
 
 	if(config_has_property(config, valorModuloConfig)) {
 		char* valor = config_get_string_value(config, valorModuloConfig);
@@ -21,7 +21,7 @@ char* extraerDeConfig(t_config* config, char* valor, char* modulo, t_log* logger
 
 
 // TODO: volverla funcion que acepte infinitos parametros
-char* concatenarStrings(char *p1, char *p2 ) {
+char* concatenar_strings(char *p1, char *p2 ) {
   char *concatenacion = malloc( sizeof( char ) * ( strlen( p1 ) + strlen( p2 ) ) + 1 );
 
   // strcat( ) NECESITA un 0 al final de la cadena destino.
@@ -34,15 +34,54 @@ char* concatenarStrings(char *p1, char *p2 ) {
   return concatenacion;
 }
 
+bool obtener_valores_para_logger(int moduloPos, bool *mostrarConsola, t_log_level *log_level) {
+	switch(moduloPos) {
+			case ENUM_KERNEL:
+					(*mostrarConsola) = !!(MOSTRAR_OCULTAR_MENSAJES_LOG_KERNEL);
+					(*log_level) = LOG_LEVEL_KERNEL;
+					break;
+			case ENUM_CPU:
+				    (*mostrarConsola) = !!(MOSTRAR_OCULTAR_MENSAJES_LOG_CPU);
+					(*log_level) = LOG_LEVEL_CPU;
+					break;
+			case ENUM_MEMORIA:
+			    	(*mostrarConsola) = !!(MOSTRAR_OCULTAR_MENSAJES_LOG_MEMORIA);
+					(*log_level) = LOG_LEVEL_MEMORIA;
+					break;
+			case ENUM_FILE_SYSTEM:
+				    (*mostrarConsola) = !!(MOSTRAR_OCULTAR_MENSAJES_LOG_FILE_SYSTEM);
+					(*log_level) = LOG_LEVEL_FILE_SYSTEM;
+					break;
+			case ENUM_CONSOLA:
+				    (*mostrarConsola) = MOSTRAR_OCULTAR_MENSAJES_LOG_CONSOLA != 0;
+					(*log_level) = LOG_LEVEL_CONSOLA;
+					break;
+			default:
+				    (*mostrarConsola) = true;
+					(*log_level) = LOG_LEVEL_DEFAULT;
+					return true;
+	}
+	return false;
+}
 
-t_log* iniciar_logger(char* pathLog)
+t_log* iniciar_logger(char* pathLog, int moduloPos)
 {
+		bool mostrarConsola = true;
+		t_log_level log_level;
+		bool valoresPorDefecto = obtener_valores_para_logger(moduloPos, &mostrarConsola, &log_level);
+
 	t_log *logger;
-	if (( logger = log_create(pathLog, "logs", true, LOG_LEVEL_INFO)) == NULL ) {
+	if (( logger = log_create(pathLog, "logs", mostrarConsola, log_level)) == NULL ) {
 		printf(E__LOGGER_CREATE, ENTER);
 		exit(1);
 	}
-	log_debug(logger, D__LOG_CREADO, "-> ", pathLog, ENTER);
+
+	if (valoresPorDefecto) {
+		log_warning(logger, D__LOG_CREADO, "-> ", pathLog, " con valores por defecto", ENTER);
+	}else {
+		log_debug(logger, D__LOG_CREADO, "-> ", pathLog, ENTER);
+	}
+
 	return logger;
 }
 

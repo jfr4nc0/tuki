@@ -1,6 +1,8 @@
 #ifndef CONSTANTES_GLOBALES_H_
 #define CONSTANTES_GLOBALES_H_
 
+#include "configuraciones.h"
+
 // TODO separar configuraciones en archivo más especifico
 /////////////////////////////////////////////////////////
 
@@ -12,22 +14,6 @@
 #define IP "127.0.0.1"
 #define PUERTO "4444"
 
-/* CONFIGURACIONES INDIVIDUALES POR MODULO*/
-
-#define LOG_LEVEL_CONSOLA                           LOG_LEVEL_INFO
-#define LOG_LEVEL_CPU                               LOG_LEVEL_INFO
-#define LOG_LEVEL_FILE_SYSTEM                       LOG_LEVEL_INFO
-#define LOG_LEVEL_KERNEL                            LOG_LEVEL_TRACE
-#define LOG_LEVEL_MEMORIA                           LOG_LEVEL_INFO
-
-#define MOSTRAR_OCULTAR_MENSAJES_LOG_CONSOLA        1
-#define MOSTRAR_OCULTAR_MENSAJES_LOG_CPU            1
-#define MOSTRAR_OCULTAR_MENSAJES_LOG_FILE_SYSTEM    1
-#define MOSTRAR_OCULTAR_MENSAJES_LOG_MEMORIA        1
-#define MOSTRAR_OCULTAR_MENSAJES_LOG_KERNEL         1
-
-////////////////////////////////////////////////////////
-
 // Signos
 #define ENTER             "\n"
 #define SIGN_CONSOLA      "> "
@@ -35,14 +21,21 @@
 
 // CONSTANTES
 #define MODO_LECTURA_ARCHIVO 	"r"
-#define MODULO_CONSOLA			"CONSOLA"
-#define MODULO_CPU              "CPU"
-#define MODULO_MEMORIA          "MEMORIA"
-#define MODULO_FILE_SYSTEM		"FILE_SYSTEM"
-#define MODULO_KERNEL			"KERNEL"
-
 #define IP_CONFIG 				"IP_"
 #define PUERTO_CONFIG 			"PUERTO_"
+
+// Modulos
+#define CONSOLA			        "CONSOLA"
+#define CPU                     "CPU"
+#define FILE_SYSTEM		        "FILE_SYSTEM"
+#define KERNEL			        "KERNEL"
+#define MEMORIA                 "MEMORIA"
+
+#define ENUM_CONSOLA			0
+#define ENUM_CPU                1
+#define ENUM_FILE_SYSTEM		2
+#define ENUM_KERNEL			    3
+#define ENUM_MEMORIA            4
 
 // DEBUG MENSAJES
 #define D__ESTABLECIENDO_CONEXION   "Estableciendo conexion"

@@ -13,11 +13,11 @@ int main(int argc, char** argv)
 	t_log* logger;
 	t_config* config;
 
-	logger = iniciar_logger(pathLog);
+	logger = iniciar_logger(pathLog, ENUM_MEMORIA);
 	config = iniciar_config(pathConfig, logger);
 
 	// Creamos una conexión hacia el servidor
-	conexion = armar_conexion(config, MODULO_MEMORIA, logger);
+	conexion = armar_conexion(config, MEMORIA, logger);
 
 	// Armamos y enviamos el paquete
 	paquete(conexion, logger);

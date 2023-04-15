@@ -37,8 +37,8 @@ void eliminar_paquete(t_paquete* paquete)
 
 int armar_conexion(t_config* config, char* modulo, t_log* logger)
 {
-	char* ip = extraerDeConfig(config, IP_CONFIG, modulo, logger);
-	char* puerto = extraerDeConfig(config, PUERTO_CONFIG, modulo, logger);
+	char* ip = extrar_de_config(config, IP_CONFIG, modulo, logger);
+	char* puerto = extrar_de_config(config, PUERTO_CONFIG, modulo, logger);
 
 	log_debug(logger, D__ESTABLECIENDO_CONEXION, ENTER);
 
@@ -89,7 +89,7 @@ int crear_conexion(char *ip, char* puerto, t_log* logger)
 	return socket_cliente;
 }
 
-void enviar_mensaje(char* mensaje, int socket_cliente)
+void enviar_mensaje(char* mensaje, int socket_cliente, t_log* logger)
 {
 	t_paquete* paquete = malloc(sizeof(t_paquete));
 
@@ -104,6 +104,8 @@ void enviar_mensaje(char* mensaje, int socket_cliente)
 	void* a_enviar = serializar_paquete(paquete, bytes);
 
 	send(socket_cliente, a_enviar, bytes, 0);
+
+	log_debug(logger, "Se envió valor %s\n", mensaje);
 
 	free(a_enviar);
 	eliminar_paquete(paquete);
