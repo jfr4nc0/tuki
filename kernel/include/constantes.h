@@ -3,11 +3,11 @@
 
 /////// LOGS OBLIGATORIOS///////////
 #define ABRIR_ARCHIVO               "PID: <PID> - Abrir Archivo: <NOMBRE ARCHIVO>"
-#define ACTUALIZAR_PUNTERO_ARCHIVO 	"PID: <PID> - Actualizar puntero Archivo: <NOMBRE ARCHIVO> - Puntero <PUNTERO>" // Nota: El valor del puntero debe ser luego de ejecutar F_SEEK.
+#define ACTUALIZAR_PUNTERO_ARCHIVO     "PID: <PID> - Actualizar puntero Archivo: <NOMBRE ARCHIVO> - Puntero <PUNTERO>" // Nota: El valor del puntero debe ser luego de ejecutar F_SEEK.
 #define CAMBIO_DE_ESTADO            "PID: <PID> - Estado Anterior: <ESTADO_ANTERIOR> - Estado Actual: <ESTADO_ACTUAL>"
 #define CERRAR_ARCHIVO              "PID: <PID> - Cerrar Archivo: <NOMBRE ARCHIVO>"
 #define CREACION_DE_PROCESO         "Se crea el proceso <PID> en NEW"
-#define CREAR_SEGMENTO 	            "PID: <PID> - Crear Segmento - Id: <ID SEGMENTO> - Tamaño: <TAMAÑO>"
+#define CREAR_SEGMENTO                 "PID: <PID> - Crear Segmento - Id: <ID SEGMENTO> - Tamaño: <TAMAÑO>"
 #define ELIMINAR_SEGMENTO           "PID: <PID> - Eliminar Segmento - Id Segmento: <ID SEGMENTO>"
 #define ESCRIBIR_ARCHIVO            "PID: <PID> -  Escribir Archivo: <NOMBRE ARCHIVO> - Puntero <PUNTERO> - Dirección Memoria <DIRECCIÓN MEMORIA> - Tamaño <TAMAÑO>"
 #define FIN_COMPACTACIÓN            "Se finalizó el proceso de compactación"
@@ -22,7 +22,7 @@
 #define WAIT                        "PID: <PID> - Wait: <NOMBRE RECURSO> - Instancias: <INSTANCIAS RECURSO>" // Nota: El valor de las instancias es después de ejecutar el Wait
 ////////////////////////////////////
 
-#define PATH_LOG_KERNEL 			"logs/kernel.log"
-#define PATH_CONFIG_KERNEL 			"kernel.config"
+#define PATH_LOG_KERNEL             "logs/kernel.log"
+#define PATH_CONFIG_KERNEL             "kernel.config"
 
 #endif

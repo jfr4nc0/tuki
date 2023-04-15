@@ -3,13 +3,6 @@
 
 #include "configuraciones.h"
 
-// TODO separar configuraciones en archivo más especifico
-/////////////////////////////////////////////////////////
-
-// Configuracion General
-#define LONGITUD_MAXIMA_CADENA          1000
-#define PATH_DEFAULT_CONEXION_KERNEL    "../kernel_conexion.config"
-
 // TODO: Borrar
 #define IP "127.0.0.1"
 #define PUERTO "4444"
@@ -20,22 +13,23 @@
 #define EMPTY_STRING      ""
 
 // CONSTANTES
-#define MODO_LECTURA_ARCHIVO 	"r"
-#define IP_CONFIG 				"IP_"
-#define PUERTO_CONFIG 			"PUERTO_"
+#define MODO_LECTURA_ARCHIVO      "r"
+#define IP_CONFIG                 "IP_"
+#define PUERTO_CONFIG             "PUERTO_"
+#define LONGITUD_MAXIMA_CADENA    1000
 
 // Modulos
-#define CONSOLA			        "CONSOLA"
-#define CPU                     "CPU"
-#define FILE_SYSTEM		        "FILE_SYSTEM"
-#define KERNEL			        "KERNEL"
-#define MEMORIA                 "MEMORIA"
+#define CONSOLA                    "CONSOLA"
+#define CPU                        "CPU"
+#define FILE_SYSTEM                "FILE_SYSTEM"
+#define KERNEL                    "KERNEL"
+#define MEMORIA                   "MEMORIA"
 
-#define ENUM_CONSOLA			0
-#define ENUM_CPU                1
-#define ENUM_FILE_SYSTEM		2
-#define ENUM_KERNEL			    3
-#define ENUM_MEMORIA            4
+#define ENUM_CONSOLA              0
+#define ENUM_CPU                  1
+#define ENUM_FILE_SYSTEM          2
+#define ENUM_KERNEL               3
+#define ENUM_MEMORIA              4
 
 // DEBUG MENSAJES
 #define D__ESTABLECIENDO_CONEXION   "Estableciendo conexion"
@@ -49,12 +43,12 @@
 
 
 // ERROR MENSAJES
-#define E__ARCHIVO_CREATE   "Error al crear/leer archivo"
-#define E__BAD_REQUEST 	    "BAD REQUEST"
-#define E__CONEXION_CREATE  "Error al crear conexion"
-#define E__CONEXION_CONNECT "Error al conectar conexion"
-#define E__LOGGER_CREATE    "No se pudo crear logger"
-#define E__CONFIG_CREATE    "No se pudo crear config"
-#define E__PAQUETE_CREATE   "Error al crear paquete"
+#define E__ARCHIVO_CREATE      "Error al crear/leer archivo"
+#define E__BAD_REQUEST         "BAD REQUEST"
+#define E__CONEXION_CREATE     "Error al crear conexion"
+#define E__CONEXION_CONNECT    "Error al conectar conexion"
+#define E__LOGGER_CREATE       "No se pudo crear logger"
+#define E__CONFIG_CREATE       "No se pudo crear config"
+#define E__PAQUETE_CREATE      "Error al crear paquete"
 
 #endif

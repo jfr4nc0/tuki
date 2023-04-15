@@ -4,22 +4,22 @@
 int main(int argc, char** argv)
 {
 
-	// Se setean los parametros que se pasan, con poner valores por defecto
-	char* pathConfig = DEFAULT_CONFIG_PATH;
-	char* pathLog = DEFAULT_LOG_PATH;
+    // Se setean los parametros que se pasan, con poner valores por defecto
+    char* pathConfig = DEFAULT_CONFIG_PATH;
+    char* pathLog = DEFAULT_LOG_PATH;
 
-	int conexion;
+    int conexion;
 
-	t_log* logger;
-	t_config* config;
+    t_log* logger;
+    t_config* config;
 
-	logger = iniciar_logger(pathLog, ENUM_CPU);
+    logger = iniciar_logger(pathLog, ENUM_CPU);
 
-	// Creamos una conexión hacia el servidor
-	conexion = armar_conexion(config, CPU, logger);
+    // Creamos una conexión hacia el servidor
+    conexion = armar_conexion(config, CPU, logger);
 
-	// Armamos y enviamos el paquete
-	paquete(conexion, logger);
+    // Armamos y enviamos el paquete
+    paquete(conexion, logger);
 
-	terminar_programa(conexion, logger, config);
+    terminar_programa(conexion, logger, config);
 }
