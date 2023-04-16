@@ -3,23 +3,17 @@
 
 int main(int argc, char** argv)
 {
-
-    // Se setean los parametros que se pasan, con poner valores por defecto
-    char* pathConfig = DEFAULT_CONFIG_PATH;
-    char* pathLog = DEFAULT_LOG_PATH;
-
-    int conexion;
+    int servidorCpu;
+    int clienteAceptado;
 
     t_log* logger;
     t_config* config;
 
-    logger = iniciar_logger(pathLog, ENUM_CPU);
+    logger = iniciar_logger(DEFAULT_LOG_PATH, ENUM_CPU);
+    config = iniciar_config(DEFAULT_CONFIG_PATH, logger);
 
-    // Creamos una conexión hacia el servidor
-    conexion = armar_conexion(config, CPU, logger);
+    servidorCpu = iniciar_servidor(config, logger);
+    clienteAceptado = esperar_cliente(servidorCpu, logger);
 
-    // Armamos y enviamos el paquete
-    paquete(conexion, logger);
-
-    terminar_programa(conexion, logger, config);
+    terminar_programa(servidorCpu, logger, config);
 }

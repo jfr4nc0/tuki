@@ -3,9 +3,8 @@
 
 #include "configuraciones.h"
 
-// TODO: Borrar
-#define IP "127.0.0.1"
-#define PUERTO "4444"
+#define LOCALHOST           "127.0.0.1"
+#define PUERTO_LOCAL        "PUERTO_ESCUCHA"
 
 // Signos
 #define ENTER             "\n"
@@ -22,8 +21,8 @@
 #define CONSOLA                    "CONSOLA"
 #define CPU                        "CPU"
 #define FILE_SYSTEM                "FILE_SYSTEM"
-#define KERNEL                    "KERNEL"
-#define MEMORIA                   "MEMORIA"
+#define KERNEL                     "KERNEL"
+#define MEMORIA                    "MEMORIA"
 
 #define ENUM_CONSOLA              0
 #define ENUM_CPU                  1

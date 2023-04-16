@@ -6,7 +6,7 @@ int main(int argc, char** argv)
     // Comentar este if si se quiere tomar los valores por defecto
     validarArgumentos(argc, argv);
 
-    // Se setean los parametros que se pasan, con poner valores por defecto
+    // Se setean los parametros que se pasan, con valores por defecto si no encuentra parametros
     char* pathConfig = argv[1] ? argv[1] : PATH_DEFAULT_CONEXION_KERNEL;
     char* pathInstrucciones = argv[2] ? argv[2] : DEFAULT_INSTRUCCIONES_PATH;
 

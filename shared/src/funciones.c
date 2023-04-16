@@ -5,20 +5,21 @@
 
 t_log* logger;
 
-char* extrar_de_config(t_config* config, char* valor, char* modulo, t_log* logger) {
-    char* valorModuloConfig = concatenar_strings(valor, modulo);
+char* extraer_de_config(t_config* config, char* property, t_log* logger) {
+    if(config_has_property(config, property)) {
+            char* valor = config_get_string_value(config, property);
+            log_trace(logger, "Se obtuvo el valor -> %s. En el config %s (%s)\n", valor, config->path, property);
+            return valor;
+        }
+        log_warning(logger, "No se pudo encontrar en el config (%s), la propiedad -> %s\n", config->path, property);
 
-    if(config_has_property(config, valorModuloConfig)) {
-        char* valor = config_get_string_value(config, valorModuloConfig);
-        log_trace(logger, "Se obtuvo el valor -> %s. En el archivo de configuracion %s (%s)\n", valor, config->path, valorModuloConfig);
-        return valor;
-    }
-
-    log_warning(logger, "No se pudo encontrar en el archivo de configuracion (%s), el valor -> %s\n", config->path, valorModuloConfig);
-
-    return EMPTY_STRING;
+        return EMPTY_STRING;
 }
 
+char* extraer_de_modulo_config(t_config* config, char* valorIncompleto, char* modulo, t_log* logger) {
+    char* property = concatenar_strings(valorIncompleto, modulo);
+    return extraer_de_config(config, property, logger);
+}
 
 // TODO: volverla funcion que acepte infinitos parametros
 char* concatenar_strings(char *p1, char *p2 ) {
@@ -34,31 +35,37 @@ char* concatenar_strings(char *p1, char *p2 ) {
     return concatenacion;
 }
 
-bool obtener_valores_para_logger(int moduloPos, bool *mostrarConsola, t_log_level *log_level) {
+bool obtener_valores_para_logger(int moduloPos, bool *mostrarConsola, t_log_level *log_level, char* *modulo) {
     switch(moduloPos) {
             case ENUM_KERNEL:
+                    (*modulo) = KERNEL;
                     (*mostrarConsola) = !!(MOSTRAR_OCULTAR_MENSAJES_LOG_KERNEL);
                     (*log_level) = LOG_LEVEL_KERNEL;
                     break;
             case ENUM_CPU:
+                    (*modulo) = CPU;
                     (*mostrarConsola) = !!(MOSTRAR_OCULTAR_MENSAJES_LOG_CPU);
                     (*log_level) = LOG_LEVEL_CPU;
                     break;
             case ENUM_MEMORIA:
+                    (*modulo) = MEMORIA;
                     (*mostrarConsola) = !!(MOSTRAR_OCULTAR_MENSAJES_LOG_MEMORIA);
                     (*log_level) = LOG_LEVEL_MEMORIA;
                     break;
             case ENUM_FILE_SYSTEM:
+                    (*modulo) = FILE_SYSTEM;
                     (*mostrarConsola) = !!(MOSTRAR_OCULTAR_MENSAJES_LOG_FILE_SYSTEM);
                     (*log_level) = LOG_LEVEL_FILE_SYSTEM;
                     break;
             case ENUM_CONSOLA:
+                    (*modulo) = CONSOLA;
                     (*mostrarConsola) = !!(MOSTRAR_OCULTAR_MENSAJES_LOG_CONSOLA);
                     (*log_level) = LOG_LEVEL_CONSOLA;
               break;
             default:
-              (*mostrarConsola) = true;
-              (*log_level) = LOG_LEVEL_DEFAULT;
+                    (*modulo) = "LOG";
+                    (*mostrarConsola) = true;
+                    (*log_level) = LOG_LEVEL_DEFAULT;
                     return true;
     }
     return false;
@@ -68,10 +75,11 @@ t_log* iniciar_logger(char* pathLog, int moduloPos)
 {
         bool mostrarConsola = true;
         t_log_level log_level;
-        bool valoresPorDefecto = obtener_valores_para_logger(moduloPos, &mostrarConsola, &log_level);
+        char* modulo;
+        bool valoresPorDefecto = obtener_valores_para_logger(moduloPos, &mostrarConsola, &log_level, &modulo);
 
     t_log *logger;
-    if (( logger = log_create(pathLog, "logs", mostrarConsola, log_level)) == NULL ) {
+    if (( logger = log_create(pathLog, modulo, mostrarConsola, log_level)) == NULL ) {
         printf(E__LOGGER_CREATE, ENTER);
         exit(1);
     }
