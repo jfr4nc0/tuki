@@ -1,10 +1,9 @@
 #include "../funcionesServidor.h"
 
-int iniciar_servidor(t_config* config, char* modulo)
+int iniciar_servidor(t_config* config, t_log* logger)
 {
     int socket_servidor;
-    char* ip = extrar_de_config(config, IP_CONFIG, modulo, logger);
-    char* puerto = extrar_de_config(config, PUERTO_CONFIG, modulo, logger);
+    char* puerto = extraer_de_config(config, PUERTO_LOCAL, logger);
 
     struct addrinfo hints, *servinfo;
 
@@ -13,7 +12,7 @@ int iniciar_servidor(t_config* config, char* modulo)
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE;
 
-    getaddrinfo(ip, puerto, &hints, &servinfo);
+    getaddrinfo(LOCALHOST, puerto, &hints, &servinfo);
 
     // Creamos el socket de escucha del servidor
     socket_servidor = socket(servinfo->ai_family,
@@ -25,13 +24,14 @@ int iniciar_servidor(t_config* config, char* modulo)
 
     // Escuchamos las conexiones entrantes
     listen(socket_servidor, SOMAXCONN);
+    log_info(logger, I__SERVER_READY, ENTER);
 
     freeaddrinfo(servinfo);
 
     return socket_servidor;
 }
 
-int esperar_cliente(int socket_servidor)
+int esperar_cliente(int socket_servidor, t_log* logger)
 {
     // Aceptamos un nuevo cliente
     int socket_cliente = accept(socket_servidor, NULL, NULL);

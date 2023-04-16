@@ -1,8 +1,8 @@
 #ifndef MEMORIA_CONSTANTES_H_
 #define MEMORIA_CONSTANTES_H_
 
-#define DEFAULT_LOG_PATH "./logs/memoria.log"
-#define DEFAULT_CONFIG_PATH "./memoria.config"
+#define DEFAULT_LOG_PATH            "logs/memoria.log"
+#define DEFAULT_CONFIG_PATH         "memoria.config"
 
 // LOGS ////////////////////////////////////
 #define CREACION_DE_PROCESO         "Creación de Proceso PID: <PID>"

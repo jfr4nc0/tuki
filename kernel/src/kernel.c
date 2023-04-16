@@ -4,20 +4,18 @@
 t_log* logger;
 
 int main(int argc, char** argv) {
-    char* pathConfig = argv[1] ? argv[1] : PATH_DEFAULT_CONEXION_KERNEL;
+    char* pathConfig = PATH_DEFAULT_CONEXION_KERNEL;
     logger = iniciar_logger(PATH_LOG_KERNEL, ENUM_KERNEL);
     t_config* config = iniciar_config(PATH_CONFIG_KERNEL, logger);
-    t_config* configConexionKernel = iniciar_config(pathConfig, logger);
 
-    int servidorKernel = iniciar_servidor(configConexionKernel, KERNEL);
-    log_info(logger, I__SERVER_READY, KERNEL, ENTER);
+    int servidorKernel = iniciar_servidor(config, logger);
 
     // int conexionMemoria = armar_conexion(configConexionKernel, MEMORIA, logger);
     // int conexionCpu = armar_conexion(configConexionKernel, CPU, logger);
 
-    int clienteAceptado = esperar_cliente(servidorKernel);
+    int clienteAceptado = esperar_cliente(servidorKernel, logger);
 
-    return procesar_instrucciones(clienteAceptado, logger);
+    return procesar_instrucciones(clienteAceptado, logger, config);
 }
 
 
@@ -27,7 +25,7 @@ void iterator(char* value) {
 }
 
 
-int procesar_instrucciones(int clienteAceptado, t_log* logger) {
+int procesar_instrucciones(int clienteAceptado, t_log* logger, t_config* config) {
     t_list* lista;
     while (1) {
         int instruccion = recibir_operacion(clienteAceptado);
@@ -42,11 +40,13 @@ int procesar_instrucciones(int clienteAceptado, t_log* logger) {
             break;
         case -1:
             log_info(logger, I__DESCONEXION_CLIENTE);
+            terminar_programa(clienteAceptado, logger, config);
             return EXIT_FAILURE;
         default:
             log_warning(logger,"Operacion desconocida.");
             break;
         }
     }
+    terminar_programa(clienteAceptado, logger, config);
     return EXIT_SUCCESS;
 }

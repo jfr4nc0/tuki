@@ -1,8 +1,8 @@
 #ifndef FILE_SYSTEM_CONSTANTES_H_
 #define FILE_SYSTEM_CONSTANTES_H_
 
-#define DEFAULT_LOG_PATH "logs/fileSystem.log"
-#define DEFAULT_CONFIG_PATH "fileSystem.config"
+#define DEFAULT_LOG_PATH        "logs/file_system.log"
+#define DEFAULT_CONFIG_PATH     "file_system.config"
 
 //// LOGS
 #define ACCESO_BITMAP            "Acceso a Bitmap - Bloque: <NUMERO BLOQUE> - Estado: <ESTADO>" Nota: El estado es 0 o 1 donde 0 es libre y 1 es ocupado.
