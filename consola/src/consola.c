@@ -30,12 +30,12 @@ int main(int argc, char** argv)
 
 //TODO, ver si pasarle el parametro log, el problema es que es el tercer parametro
 int validarArgumentos(int argc, char** argv) {
-    if (argc<2) {
+    if (argc<3) {
             printf(E__BAD_REQUEST, ENTER);
 
             printf("Dos parametros son obligatorios (pathConfig y pathInstrucciones), parametros enviados: %d\n", argc);
 
-            for(int i=0; i<argc; i++) {
+            for(int i=1; i<argc; i++) {
                     printf("%s\n", argv[i]);
             }
 

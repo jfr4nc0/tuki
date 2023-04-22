@@ -4,7 +4,6 @@
 t_log* logger;
 
 int main(int argc, char** argv) {
-    char* pathConfig = PATH_DEFAULT_CONEXION_KERNEL;
     logger = iniciar_logger(PATH_LOG_KERNEL, ENUM_KERNEL);
     t_config* config = iniciar_config(PATH_CONFIG_KERNEL, logger);
 
