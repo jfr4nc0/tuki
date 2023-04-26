@@ -5,6 +5,9 @@
 /memoria/.settings/
 /fileSystem/.settings/
 
+# Metadata
+/.metadata/
+
 # Prerequisites
 *.d
 

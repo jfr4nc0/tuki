@@ -10,21 +10,19 @@ int main(int argc, char** argv)
     char* pathConfig = argv[1] ? argv[1] : PATH_DEFAULT_CONEXION_KERNEL;
     char* pathInstrucciones = argv[2] ? argv[2] : DEFAULT_INSTRUCCIONES_PATH;
 
-    int conexionKernel;
     t_log* logger;
     t_config* config;
 
     logger = iniciar_logger(DEFAULT_LOG_PATH, ENUM_CONSOLA);
+
     config = iniciar_config(pathConfig, logger);
 
-    // Creamos una conexión hacia kernel
-    conexionKernel = armar_conexion(config, KERNEL, logger);
+    int conexionKernel = armar_conexion(config, KERNEL, logger);
 
     enviarInstrucciones(pathInstrucciones, conexionKernel, logger);
 
     terminar_programa(conexionKernel, logger, config);
 }
-
 
 // TODO: Mover todas las funciones a funciones.c
 

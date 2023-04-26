@@ -5,12 +5,15 @@ t_log* logger;
 
 int main(int argc, char** argv) {
     logger = iniciar_logger(PATH_LOG_KERNEL, ENUM_KERNEL);
+
     t_config* config = iniciar_config(PATH_CONFIG_KERNEL, logger);
 
     int servidorKernel = iniciar_servidor(config, logger);
 
-    // int conexionMemoria = armar_conexion(configConexionKernel, MEMORIA, logger);
-    // int conexionCpu = armar_conexion(configConexionKernel, CPU, logger);
+    // Conexiones con los demas modulos
+    int conexionCPU = armar_conexion(config, CPU, logger);
+    int conexionMemoria = armar_conexion(config, MEMORIA, logger);
+    int conexionFileSystem = armar_conexion(config, FILE_SYSTEM, logger);
 
     int clienteAceptado = esperar_cliente(servidorKernel, logger);
 
