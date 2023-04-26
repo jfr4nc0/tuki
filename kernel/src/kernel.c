@@ -7,23 +7,14 @@ int main(int argc, char** argv) {
     char* pathConfig = PATH_DEFAULT_CONEXION_KERNEL;
     logger = iniciar_logger(PATH_LOG_KERNEL, ENUM_KERNEL);
 
-    // Levanta archivo de configuración
     t_config* config = iniciar_config(PATH_CONFIG_KERNEL, logger);
 
-    // CONEXION CON CONSOLAS - servidor
     int servidorKernel = iniciar_servidor(config, logger);
 
-    // CONEXION CON CPU - cliente
-    //int conexionCpu = armar_conexion(configConexionKernel, CPU, logger);
+    // Conexiones con los demas modulos
     int conexionCPU = armar_conexion(config, CPU, logger);
-
-    // CONEXION CON MEMORIA - cliente
-    // int conexionMemoria = armar_conexion(configConexionKernel, MEMORIA, logger);
     int conexionMemoria = armar_conexion(config, MEMORIA, logger);
-
-    // CONEXION CON FILESYSTEM - cliente
     int conexionFileSystem = armar_conexion(config, FILE_SYSTEM, logger);
-
 
     int clienteAceptado = esperar_cliente(servidorKernel, logger);
 

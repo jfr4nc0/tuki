@@ -10,13 +10,11 @@ int main(int argc, char** argv)
 
     logger = iniciar_logger(DEFAULT_LOG_PATH, ENUM_FILE_SYSTEM);
 
-    // Levanta archivo de configuración
     config = iniciar_config(DEFAULT_CONFIG_PATH, logger);
 
-    // CONEXION CON MEMORIA - cliente
+    // Conexion con memoria
     int conexionMemoria = armar_conexion(config, MEMORIA, logger);
 
-    // CONEXION CON KERNEL - servidor
     int servidorFileSystem = iniciar_servidor(config, logger);
     clienteAceptado = esperar_cliente(servidorFileSystem, logger);
 

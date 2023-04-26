@@ -15,10 +15,8 @@ int main(int argc, char** argv)
 
     logger = iniciar_logger(DEFAULT_LOG_PATH, ENUM_CONSOLA);
 
-    // Levanta archivo de configuración
     config = iniciar_config(pathConfig, logger);
 
-    // CONEXIÓN CON KERNEL - cliente
     int conexionKernel = armar_conexion(config, KERNEL, logger);
 
     enviarInstrucciones(pathInstrucciones, conexionKernel, logger);
