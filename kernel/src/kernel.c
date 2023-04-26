@@ -11,7 +11,7 @@ int main(int argc, char** argv) {
     int servidorKernel = iniciar_servidor(config, logger);
 
     // Conexiones con los demas modulos
-    int conexionCPU = armar_conexion(config, CPU, logger);
+    int conexionCpu = armar_conexion(config, CPU, logger);
     int conexionMemoria = armar_conexion(config, MEMORIA, logger);
     int conexionFileSystem = armar_conexion(config, FILE_SYSTEM, logger);
 

@@ -7,6 +7,17 @@
 
 # Metadata
 /.metadata/
+/cpu/.metadata/
+/kernel/.metadata/
+/memoria/.metadata/
+/fileSystem/.metadata/
+
+# Autotools
+/.autotools/
+/cpu/.autotools/
+/kernel/.autotools/
+/memoria/.autotools/
+/fileSystem/.autotools/
 
 # Prerequisites
 *.d
