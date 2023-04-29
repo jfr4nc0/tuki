@@ -21,4 +21,17 @@
 
 extern t_log* logger;
 
+pthread_t planificador_corto_plazo;
+pthread_t thread_memory;
+pthread_t thread_dispatch;
+
+void inicializar_planificador();
+
+void schedule_next_to_running();
+void manage_memory();
+void manage_dispatch();
+
+
+
+
 #endif

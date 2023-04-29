@@ -8,6 +8,8 @@ int main(int argc, char** argv) {
 
     t_config* config = iniciar_config(PATH_CONFIG_KERNEL, logger);
 
+    //log_warning(logger, "Vamos a usar el algoritmo %s", )
+
     int servidorKernel = iniciar_servidor(config, logger);
 
     // Conexiones con los demas modulos
@@ -15,40 +17,43 @@ int main(int argc, char** argv) {
     int conexionMemoria = armar_conexion(config, MEMORIA, logger);
     int conexionFileSystem = armar_conexion(config, FILE_SYSTEM, logger);
 
-    int clienteAceptado = esperar_cliente(servidorKernel, logger);
-
-    return procesar_instrucciones(clienteAceptado, logger, config);
-}
-
-
-
-void iterator(char* value) {
-    log_info(logger,"%s", value);
-}
-
-
-int procesar_instrucciones(int clienteAceptado, t_log* logger, t_config* config) {
-    t_list* lista;
-    while (1) {
-        int instruccion = recibir_operacion(clienteAceptado);
-        switch (instruccion) {
-        case MENSAJE:
-            recibir_mensaje(clienteAceptado);
-            break;
-        case PAQUETE:
-            lista = recibir_paquete(clienteAceptado);
-            log_info(logger, "Me llegaron los siguientes valores:", ENTER);
-            list_iterate(lista, (void*) iterator);
-            break;
-        case -1:
-            log_info(logger, I__DESCONEXION_CLIENTE);
-            terminar_programa(clienteAceptado, logger, config);
-            return EXIT_FAILURE;
-        default:
-            log_warning(logger,"Operacion desconocida.");
-            break;
-        }
+    inicializar_planificador();
+/*
+    while(1){
+    	log_info(logger, "Esperando un cliente nuevo de la consola...");
+        int client_socket = wait_client(kernel_socket, logger);
+    	log_info(logger, "Entro una consola con este socket: %d", client_socket);
+        pthread_t attend_console;
+        pthread_create(&attend_console, NULL, (void*) receive_console, (void*) client_socket);
+        pthread_detach(attend_console);
+    // Espera cliente
     }
-    terminar_programa(clienteAceptado, logger, config);
-    return EXIT_SUCCESS;
+*/
+    return 0;
 }
+
+void inicializar_planificador() {
+    log_info(logger, "Inicializando hilos...");
+    pthread_create(&planificador_corto_plazo, NULL, (void*) schedule_next_to_running, NULL);
+    pthread_detach(planificador_corto_plazo);
+
+    pthread_create(&thread_memory, NULL, (void*) manage_memory, NULL);
+    pthread_detach(thread_memory);
+
+    //pthread_create(&thread_dispatch, NULL, (void*) manage_dispatch, (void*) connection_cpu_dispatch);
+    //pthread_detach(thread_dispatch);
+
+}
+
+void schedule_next_to_running(){
+}
+void manage_memory(){
+}
+void manage_dispatch(){
+}
+
+
+
+
+
+
