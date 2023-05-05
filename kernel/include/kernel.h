@@ -32,7 +32,7 @@ int conexionMemoria;
 int conexionFileSystem;
 
 pthread_t planificador_corto_plazo;
-pthread_t thread_memory;
+pthread_t thread_memoria;
 pthread_t thread_cpu;
 
 pthread_mutex_t m_lista_NEW;
@@ -64,6 +64,21 @@ typedef struct
 
 t_kernel_config* kernel_config;
 
+typedef enum {
+    NEW,
+    READY,
+    BLOCKED,
+    EXECUTING,
+    EXIT,
+} pcb_estado;
+
+typedef struct {
+	int pid;
+	pcb_estado estado;
+} t_pcb;
+
+t_pcb* pcb;
+
 t_list* lista_NEW;
 t_list* lista_READY;
 t_list* lista_BLOCKED;
@@ -81,6 +96,8 @@ typedef struct{
 t_dictionary* diccionario_recursos;
 
 void inicializar_semaforos();
+void crear_cola_recursos(char*, int);
+void inicializar_diccionario_recursos();
 
 sem_t sem_grado_multiprogamacion;
 sem_t sem_proceso_en_ready;
@@ -91,9 +108,12 @@ sem_t sem_proceso_a_ready;
 void inicializar_planificador();
 
 void proximo_a_ejecutar();
-void cambio_de_estado();
-// void manage_memory();
-// void manage_cpu();
+void cambio_de_estado(t_pcb*, pcb_estado, t_list*, pthread_mutex_t);
+void cambiar_estado_pcb_a(t_pcb*, pcb_estado);
+void agregar_a_lista(t_pcb*, t_list*, pthread_mutex_t);
+char* obtener_nombre_estado(pcb_estado);
+void manejo_memoria();
+// void manejo_cpu();
 
 
 

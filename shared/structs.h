@@ -29,6 +29,9 @@ enum modulos {
 };
 */
 
+typedef enum {
+
+} operation_code;
 
 #endif
 
