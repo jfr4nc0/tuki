@@ -6,7 +6,7 @@
  */
 
 #include <stdlib.h>
-#include "pcb.h"
+#include "../include/pcb.h"
 #include "../../shared/constructor.h"
 
 // TODO Cuando se instancia un nuevo PCB, se crea tambien las listas de los elementos necesarios
