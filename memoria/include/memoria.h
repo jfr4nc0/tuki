@@ -3,4 +3,6 @@
 
     #include "utils.h"
 
+void handshakeConCPU(int);
+
 #endif

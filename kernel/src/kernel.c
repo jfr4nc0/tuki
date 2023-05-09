@@ -32,7 +32,7 @@ int main(int argc, char** argv) {
 
 void cargar_config(t_config* config){
 	kernel_config = malloc(sizeof(t_kernel_config));
-	kernel_config->IP_KERNEL = config_get_string_value(config, "IP_KERNEL");
+	//kernel_config->IP_KERNEL = config_get_string_value(config, "IP_KERNEL");
 	kernel_config->IP_MEMORIA = config_get_string_value(config, "IP_MEMORIA");
 	kernel_config->PUERTO_MEMORIA = config_get_string_value(config, "PUERTO_MEMORIA");
 	kernel_config->IP_FILE_SYSTEM = config_get_string_value(config, "IP_FILE_SYSTEM");
@@ -65,37 +65,6 @@ void inicializar_escucha_conexiones_consolas(){
 	return;
 }
 
-
-//void manejo_memoria() {
-//    while(1) {
-//        int codigo_operac = receive_operation(conexionMemoria);
-//        log_warning(logger, "Memoria envía el siguiente código de operación: %d", codigo_operac);
-//        t_pcb* pcb;
-//
-//        switch(codigo_operac){
-//            case INIT_PROCESS_STRUCTURES_MEMORY_RESPONSE:
-//                pcb = receive_pcb(memory_connection, logger);
-//                list_replace(list_NEW, 0, pcb);
-//                sem_post(&sem_init_process_memory);
-//                break;
-//            case -1:
-//                log_warning(logger, "La memoria se desconecto");
-//                end_kernel_module(1);
-//                pthread_exit(NULL);
-//                break;
-//            default:
-//                log_error(logger, "Codigo de operacion desconocido");
-//                break;
-//        }
-//    }
-//}
-
-/*
-void manage_memory(){
-}
-void manage_cpu(){
-}
-*/
 
 
 

@@ -35,8 +35,8 @@ int conexionFileSystem;
 
 typedef struct
 {
-    char* IP_KERNEL;
-	char* PUERTO_KERNEL;
+    //char* IP_KERNEL;
+	//char* PUERTO_KERNEL;
 	char* IP_MEMORIA;
 	char* PUERTO_MEMORIA;
     char* IP_FILE_SYSTEM;

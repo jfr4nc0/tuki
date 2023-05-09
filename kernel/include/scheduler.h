@@ -63,14 +63,12 @@ sem_t sem_creacion_pcb;
 sem_t sem_proceso_a_ready;
 
 void inicializar_planificador();
-
+void inicializar_listas_estados();
 void proximo_a_ejecutar();
 void cambio_de_estado(t_pcb*, pcb_estado, t_list*, pthread_mutex_t);
 void cambiar_estado_pcb_a(t_pcb*, pcb_estado);
 void agregar_a_lista(t_pcb*, t_list*, pthread_mutex_t);
 char* obtener_nombre_estado(pcb_estado);
-void manejo_memoria();
-// void manejo_cpu();
 
 
 

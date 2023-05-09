@@ -7,16 +7,11 @@
 #include "../include/kernel.h"
 
 void inicializar_planificador() {
-    log_info(logger, "Inicialización de los hilos...");
+    log_info(logger, "Inicialización del planificador FIFO...");
     pthread_create(&planificador_corto_plazo, NULL, (void*) proximo_a_ejecutar, NULL);
     pthread_detach(planificador_corto_plazo);
 
-    pthread_create(&thread_memoria, NULL, (void*) manejo_memoria, NULL);
-    pthread_detach(thread_memoria);
-    /*
-    pthread_create(&thread_cpu, NULL, (void*) manejo_cpu, (void*) conexionCPU);
-    pthread_detach(thread_cpu);
-	*/
+    // Acá va el manejo de memoria y CPU con hilos.
 
 }
 
@@ -60,10 +55,8 @@ void crear_cola_recursos(char* nombre_recurso, int instancias) {
 void inicializar_semaforos(){
 	sem_init(&sem_grado_multiprogamacion, 0, kernel_config->GRADO_MAX_MULTIPROGRAMACION);
 	sem_init(&sem_proceso_en_ready,0, 0);
-	// sem_init(&sem_io, 0, 0);
 	sem_init(&sem_cpu_disponible, 0, 1);
 	sem_init(&sem_creacion_pcb, 0, 1);
-	// sem_init(&sem_inicializar_memoria,0,0);
 	sem_init(&sem_proceso_a_ready,0,1);
 
 }

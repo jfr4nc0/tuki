@@ -14,7 +14,22 @@
 // Cada hilo seria por procesos, no interesa el set de instrucciones que tiene el proceso (PCB)
 
 typedef struct CPURegister{
-	// TODO Agregar los valores de los registros de uso gral de la CPU
+
+	uint32_t AX;
+	uint32_t BX;
+	uint32_t CX;
+	uint32_t DX;
+
+	uint64_t EAX;
+	uint64_t EBX;
+	uint64_t ECX;
+	uint64_t EDX;
+
+	__int128_t RAX;
+	__int128_t RBX;
+	__int128_t RCX;
+	__int128_t RDX;
+
 }cpu_register_t;
 
 t_list* pid_list;
