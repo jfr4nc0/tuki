@@ -13,22 +13,22 @@
 
 // Cada hilo seria por procesos, no interesa el set de instrucciones que tiene el proceso (PCB)
 
-typedef struct CPURegister{
+typedef struct registros{
 
-	uint32_t AX;
-	uint32_t BX;
-	uint32_t CX;
-	uint32_t DX;
+	char* AX;
+	char* BX;
+	char* CX;
+	char* DX;
 
-	uint64_t EAX;
-	uint64_t EBX;
-	uint64_t ECX;
-	uint64_t EDX;
+	char* EAX;
+	char* EBX;
+	char* ECX;
+	char* EDX;
 
-	__int128_t RAX;
-	__int128_t RBX;
-	__int128_t RCX;
-	__int128_t RDX;
+	char* RAX;
+	char* RBX;
+	char* RCX;
+	char* RDX;
 
 }cpu_register_t;
 
@@ -44,6 +44,17 @@ typedef struct PCBType{
 	int ready_timestamp; // Timestamp en que el proceso llegó a ready por última vez (utilizado para el cálculo de tiempo de espera del algoritmo HRRN).
 	t_list* lista_archivos_abiertos; // Contendrá la lista de archivos abiertos del proceso con la posición del puntero de cada uno de ellos.
 }PCB;
+
+typedef struct {
+	int ID;
+	// direccion_base, de que tipo??
+	int tamanio;
+}t_segmento;
+
+typedef struct {
+    int ID; // File descriptor
+    int posicion_puntero; // Posición del puntero
+} archivo_abierto_t;
 
 /*************************** Getters && Setters of PCB ***************************/
 
