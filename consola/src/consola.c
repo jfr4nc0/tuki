@@ -4,11 +4,15 @@
 int main(int argc, char** argv)
 {
     // Comentar este if si se quiere tomar los valores por defecto
-    validarArgumentos(argc, argv);
+//    validarArgumentos(argc, argv);
 
     // Se setean los parametros que se pasan, con valores por defecto si no encuentra parametros
-    char* pathConfig = argv[1] ? argv[1] : PATH_DEFAULT_CONEXION_KERNEL;
-    char* pathInstrucciones = argv[2] ? argv[2] : DEFAULT_INSTRUCCIONES_PATH;
+//    char* pathConfig = argv[1] ? argv[1] : PATH_DEFAULT_CONEXION_KERNEL;
+//    char* pathInstrucciones = argv[2] ? argv[2] : DEFAULT_INSTRUCCIONES_PATH;
+
+	char* pathConfig = PATH_DEFAULT_CONEXION_KERNEL;
+	char* pathInstrucciones = DEFAULT_INSTRUCCIONES_PATH;
+
 
     t_log* logger;
     t_config* config;
@@ -17,7 +21,16 @@ int main(int argc, char** argv)
 
     config = iniciar_config(pathConfig, logger);
 
+<<<<<<< HEAD
+    log_info(logger, pathConfig);
+    log_info(logger, pathInstrucciones);
+
+
+    // Creamos una conexión hacia kernel
+    conexionKernel = armar_conexion(config, KERNEL, logger);
+=======
     int conexionKernel = armar_conexion(config, KERNEL, logger);
+>>>>>>> refs/heads/PlanificacionFIFO
 
     enviarInstrucciones(pathInstrucciones, conexionKernel, logger);
 
@@ -43,11 +56,24 @@ int validarArgumentos(int argc, char** argv) {
     return EXIT_SUCCESS;
 }
 
-void enviarInstrucciones(char* pathInstrucciones, int conexionKernel, t_log* logger) {
-    FILE *instrucciones = fopen(pathInstrucciones, MODO_LECTURA_ARCHIVO);
-    char instruccion[LONGITUD_MAXIMA_CADENA];
-    while (fgets(instruccion, LONGITUD_MAXIMA_CADENA, instrucciones)) {
-        strtok(instruccion, "\n"); // Removemos el salto de linea
-        enviar_mensaje(instruccion, conexionKernel, logger);
-    }
+void enviarInstrucciones(char* pathInstrucciones, int conexionKernel, t_log* logger){
+	t_paquete* instrucciones_p = crear_paquete();
+
+	// Parseo las instrucciones del .txt y las agrego al paquete
+	// TODO: Funcion rota, arreglar
+	FILE *instrucciones;
+	if( (instrucciones = fopen(pathInstrucciones, MODO_LECTURA_ARCHIVO)) == NULL ){
+		log_error(logger, E__ARCHIVO_CREATE, ENTER);
+	} else {
+
+	    char instruccion[LONGITUD_MAXIMA_CADENA];
+
+	    while (fgets(instruccion, LONGITUD_MAXIMA_CADENA, instrucciones) != NULL) {
+	        strtok(instruccion, "$"); // Removemos el salto de linea
+	        printf(instruccion);
+	        agregar_a_paquete(instrucciones_p, instruccion, strlen(instruccion));
+	    }
+
+	    enviar_paquete(instrucciones_p, conexionKernel);
+	}
 }
