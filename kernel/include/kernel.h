@@ -32,6 +32,7 @@ t_log* logger_obligatorio;
 int conexionCPU;
 int conexionMemoria;
 int conexionFileSystem;
+int servidor_kernel;
 
 typedef struct
 {
@@ -54,6 +55,7 @@ typedef struct
 
 t_kernel_config* kernel_config;
 
-void inicializar_escucha_conexiones_consolas();
+void cargar_config(t_config*);
+void inicializar_escucha_conexiones_consolas(int);
 
 #endif

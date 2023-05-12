@@ -75,11 +75,11 @@ void procesar_instruccion(int servidorCPU)
 {
 	int socket_kernel = accept(servidorCPU, NULL, NULL);
 	PCB* pcb;
-	pcb = recibir_pcb_de_kernel(servidorCPU, logger);
+	pcb = recibir_pcb(servidorCPU, logger);
 	ejecutar_proceso(pcb);
 }
 
-PCB* recibir_pcb_de_kernel(int servidor, t_log* logger)
+PCB* recibir_pcb(int servidor, t_log* logger)
 {
 	PCB* pcb = malloc(sizeof(PCB));
 	char* buffer;

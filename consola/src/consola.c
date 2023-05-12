@@ -21,20 +21,16 @@ int main(int argc, char** argv)
 
     config = iniciar_config(pathConfig, logger);
 
-<<<<<<< HEAD
     log_info(logger, pathConfig);
     log_info(logger, pathInstrucciones);
 
 
     // Creamos una conexión hacia kernel
-    conexionKernel = armar_conexion(config, KERNEL, logger);
-=======
-    int conexionKernel = armar_conexion(config, KERNEL, logger);
->>>>>>> refs/heads/PlanificacionFIFO
+    int conexion_kernel = armar_conexion(config, KERNEL, logger);
 
-    enviarInstrucciones(pathInstrucciones, conexionKernel, logger);
+    enviarInstrucciones(pathInstrucciones, conexion_kernel, logger);
 
-    terminar_programa(conexionKernel, logger, config);
+    terminar_programa(conexion_kernel, logger, config);
 }
 
 // TODO: Mover todas las funciones a funciones.c
@@ -56,7 +52,7 @@ int validarArgumentos(int argc, char** argv) {
     return EXIT_SUCCESS;
 }
 
-void enviarInstrucciones(char* pathInstrucciones, int conexionKernel, t_log* logger){
+void enviarInstrucciones(char* pathInstrucciones, int conexion_kernel, t_log* logger){
 	t_paquete* instrucciones_p = crear_paquete();
 
 	// Parseo las instrucciones del .txt y las agrego al paquete
@@ -74,6 +70,6 @@ void enviarInstrucciones(char* pathInstrucciones, int conexionKernel, t_log* log
 	        agregar_a_paquete(instrucciones_p, instruccion, strlen(instruccion));
 	    }
 
-	    enviar_paquete(instrucciones_p, conexionKernel);
+	    enviar_paquete(instrucciones_p, conexion_kernel);
 	}
 }

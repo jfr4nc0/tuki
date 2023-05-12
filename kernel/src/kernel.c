@@ -1,5 +1,7 @@
 #include "../include/kernel.h"
 #include "../../shared/src/funciones.c"
+#include "../../shared/shared.h"
+#include "../../cpu/src/cpu.c"
 
 int main(int argc, char** argv) {
     logger = iniciar_logger(PATH_LOG_KERNEL, ENUM_KERNEL);
@@ -18,14 +20,14 @@ int main(int argc, char** argv) {
     conexionMemoria = armar_conexion(config, MEMORIA, logger);
     conexionFileSystem = armar_conexion(config, FILE_SYSTEM, logger);
 
-    int servidorKernel = iniciar_servidor(config, logger);
+    int servidor_kernel = iniciar_servidor(config, logger);
 
 
     inicializar_planificador();
 
 
     // TODO Manejar multiples instancias de conexiones de consola al kernel
-    inicializar_escucha_conexiones_consolas();
+    inicializar_escucha_conexiones_consolas(servidor_kernel);
 
     return 0;
 }
@@ -60,9 +62,64 @@ t_list* procesar_instrucciones(int clienteAceptado,t_list* lista_instrucciones, 
     return lista_instrucciones;
 }
 
-void inicializar_escucha_conexiones_consolas(){
-	//TODO
-	return;
+void inicializar_escucha_conexiones_consolas(int servidor_kernel){
+
+	log_info(logger, "Esperando conexiones de las consolas...\n");
+
+	while(1){
+		int socket_cliente = accept(servidor_kernel, NULL, NULL);
+		log_info(logger, "Consola conectada!\n");
+		pthread_t hilo_consola;
+		pthread_create(&hilo_consola, NULL, (void *) recibir_de_consola, (void *) socket_cliente);
+		pthread_detach(hilo_consola);  //Los recursos asociados se liberan automáticamente al finalizar.
+	}
+}
+
+void recibir_de_consola(int socket_cliente){
+	while(1){  // Queda en un estado de espera activa para la comunicación continua entre los módulos.
+		int codigo_de_operacion;
+		int cod_op;
+		if(recv(socket_cliente, &cod_op, sizeof(int), MSG_WAITALL) > 0){
+		    codigo_de_operacion = cod_op;
+		}else{
+		    close(socket_cliente);
+		    codigo_de_operacion = -1;
+		}
+		PCB* pcb;
+		switch(codigo_de_operacion){
+			case INICIALIZAR_PROCESO:
+				pcb = inicializar_pcb(socket_cliente);
+
+
+		}
+
+
+
+	}
+
+PCB* inicializar_pcb(int socket_cliente){  // chequear que se lee bien de consola
+
+	void* buffer;
+	int tamanio = 0;
+	int desplazamiento = 0;
+	buffer = recibir_buffer(&tamanio, socket_cliente);
+	char** instrucciones = read_string_array(buffer, &desplazamiento);
+
+	wait(&sem_pcb_create);
+
+	PCB* pcb = pcb_create(instructions, socket, pid_counter, segments);
+
+    pid_counter++;
+	log_info(logger, "valor id: %d", pcb->process_id);
+
+	signal(&sem_pcb_create);
+
+	return pcb;
+}
+
+
+
+
 }
 
 
