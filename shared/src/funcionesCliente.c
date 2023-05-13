@@ -12,18 +12,6 @@ void paquete(int conexion, t_log* logger)
     // Leemos y esta vez agregamos las lineas al paquete
     printf("Los siguientes valores que ingreses se enviaran al servidor, ingrese enter para terminar de ingresar valores", ENTER);
 
-    // Por ahora no se usa la siguiente linea, Si se va a usar fijarse si es necesario agregar el include #include <readline/readline.h>
-    /*
-    while(1) {
-        lineaPaquete = readline(SIGN_CONSOLA);
-        if (strcmp(lineaPaquete, "") == 0) {
-            break;
-        }
-        agregar_a_paquete(paquete, lineaPaquete, strlen(lineaPaquete)+1);
-        free(lineaPaquete);
-    }
-    */
-
     enviar_paquete(paquete, conexion);
     eliminar_paquete(paquete);
 }
@@ -116,17 +104,6 @@ void crear_buffer(t_paquete* paquete)
     paquete->buffer = malloc(sizeof(t_buffer));
     paquete->buffer->size = 0;
     paquete->buffer->stream = NULL;
-}
-
-t_paquete* crear_super_paquete(void)
-{
-    //me falta un malloc!
-    t_paquete* paquete;
-
-    //TODO: descomentar despues de arreglar
-    //paquete->codigo_operacion = PAQUETE;
-    //crear_buffer(paquete);
-    return paquete;
 }
 
 t_paquete* crear_paquete(void)

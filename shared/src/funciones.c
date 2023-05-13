@@ -105,24 +105,6 @@ t_config* iniciar_config(char* pathConfig, t_log* logger)
     return nuevo_config;
 }
 
-void leer_consola(t_log* logger)
-{
-    printf("Los siguientes valores que ingresen se guardaran en el log, ingrese un enter para terminar de ingresar valores\n");
-    char* linea;
-
-// Por ahora no se usa la siguiente linea, Si se va a usar fijarse si es necesario agregar el include #include <readline/readline.h>
-    /*
-    while(1) {
-        // Por ahora no se usa la siguiente linea, Si se va a usar agregar el include #include <readline/readline.h>
-        //linea = readline(SIGN_CONSOLA);
-        if (strcmp(linea, "") == 0) {
-            break;
-        }
-        log_info(logger, linea, ENTER);
-        free(linea);
-    }
-    */
-}
 
 void terminar_programa(int conexion, t_log* logger, t_config* config)
 {
