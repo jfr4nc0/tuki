@@ -16,7 +16,6 @@
 #include <semaphore.h>
 
 // Internas
-#include "utils.h"
 #include "funciones.h"
 #include "constantes.h"
 #include "../../shared/constantes.h"
@@ -52,8 +51,10 @@ typedef struct
     char** INSTANCIAS_RECURSOS;
 } t_kernel_config;
 
-t_kernel_config* kernel_config;
+extern t_kernel_config* kernel_config;
 
 void inicializar_escucha_conexiones_consolas();
+
+void cargar_config(t_config*);
 
 #endif

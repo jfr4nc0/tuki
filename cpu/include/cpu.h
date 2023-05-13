@@ -9,7 +9,6 @@
     #include <commons/config.h>
     #include <readline/readline.h>
 
-    #include "utils.h"
     #include "constantes.h"
     #include "../../shared/src/funciones.c"
 

@@ -1,7 +1,6 @@
 #include "../include/memoria.h"
 
 #include "../../shared/src/funciones.c"
-#include "utils.c"
 
 int main(int argc, char** argv)
 {

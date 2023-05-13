@@ -6,7 +6,7 @@ int main(int argc, char** argv) {
 
     t_config* config = iniciar_config(PATH_CONFIG_KERNEL, logger);
     cargar_config(config);
-    log_warning(logger, "Vamos a usar el algoritmo %s", kernel_config->ALGORITMO_PLANIFICACION);
+    log_debug(logger, "Vamos a usar el algoritmo %s", kernel_config->ALGORITMO_PLANIFICACION);
 
     inicializar_listas_estados();
     inicializar_diccionario_recursos();
@@ -20,12 +20,12 @@ int main(int argc, char** argv) {
 
     int servidorKernel = iniciar_servidor(config, logger);
 
-
     inicializar_planificador();
-
 
     // TODO Manejar multiples instancias de conexiones de consola al kernel
     inicializar_escucha_conexiones_consolas();
+
+    free(kernel_config);
 
     return 0;
 }
@@ -52,6 +52,7 @@ void cargar_config(t_config* config){
 
 void iterator(char* value) {
     log_info(logger,"%s", value);
+}
 
 t_list* procesar_instrucciones(int clienteAceptado,t_list* lista_instrucciones, t_log* logger, t_config* config){
     int instruccion = recibir_operacion(clienteAceptado);

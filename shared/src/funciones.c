@@ -38,34 +38,34 @@ char* concatenar_strings(char *p1, char *p2 ) {
 bool obtener_valores_para_logger(int moduloPos, bool *mostrarConsola, t_log_level *log_level, char* *modulo) {
     switch(moduloPos) {
             case ENUM_KERNEL:
-                    (*modulo) = KERNEL;
-                    (*mostrarConsola) = !!(MOSTRAR_OCULTAR_MENSAJES_LOG_KERNEL);
-                    (*log_level) = LOG_LEVEL_KERNEL;
+                    *modulo = KERNEL;
+                    *mostrarConsola = !!(MOSTRAR_OCULTAR_MENSAJES_LOG_KERNEL);
+                    *log_level = LOG_LEVEL_KERNEL;
                     break;
             case ENUM_CPU:
-                    (*modulo) = CPU;
-                    (*mostrarConsola) = !!(MOSTRAR_OCULTAR_MENSAJES_LOG_CPU);
-                    (*log_level) = LOG_LEVEL_CPU;
+                    *modulo = CPU;
+                    *mostrarConsola = !!(MOSTRAR_OCULTAR_MENSAJES_LOG_CPU);
+                    *log_level = LOG_LEVEL_CPU;
                     break;
             case ENUM_MEMORIA:
-                    (*modulo) = MEMORIA;
-                    (*mostrarConsola) = !!(MOSTRAR_OCULTAR_MENSAJES_LOG_MEMORIA);
-                    (*log_level) = LOG_LEVEL_MEMORIA;
+                    *modulo = MEMORIA;
+                    *mostrarConsola = !!(MOSTRAR_OCULTAR_MENSAJES_LOG_MEMORIA);
+                    *log_level = LOG_LEVEL_MEMORIA;
                     break;
             case ENUM_FILE_SYSTEM:
-                    (*modulo) = FILE_SYSTEM;
-                    (*mostrarConsola) = !!(MOSTRAR_OCULTAR_MENSAJES_LOG_FILE_SYSTEM);
-                    (*log_level) = LOG_LEVEL_FILE_SYSTEM;
+                    *modulo = FILE_SYSTEM;
+                    *mostrarConsola = !!(MOSTRAR_OCULTAR_MENSAJES_LOG_FILE_SYSTEM);
+                    *log_level = LOG_LEVEL_FILE_SYSTEM;
                     break;
             case ENUM_CONSOLA:
-                    (*modulo) = CONSOLA;
-                    (*mostrarConsola) = !!(MOSTRAR_OCULTAR_MENSAJES_LOG_CONSOLA);
-                    (*log_level) = LOG_LEVEL_CONSOLA;
+                    *modulo = CONSOLA;
+                    *mostrarConsola = !!(MOSTRAR_OCULTAR_MENSAJES_LOG_CONSOLA);
+                    *log_level = LOG_LEVEL_CONSOLA;
               break;
             default:
-                    (*modulo) = "LOG";
-                    (*mostrarConsola) = true;
-                    (*log_level) = LOG_LEVEL_DEFAULT;
+                    *modulo = "LOG";
+                    *mostrarConsola = true;
+                    *log_level = LOG_LEVEL_DEFAULT;
                     return true;
     }
     return false;

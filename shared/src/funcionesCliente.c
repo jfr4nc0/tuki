@@ -3,7 +3,6 @@
 void paquete(int conexion, t_log* logger)
 {
     t_paquete* paquete;
-    char* lineaPaquete;
 
     if(!(paquete = crear_paquete())) {
         log_error(logger, E__PAQUETE_CREATE);

@@ -4,6 +4,6 @@
 #include <commons/config.h>
 
 void iterator(char* value);
-int procesar_instrucciones(int, t_log*, t_config*);
+t_list* procesar_instrucciones(int, t_log*, t_config*);
 
 #endif
