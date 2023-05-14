@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configurations>
+<<<<<<< HEAD
 <configuration id="org.eclipse.linuxtools.cdt.autotools.core.configuration.build.26438194">
+=======
+<configuration id="org.eclipse.linuxtools.cdt.autotools.core.configuration.build.1613605441">
+>>>>>>> 9ebc9c869672f5c6b632d44a7f4e04a2aaf4736e
 <option id="configure" value="configure"/>
 <option id="configdir" value=""/>
 <option id="cache-file" value=""/>
@@ -40,7 +44,11 @@
 <option id="autogen" value="autogen.sh"/>
 <option id="autogenOpts" value=""/>
 </configuration>
+<<<<<<< HEAD
 <configuration id="org.eclipse.linuxtools.cdt.autotools.core.configuration.build.debug.445127916">
+=======
+<configuration id="org.eclipse.linuxtools.cdt.autotools.core.configuration.build.debug.1011366118">
+>>>>>>> 9ebc9c869672f5c6b632d44a7f4e04a2aaf4736e
 <option id="configure" value="configure"/>
 <option id="configdir" value=""/>
 <option id="cache-file" value=""/>
@@ -76,7 +84,11 @@
 <flagvalue id="cflags-gprof" value="false"/>
 <flagvalue id="cflags-gcov" value="false"/>
 </flag>
+<<<<<<< HEAD
 <option id="user" value="CFLAGS=&apos;-g -O0&apos; CXXFLAGS=&apos;-g -O0&apos;"/>
+=======
+<option id="user" value="CFLAGS=&apos;-g -O0&apos;"/>
+>>>>>>> 9ebc9c869672f5c6b632d44a7f4e04a2aaf4736e
 <option id="autogen" value="autogen.sh"/>
 <option id="autogenOpts" value=""/>
 </configuration>

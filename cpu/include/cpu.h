@@ -11,6 +11,7 @@
 
     #include "constantes.h"
     #include "../../shared/src/funciones.c"
+	//#include "../../kernel/include/pcb.h"
 
 typedef struct {
 	char* RETARDO_INSTRUCCION;
@@ -22,27 +23,28 @@ typedef struct {
 
 cpu_config_t* cpu_config;
 
-typedef struct Registros{
+typedef struct {
+	char* AX;
+	char* BX;
+	char* CX;
+	char* DX;
 
-	uint32_t AX;
-	uint32_t BX;
-	uint32_t CX;
-	uint32_t DX;
+	char* EAX;
+	char* EBX;
+	char* ECX;
+	char* EDX;
 
-	uint64_t EAX;
-	uint64_t EBX;
-	uint64_t ECX;
-	uint64_t EDX;
+	char* RAX;
+	char* RBX;
+	char* RCX;
+	char* RDX;
 
-	__int128_t RAX;
-	__int128_t RBX;
-	__int128_t RCX;
-	__int128_t RDX;
+}cpu_register_t;
 
-}registros;
+extern cpu_register_t* registrosCPU;
 
 void handshakeConMemoria(int);
-void inicializar_registros();
+void inicializar_registros(cpu_register_t*);
 void ejecutar_instruccion();
 
 

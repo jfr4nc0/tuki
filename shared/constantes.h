@@ -16,6 +16,7 @@
 #define IP_CONFIG                 "IP_"
 #define PUERTO_CONFIG             "PUERTO_"
 #define LONGITUD_MAXIMA_CADENA    1000
+#define CANTIDAD_ESTADOS          5
 
 // Modulos
 #define CONSOLA                    "CONSOLA"
@@ -24,11 +25,27 @@
 #define KERNEL                     "KERNEL"
 #define MEMORIA                    "MEMORIA"
 
-#define ENUM_CONSOLA              0
-#define ENUM_CPU                  1
-#define ENUM_FILE_SYSTEM          2
-#define ENUM_KERNEL               3
-#define ENUM_MEMORIA              4
+// ENUMS
+
+#define ENUM_CONSOLA              	0
+#define ENUM_CPU                    1
+#define ENUM_FILE_SYSTEM            2
+#define ENUM_KERNEL               	3
+#define ENUM_MEMORIA              	4
+
+#define ENUM_NEW                         0
+#define ENUM_READY                       1
+#define ENUM_BLOCKED                     2
+#define ENUM_EXECUTING                   3
+#define ENUM_EXIT                        4
+#define ENUM_IO                          5
+
+#define NEW                             "NEW"
+#define READY                           "READY"
+#define BLOCKED                         "BLOCKED"
+#define EXECUTING                       "EXECUTING"
+#define EXIT                            "EXIT"
+#define IO                              "I0"
 
 // DEBUG MENSAJES
 #define D__ESTABLECIENDO_CONEXION   "Estableciendo conexion"

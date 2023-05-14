@@ -15,13 +15,41 @@ void inicializar_planificador() {
 
 }
 
-void inicializar_listas_estados() {
-    lista_NEW = list_create();
-	lista_READY = list_create();
-	lista_BLOCKED = list_create();
-	lista_EXECUTING = list_create();
-	lista_EXIT = list_create();
-    lista_IO = list_create();
+int* inicializar_estados() {
+	static t_list* estados[CANTIDAD_ESTADOS];
+
+	for (int estado = 0; estado < CANTIDAD_ESTADOS; estado++) {
+		estados[estado] = list_create();
+	}
+
+	return estados;
+
+    /*
+    Pregunta: ¿Conviene usar nodos?
+    NodoEstado* inicializar_estados() {
+
+    NodoEstado* primer_nodo = NULL;
+    NodoEstado* ultimo_nodo = NULL;
+
+    for (i = 0; i < CANTIDAD_ESTADOS; i++) {
+        EstadoProcesos estado =list_create();;
+        estado_procesos.estado = i;
+
+        NodoEstado* nuevo_nodo = (NodoEstado*)malloc(sizeof(NodoEstado));
+        nuevo_nodo->estado_procesos = estado_procesos;
+        nuevo_nodo->siguiente = NULL;
+
+        if (primer_nodo == NULL) {
+            primer_nodo = nuevo_nodo;
+            ultimo_nodo = nuevo_nodo;
+        } else {
+            ultimo_nodo->siguiente = nuevo_nodo;
+            ultimo_nodo = nuevo_nodo;
+        }
+    }
+
+    return primer_nodo;
+    */
 }
 
 void inicializar_diccionario_recursos() {
@@ -37,12 +65,12 @@ void inicializar_diccionario_recursos() {
 
 void crear_cola_recursos(char* nombre_recurso, int instancias) {
 
-    //t_list* lista_recursos = list_create();
+    // t_list* lista_recursos = list_create();
     t_recurso* recurso = malloc(sizeof(t_recurso));
 
     recurso->nombre = nombre_recurso;
     recurso->instancias = instancias;
-    //device->list_processes = io_list;
+    // device->list_processes = io_list;
 
     sem_t sem;
     sem_init(&sem, 1, 0);
@@ -58,7 +86,6 @@ void inicializar_semaforos(){
 	sem_init(&sem_cpu_disponible, 0, 1);
 	sem_init(&sem_creacion_pcb, 0, 1);
 	sem_init(&sem_proceso_a_ready,0,1);
-
 }
 
 void proximo_a_ejecutar(){
@@ -69,10 +96,10 @@ void proximo_a_ejecutar(){
 	    	log_info(logger, "Entre por FIFO");
 
 	        pthread_mutex_lock(&m_lista_READY);
-	        t_pcb* pcb_a_ejecutar = list_remove(lista_READY, 0);
+	        t_pcb* pcb_a_ejecutar = list_remove(estados[ENUM_READY], 0);
 	        pthread_mutex_unlock(&m_lista_READY);
 
-	        cambio_de_estado(pcb_a_ejecutar, EXECUTING, lista_EXECUTING, m_lista_EXECUTING);
+	        cambio_de_estado(pcb_a_ejecutar, EXECUTING, estados[ENUM_EXECUTING], m_lista_EXECUTING);
 
 	        log_info(logger, "El proceso %d cambio su estado a RUNNING", pcb_a_ejecutar->pid);
 	        log_info(logger_obligatorio,"PID: %d - Estado Anterior: READY - Estado Actual: RUNNING",pcb_a_ejecutar->pid);
@@ -92,11 +119,13 @@ void cambio_de_estado(t_pcb* pcb, pcb_estado estado, t_list* lista, pthread_mute
 void cambiar_estado_pcb_a(t_pcb* pcb, pcb_estado nuevoEstado){
     pcb->estado = nuevoEstado;
 }
+
 void agregar_a_lista(t_pcb* pcb, t_list* lista, pthread_mutex_t m_sem){
     pthread_mutex_lock(&m_sem);
     list_add(lista, pcb);
     pthread_mutex_unlock(&m_sem);
 }
+
 char* obtener_nombre_estado(pcb_estado estado){
 	char* valor_estado;
 	switch(estado){

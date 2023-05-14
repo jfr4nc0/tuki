@@ -21,6 +21,13 @@ pthread_mutex_t m_lista_EXECUTING;
 pthread_mutex_t m_lista_EXIT;
 pthread_mutex_t m_lista_IO;
 
+/*
+typedef struct NodoEstado {
+    t_list* estado;
+    struct NodoEstado* siguiente;
+} NodoEstado;
+*/
+
 typedef enum {
     NEW,
     READY,
@@ -36,17 +43,10 @@ typedef struct {
 
 t_pcb* pcb;
 
-t_list* lista_NEW;
-t_list* lista_READY;
-t_list* lista_BLOCKED;
-t_list* lista_EXECUTING;
-t_list* lista_EXIT;
-t_list* lista_IO;
-
 typedef struct{
     char* nombre;
     int instancias;
-    //t_list* lista_procesos;
+    // t_list* lista_procesos;
     sem_t sem_recurso;
 } t_recurso;
 
@@ -63,7 +63,7 @@ sem_t sem_creacion_pcb;
 sem_t sem_proceso_a_ready;
 
 void inicializar_planificador();
-void inicializar_listas_estados();
+int* inicializar_estados();
 void proximo_a_ejecutar();
 void cambio_de_estado(t_pcb*, pcb_estado, t_list*, pthread_mutex_t);
 void cambiar_estado_pcb_a(t_pcb*, pcb_estado);
