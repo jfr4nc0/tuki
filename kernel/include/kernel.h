@@ -6,11 +6,12 @@
 #include<stdlib.h>
 #include<string.h>
 #include<sys/socket.h>
-#include <commons/log.h>
+#include<commons/log.h>
 #include<unistd.h>
 #include<netdb.h>
 #include<commons/collections/list.h>
 #include<assert.h>
+#include <commons/config.h>
 
 #include <pthread.h>
 #include <semaphore.h>
@@ -19,19 +20,15 @@
 #include "funciones.h"
 #include "constantes.h"
 #include "../../shared/constantes.h"
+#include "../../shared/funciones.h"
 #include "../../shared/structs.h"
 #include "pcb.h"
 #include "scheduler.h"
 
-extern t_log* logger;
-
-t_log* logger;
-t_log* logger_obligatorio;
-
 int conexionCPU;
 int conexionMemoria;
 int conexionFileSystem;
-int servidor_kernel;
+int servidorKernel;
 
 typedef struct
 {
@@ -52,9 +49,17 @@ typedef struct
     char** INSTANCIAS_RECURSOS;
 } t_kernel_config;
 
-extern t_kernel_config* kernel_config;
+typedef enum{
+    INICIALIZAR_PROCESO
+}codigo_de_operacion;
 
-void cargar_config(t_config*);
+extern t_kernel_config kernel_config;
+extern t_log* logger;
+
+t_kernel_config inicializar_config(char*, t_log*);
+t_kernel_config cargar_config_kernel(t_config*, t_log*);
 void inicializar_escucha_conexiones_consolas(int);
+PCB* inicializar_pcb(int);
+void recibir_de_consola(int);
 
 #endif

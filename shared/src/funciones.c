@@ -1,19 +1,14 @@
 #include "../funciones.h"
 
-#include "funcionesCliente.c"
-#include "funcionesServidor.c"
-
-t_log* logger;
-
 char* extraer_de_config(t_config* config, char* property, t_log* logger) {
     if(config_has_property(config, property)) {
             char* valor = config_get_string_value(config, property);
             log_trace(logger, "Se obtuvo el valor -> %s. En el config %s (%s)\n", valor, config->path, property);
             return valor;
-        }
-        log_warning(logger, "No se pudo encontrar en el config (%s), la propiedad -> %s\n", config->path, property);
+    }
+    log_warning(logger, "No se pudo encontrar en el config (%s), la propiedad -> %s\n", config->path, property);
 
-        return EMPTY_STRING;
+    return "";
 }
 
 char* extraer_de_modulo_config(t_config* config, char* valorIncompleto, char* modulo, t_log* logger) {
@@ -122,4 +117,34 @@ void terminar_programa(int conexion, t_log* logger, t_config* config)
 void liberar_conexion(int socket_cliente)
 {
     close(socket_cliente);
+}
+
+int leer_int(char* buffer, int* desp) {
+	int ret;
+	memcpy(&ret, buffer + (*desp), sizeof(int));
+	(*desp)+=sizeof(int);
+	return ret;
+}
+
+char* leer_string(char* buffer, int* desp){
+	int size = leer_int(buffer, desp);
+
+	char* valor = malloc(size);
+	memcpy(valor, buffer+(*desp), size);
+	(*desp)+=size;
+
+	return valor;
+}
+
+char** leer_string_array(char* buffer, int* desp) {
+    int length = leer_int(buffer, desp);
+    char** arr = malloc((length + 1) * sizeof(char*));
+
+    for(int i = 0; i < length; i++)
+    {
+        arr[i] = leer_string(buffer, desp);
+    }
+    arr[length] = NULL;
+
+    return arr;
 }

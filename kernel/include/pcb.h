@@ -10,27 +10,9 @@
 #include <stdbool.h>
 #include <string.h>
 #include <commons/collections/list.h>
+#include "../../shared/structs.h"
 
 // Cada hilo seria por procesos, no interesa el set de instrucciones que tiene el proceso (PCB)
-
-typedef struct registros{
-
-	char* AX;
-	char* BX;
-	char* CX;
-	char* DX;
-
-	char* EAX;
-	char* EBX;
-	char* ECX;
-	char* EDX;
-
-	char* RAX;
-	char* RBX;
-	char* RCX;
-	char* RDX;
-
-}cpu_register_t;
 
 t_list* pid_list;
 
@@ -38,7 +20,7 @@ typedef struct PCBType{
 	int pid; // Identificador del proceso, unico en todo el sistema
 	t_list* lista_instrucciones; // Lista de instrucciones a ejecutar
 	int program_counter; // Numero de la proxima instruccion a ejecutar
-	cpu_register_t* cpu_register;
+	cpu_registers* cpu_register;
 	t_list* lista_segmentos;
 	float processor_burst ; // Estimacion utilizada para planificar los procesos en el algoritmo HRRN, la misma tendra un valor inicial definido por archivo de config y sera recalculada bajo la formula de promedio ponderado
 	int ready_timestamp; // Timestamp en que el proceso llegó a ready por última vez (utilizado para el cálculo de tiempo de espera del algoritmo HRRN).
@@ -64,8 +46,8 @@ int set_program_counter();
 int get_program_counter();
 t_list* set_lista_instrucciones();
 t_list* get_lista_instrucciones();
-cpu_register_t* set_registro_cpu();
-cpu_register_t* get_registro_cpu();
+cpu_registers* set_registro_cpu();
+cpu_registers* get_registro_cpu();
 t_list* set_lista_segmentos();
 t_list* get_lista_segmentos();
 float set_processor_burst();

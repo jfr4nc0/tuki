@@ -15,44 +15,13 @@ void inicializar_planificador() {
 
 }
 
-int* inicializar_estados() {
-	static t_list* estados[CANTIDAD_ESTADOS];
-
+void inicializar_listas_estados(t_list* lista_estados[CANTIDAD_ESTADOS]) {
 	for (int estado = 0; estado < CANTIDAD_ESTADOS; estado++) {
-		estados[estado] = list_create();
+		lista_estados[estado] = list_create();
 	}
-
-	return estados;
-
-    /*
-    Pregunta: ¿Conviene usar nodos?
-    NodoEstado* inicializar_estados() {
-
-    NodoEstado* primer_nodo = NULL;
-    NodoEstado* ultimo_nodo = NULL;
-
-    for (i = 0; i < CANTIDAD_ESTADOS; i++) {
-        EstadoProcesos estado =list_create();;
-        estado_procesos.estado = i;
-
-        NodoEstado* nuevo_nodo = (NodoEstado*)malloc(sizeof(NodoEstado));
-        nuevo_nodo->estado_procesos = estado_procesos;
-        nuevo_nodo->siguiente = NULL;
-
-        if (primer_nodo == NULL) {
-            primer_nodo = nuevo_nodo;
-            ultimo_nodo = nuevo_nodo;
-        } else {
-            ultimo_nodo->siguiente = nuevo_nodo;
-            ultimo_nodo = nuevo_nodo;
-        }
-    }
-
-    return primer_nodo;
-    */
 }
 
-void inicializar_diccionario_recursos() {
+void inicializar_diccionario_recursos(t_kernel_config* kernel_config) {
     diccionario_recursos = dictionary_create();
 
     int indice = 0;
@@ -80,29 +49,29 @@ void crear_cola_recursos(char* nombre_recurso, int instancias) {
 
 }
 
-void inicializar_semaforos(){
-	sem_init(&sem_grado_multiprogamacion, 0, kernel_config->GRADO_MAX_MULTIPROGRAMACION);
-	sem_init(&sem_proceso_en_ready,0, 0);
+void inicializar_semaforos() {
+	sem_init(&sem_grado_multiprogamacion, 0, kernel_config.GRADO_MAX_MULTIPROGRAMACION);
+	sem_init(&sem_proceso_en_ready, 0, 0);
 	sem_init(&sem_cpu_disponible, 0, 1);
 	sem_init(&sem_creacion_pcb, 0, 1);
-	sem_init(&sem_proceso_a_ready,0,1);
+	// sem_init(&sem_proceso_a_ready,0,1);
 }
 
 void proximo_a_ejecutar(){
 	while(1){
 		sem_wait(&sem_proceso_en_ready);
 	    sem_wait(&sem_cpu_disponible);
-	    if(strcmp(kernel_config->ALGORITMO_PLANIFICACION, "FIFO") == 0) {
+	    if(strcmp(kernel_config.ALGORITMO_PLANIFICACION, "FIFO") == 0) {
 	    	log_info(logger, "Entre por FIFO");
 
 	        pthread_mutex_lock(&m_lista_READY);
-	        t_pcb* pcb_a_ejecutar = list_remove(estados[ENUM_READY], 0);
+	        t_pcb* pcb_a_ejecutar = list_remove(lista_estados[ENUM_READY], 0);
 	        pthread_mutex_unlock(&m_lista_READY);
 
-	        cambio_de_estado(pcb_a_ejecutar, EXECUTING, estados[ENUM_EXECUTING], m_lista_EXECUTING);
+	        cambio_de_estado(pcb_a_ejecutar, EXECUTING, lista_estados[ENUM_EXECUTING], m_lista_EXECUTING);
 
 	        log_info(logger, "El proceso %d cambio su estado a RUNNING", pcb_a_ejecutar->pid);
-	        log_info(logger_obligatorio,"PID: %d - Estado Anterior: READY - Estado Actual: RUNNING",pcb_a_ejecutar->pid);
+	        log_info(logger,"PID: %d - Estado Anterior: READY - Estado Actual: RUNNING", pcb_a_ejecutar->pid);
 
 	    } else {
             log_error(logger, "No es posible utilizar el algoritmo especificado.");
@@ -129,20 +98,20 @@ void agregar_a_lista(t_pcb* pcb, t_list* lista, pthread_mutex_t m_sem){
 char* obtener_nombre_estado(pcb_estado estado){
 	char* valor_estado;
 	switch(estado){
-		case NEW :
-			valor_estado = string_duplicate("NEW");
+		case ENUM_NEW:
+			valor_estado = string_duplicate(NEW);
 			break;
-		case READY:
-			valor_estado = string_duplicate("READY");
+		case ENUM_READY:
+			valor_estado = string_duplicate(READY);
 			break;
-		case BLOCKED:
-			valor_estado = string_duplicate("BLOCKED");
+		case ENUM_BLOCKED:
+			valor_estado = string_duplicate(BLOCKED);
 			break;
-		case EXECUTING:
-			valor_estado = string_duplicate("EXECUTING");
+		case ENUM_EXECUTING:
+			valor_estado = string_duplicate(EXECUTING);
 			break;
-		case EXIT:
-			valor_estado = string_duplicate("EXIT");
+		case ENUM_EXIT:
+			valor_estado = string_duplicate(EXIT);
 			break;
 		default:
 			valor_estado = string_duplicate("EL ESTADO NO ESTÁ REGISTRADO");

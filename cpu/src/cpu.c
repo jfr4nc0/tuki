@@ -1,5 +1,6 @@
 #include "../include/cpu.h"
 #include "../../kernel/include/pcb.h"
+#include "../../shared/src/funciones.c"
 
 int main(int argc, char** argv)
 {
@@ -9,16 +10,16 @@ int main(int argc, char** argv)
 
     int servidorCPU = iniciar_servidor(config, logger);
 
-    /*******************  Conexion con memoria ******************/
+
     int conexionMemoria = armar_conexion(config, MEMORIA, logger);
+    /*
     handshakeConMemoria(conexionMemoria);
     // int clienteAceptado = esperar_cliente(servidorCpu, logger);
 
-    cpu_register_t registros;
+    cpu_registers registros;
     inicializar_registros(registros);
    
 
-    /*******************  Conexion con kernel ******************/
     //pthread_t hilo_ejecucion;
     pthread_t hilo_dispatcher, hilo_interrupcion;
 
@@ -27,7 +28,8 @@ int main(int argc, char** argv)
     pthread_create(&hilo_interrupcion, NULL, (void *) procesar_interrupcion, NULL);
     pthread_join(hilo_dispatcher, NULL);
     pthread_join(hilo_interrupcion, NULL);
-    
+    */
+    return 0;
     //terminar_programa(servidorCpu, logger, config);
 }
 
@@ -40,9 +42,9 @@ void cargar_config(t_config* config)
 	cpu_config->TAM_MAX_SEGMENTO = config_get_int_value(config, "TAM_MAX_SEGMENTO");
 }
 
-void handshakeConMemoria(int socket)
+/*
 
-{
+void handshakeConMemoria(int socket){
 	send(socket, "CPU", 3, 0);
 	char* respuesta_de_memoria = receive(socket);
 	if (strcmp(respuesta_de_memoria, "MEMORIA") == 0) {
@@ -86,44 +88,44 @@ PCB* recibir_pcb(int servidor, t_log* logger)
 
 	buffer = recibir_buffer(&tamanio, servidor);
 
-	pcb->pid = read_int(buffer, &desplazamiento);
-	pcb->lista_instrucciones = read_string_array(buffer, &desplazamiento);
-	pcb->program_counter = read_int(buffer, &desplazamiento);
-	pcb->cpu_register->[AX] = read_string(buffer, &desplazamiento);
-	pcb->cpu_register->[BX] = read_string(buffer, &desplazamiento);
-	pcb->cpu_register->[CX] = read_string(buffer, &desplazamiento);
-	pcb->cpu_register->[DX] = read_string(buffer, &desplazamiento);
-	pcb->cpu_register->[EAX] = read_string(buffer, &desplazamiento);
-	pcb->cpu_register->[EBX] = read_string(buffer, &desplazamiento);
-	pcb->cpu_register->[ECX] = read_string(buffer, &desplazamiento);
-	pcb->cpu_register->[EDX] = read_string(buffer, &desplazamiento);
-	pcb->cpu_register->[RAX] = read_string(buffer, &desplazamiento);
-	pcb->cpu_register->[RBX] = read_string(buffer, &desplazamiento);
-	pcb->cpu_register->[RCX] = read_string(buffer, &desplazamiento);
-	pcb->cpu_register->[RDX] = read_string(buffer, &desplazamiento);
+	pcb->pid = leer_int(buffer, &desplazamiento);
+	pcb->lista_instrucciones = leer_string_array(buffer, &desplazamiento);
+	pcb->program_counter = leer_int(buffer, &desplazamiento);
+	pcb->cpu_register->[AX] = leer_string(buffer, &desplazamiento);
+	pcb->cpu_register->[BX] = leer_string(buffer, &desplazamiento);
+	pcb->cpu_register->[CX] = leer_string(buffer, &desplazamiento);
+	pcb->cpu_register->[DX] = leer_string(buffer, &desplazamiento);
+	pcb->cpu_register->[EAX] = leer_string(buffer, &desplazamiento);
+	pcb->cpu_register->[EBX] = leer_string(buffer, &desplazamiento);
+	pcb->cpu_register->[ECX] = leer_string(buffer, &desplazamiento);
+	pcb->cpu_register->[EDX] = leer_string(buffer, &desplazamiento);
+	pcb->cpu_register->[RAX] = leer_string(buffer, &desplazamiento);
+	pcb->cpu_register->[RBX] = leer_string(buffer, &desplazamiento);
+	pcb->cpu_register->[RCX] = leer_string(buffer, &desplazamiento);
+	pcb->cpu_register->[RDX] = leer_string(buffer, &desplazamiento);
 
 	pcb->lista_segmentos = list_create();
-	int cantidad_de_segmentos = read_int(buffer, &desplazamiento);
+	int cantidad_de_segmentos = leer_int(buffer, &desplazamiento);
 	for (int i = 0; i < cantidad_de_segmentos; i++) {
 	    t_segmento* segmento = malloc(sizeof(t_segmento));
 
-	    segmento->ID = read_int(buffer, &desplazamiento);
-	    //segmento->direccion_base = read_int(buffer, &desplazamiento);
-	    segmento->tamanio = read_int(buffer, &desplazamiento);
+	    segmento->ID = leer_int(buffer, &desplazamiento);
+	    //segmento->direccion_base = leer_int(buffer, &desplazamiento);
+	    segmento->tamanio = leer_int(buffer, &desplazamiento);
 
 	    list_add(pcb->lista_segmentos, segmento);
 	}
 
 	pcb->processor_burst = read_float(buffer, &desplazamiento);
-	pcb->ready_timestamp = read_int(buffer, &desplazamiento);
+	pcb->ready_timestamp = leer_int(buffer, &desplazamiento);
 
 	pcb->lista_archivos_abiertos = list_create();
-	int cantidad_de_archivos = read_int(buffer, &desplazamiento);
+	int cantidad_de_archivos = leer_int(buffer, &desplazamiento);
 	for (int i = 0; i < cantidad_de_archivos; i++) {
 			archivo_abierto_t* archivo_abierto = malloc(sizeof(archivo_abierto_t));
 
-		    archivo_abierto->ID = read_int(buffer, &desplazamiento);
-		    archivo_abierto->posicion_puntero = read_int(buffer, &desplazamiento);
+		    archivo_abierto->ID = leer_int(buffer, &desplazamiento);
+		    archivo_abierto->posicion_puntero = leer_int(buffer, &desplazamiento);
 
 		    list_add(pcb->lista_archivos_abiertos, archivo_abierto);
 		}
@@ -157,7 +159,7 @@ void ejecutar_proceso(PCB* pcb)
         
         log_info(logger, "Ejecutando instruccion: %s", instruccion_decodificada[0];
         ejecutar_instruccion(instruccion_decodificada, pcb);
-		
+
         // Evaluar si la instruccion genero una excepcion "f_pagefault"
         // Caso afirmativo => No se actualiza el program counter del pcb
         if(f_pagefault!=1){ actualizar_program_counter(pcb); }
@@ -165,10 +167,10 @@ void ejecutar_proceso(PCB* pcb)
         log_info(logger, "PROGRAM COUNTER: %d", pcb->program_counter);
 
         usleep(atoi(cpu->RETARDO_INSTRUCCION)*1000);
-        log_info(logger,"Se suspendio el proceso por retardo de la instruccion...",ENTER);    
+        log_info(logger, "Se suspendio el proceso por retardo de la instruccion...", ENTER);
 	}
 
-    log_info(logger,"Se salio de la ejecucion. Guardando el contexto de ejecucion...",ENTER);
+    log_info(logger, "Se salio de la ejecucion. Guardando el contexto de ejecucion...", ENTER);
 	guardar_contexto_de_ejecucion(pcb);
 
     if(f_eop){
@@ -275,5 +277,6 @@ void guardar_contexto_de_ejecucion(PCB* pcb)
 	cpu_register->RCX = pcb->registrosCPU->RCX;
 	cpu_register->RDX = pcb->registrosCPU->RDX;
 }
+*/
 
 

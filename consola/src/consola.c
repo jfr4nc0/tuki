@@ -17,11 +17,6 @@ int main(int argc, char** argv)
 
     config = iniciar_config(pathConfig, logger);
 
-    log_info(logger, pathConfig);
-    log_info(logger, pathInstrucciones);
-
-
-    // Creamos una conexión hacia kernel
     int conexion_kernel = armar_conexion(config, KERNEL, logger);
 
     enviarInstrucciones(pathInstrucciones, conexion_kernel, logger);

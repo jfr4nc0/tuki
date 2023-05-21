@@ -9,7 +9,7 @@
 #include <commons/log.h>
 #include <commons/string.h>
 #include <commons/config.h>
-#include <readline/readline.h>
+// #include <readline/readline.h>
 #include "constantes.h"
 #include<signal.h>
 #include<unistd.h>
@@ -23,7 +23,5 @@ int esperar_cliente(int, t_log* logger);
 t_list* recibir_paquete(int);
 void recibir_mensaje(int);
 int recibir_operacion(int);
-
-extern t_log* logger;
 
 #endif

@@ -10,7 +10,6 @@
     #include <readline/readline.h>
 
     #include "constantes.h"
-    #include "../../shared/src/funciones.c"
 	//#include "../../kernel/include/pcb.h"
 
 typedef struct {
@@ -23,28 +22,10 @@ typedef struct {
 
 cpu_config_t* cpu_config;
 
-typedef struct {
-	char* AX;
-	char* BX;
-	char* CX;
-	char* DX;
-
-	char* EAX;
-	char* EBX;
-	char* ECX;
-	char* EDX;
-
-	char* RAX;
-	char* RBX;
-	char* RCX;
-	char* RDX;
-
-}cpu_register_t;
-
-extern cpu_register_t* registrosCPU;
+extern cpu_registers* registrosCPU;
 
 void handshakeConMemoria(int);
-void inicializar_registros(cpu_register_t*);
+void inicializar_registros(cpu_registers*);
 void ejecutar_instruccion();
 
 

@@ -33,13 +33,6 @@
 #define ENUM_KERNEL               	3
 #define ENUM_MEMORIA              	4
 
-#define ENUM_NEW                         0
-#define ENUM_READY                       1
-#define ENUM_BLOCKED                     2
-#define ENUM_EXECUTING                   3
-#define ENUM_EXIT                        4
-#define ENUM_IO                          5
-
 #define NEW                             "NEW"
 #define READY                           "READY"
 #define BLOCKED                         "BLOCKED"

@@ -10,9 +10,9 @@
 #include "../../shared/constructor.h"
 
 // TODO Cuando se instancia un nuevo PCB, se crea tambien las listas de los elementos necesarios
-PCB* new_PCB(int pid, t_list lista_instrucciones,int program_counter, cpu_register_t cpu_register, t_list lista_segmentos,float processor_burst, int ready_timestamp, t_list lista_archivos_abiertos)
+PCB* new_PCB(int pid, t_list lista_instrucciones,int program_counter, cpu_registers cpu_register, t_list lista_segmentos,float processor_burst, int ready_timestamp, t_list lista_archivos_abiertos)
 {
-	NEW(new_pcb,PCB);
+	NUEVO(new_pcb,PCB);
 	new_pcb->pid = set_pid();
 	new_pcb->lista_instrucciones = set_lista_instrucciones(lista_instrucciones);
 	new_pcb->program_counter = set_program_counter();
@@ -26,8 +26,7 @@ PCB* new_PCB(int pid, t_list lista_instrucciones,int program_counter, cpu_regist
 }
 
 
-
-/*************************** Getters && Setters of PCB ***************************/
+/*************************** Getters && Setters of PCB **************************
 
 // Funcion que genere un pid unico en el sistema
 int set_pid()
@@ -71,13 +70,13 @@ t_list* get_lista_instrucciones(PCB* pcb){
 }
 
 // TODO set_registro_cpu
-cpu_register_t* set_registro_cpu(){
-	cpu_register_t* registro_cpu;
+cpu_registers* set_registro_cpu(){
+	cpu_registers* registro_cpu;
 
 	return registro_cpu;
 }
 
-cpu_register_t* get_registro_cpu(PCB* pcb){
+cpu_registers* get_registro_cpu(PCB* pcb){
 	return pcb->cpu_register;
 }
 
@@ -124,3 +123,5 @@ t_list* set_lista_archivos_abiertos(){
 t_list* get_lista_archivos_abiertos(PCB* pcb){
 	return pcb->lista_archivos_abiertos;
 }
+
+*/
