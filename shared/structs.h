@@ -42,14 +42,4 @@ typedef struct {
     char RDX[sizeof(long long)];
 } cpu_registers;
 
-/* TODO: Hacer enum para iniciar_log
-enum modulos {
-    CONSOLA = ENUM_CONSOLA,
-    CPU = ENUM_CPU,
-    FILE_SYSTEM = ENUM_FILE_SYSTEM,
-    KERNEL = ENUM_KERNEL,
-    MEMORIA = ENUM_MEMORIA
-};
-*/
-
 #endif

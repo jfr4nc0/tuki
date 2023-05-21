@@ -8,7 +8,7 @@ char* extraer_de_config(t_config* config, char* property, t_log* logger) {
     }
     log_warning(logger, "No se pudo encontrar en el config (%s), la propiedad -> %s\n", config->path, property);
 
-    return "";
+    return NULL;
 }
 
 char* extraer_de_modulo_config(t_config* config, char* valorIncompleto, char* modulo, t_log* logger) {

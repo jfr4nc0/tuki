@@ -8,7 +8,6 @@
 #include<sys/socket.h>
 #include<commons/log.h>
 #include<unistd.h>
-#include<netdb.h>
 #include<commons/collections/list.h>
 #include<assert.h>
 #include <commons/config.h>

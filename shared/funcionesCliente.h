@@ -1,6 +1,10 @@
 #ifndef FUNCIONES_CLIENT_GLOBAL_H_
 #define FUNCIONES_CLIENT_GLOBAL_H_
 
+// Internas
+#include "structs.h"
+#include "constantes.h"
+
 // Externas
 #include<stdio.h>
 #include<stdlib.h>
@@ -9,12 +13,10 @@
 #include<commons/config.h>
 #include<signal.h>
 #include<unistd.h>
-#include<sys/socket.h>
-#include<netdb.h>
 #include<string.h>
-
-// Internas
-#include "structs.h"
+#include<sys/socket.h>
+#include<sys/types.h>
+#include<netdb.h>
 
 
 void paquete(int, t_log*);

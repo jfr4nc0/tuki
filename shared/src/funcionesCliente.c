@@ -49,8 +49,7 @@ void* serializar_paquete(t_paquete* paquete, int bytes)
 
 int crear_conexion(char *ip, char* puerto, t_log* logger)
 {
-    struct addrinfo hints;
-    struct addrinfo *server_info;
+    struct addrinfo hints, *server_info;
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;

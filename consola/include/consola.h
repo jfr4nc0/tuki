@@ -10,13 +10,12 @@
 #include <commons/config.h>
 #include<signal.h>
 #include<unistd.h>
-#include<sys/socket.h>
-#include<netdb.h>
 
 // Internas
-#include "../../shared/constantes.h"
 #include "structs.h"
 #include "constantes.h"
 #include "funciones.h"
+#include "../../shared/funciones.h"
+#include "../../shared/funcionesCliente.h"
 
 #endif

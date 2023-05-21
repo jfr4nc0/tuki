@@ -2,11 +2,11 @@
 #define FUNCIONES_GLOBALES_H_
 
 #include <commons/config.h>
+#include <commons/log.h>
 
 #include "constantes.h"
 #include "structs.h"
-#include "funcionesCliente.h"
-#include "funcionesServidor.h"
+#include "configuraciones.h"
 
 char* extraer_de_config(t_config*, char*, t_log* logger);
 char* extraer_de_modulo_config(t_config*, char*, char*, t_log* logger);
