@@ -1,6 +1,4 @@
 #include "../include/kernel.h"
-#include "../include/pcb.h"
-#include "../include/scheduler.h"
 
 int main(int argc, char** argv) {
     logger = iniciar_logger(PATH_LOG_KERNEL, ENUM_KERNEL);

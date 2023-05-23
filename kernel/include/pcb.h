@@ -8,23 +8,25 @@
 #ifndef PCB_H_
 #define PCB_H_
 
+
+#include <stddef.h>
+#include <stdlib.h>
+#include <commons/collections/list.h>
+
+// Elimina la inclusión de "scheduler.h"
+
+#include "../../shared/structs.h"
+#include "constantes.h"
+#include "../../shared/constantes.h"
+#include "../../shared/constructor.h"
+#include "../../shared/funciones.h"
+#include "../../shared/funcionesCliente.h"
+#include "../../shared/funcionesServidor.h"
 // Cada hilo seria por procesos, no interesa el set de instrucciones que tiene el proceso (PCB)
 
 t_list* pid_list;
 
-int contadorProcessId = 0;
-
-typedef struct {
-	int id_proceso; // Identificador del proceso, unico en todo el sistema
-	pcb_estado estado;
-	t_list* lista_instrucciones; // Lista de instrucciones a ejecutar
-	int program_counter; // Numero de la proxima instruccion a ejecutar
-	cpu_registers* cpu_register;
-	t_list* lista_segmentos;
-	t_list* lista_archivos_abiertos; // Contendrá la lista de archivos abiertos del proceso con la posición del puntero de cada uno de ellos.
-	float processor_burst ; // Estimacion utilizada para planificar los procesos en el algoritmo HRRN, la misma tendra un valor inicial definido por archivo de config y sera recalculada bajo la formula de promedio ponderado
-	int ready_timestamp; // Timestamp en que el proceso llegó a ready por última vez (utilizado para el cálculo de tiempo de espera del algoritmo HRRN).
-}PCB;
+int contadorProcesoId = 0;
 
 typedef struct {
 	int ID;
@@ -57,4 +59,4 @@ int get_ready_timestamp();
 t_list* set_lista_archivos_abiertos();
 t_list* get_lista_archivos_abiertos();
 
-#endif /* PCB_H_ */
+#endif

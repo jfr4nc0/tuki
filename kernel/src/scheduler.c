@@ -6,6 +6,7 @@
  */
 #include "../include/scheduler.h"
 
+
 void inicializar_planificador() {
     log_info(logger, "Inicialización del planificador FIFO...");
     pthread_create(&planificador_corto_plazo, NULL, (void*) proximo_a_ejecutar, NULL);

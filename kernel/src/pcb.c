@@ -4,14 +4,15 @@
  *  Created on: Apr 27, 2023
  *      Author: @jfr4nc0
  */
-#include "../include/kernel.h"
+#include "../include/pcb.h"
 
 // TODO Cuando se instancia un nuevo PCB, se crea tambien las listas de los elementos necesarios
 PCB* new_pcb(int clienteAceptado, t_list* lista_instrucciones)
 {
-	NUEVO(pcb,PCB);
-	pcb->id_proceso = contadorProcessId;
-	contadorProcessId++;
+//	NUEVO(pcb,PCB);
+	PCB* pcb = malloc(sizeof(PCB));
+	pcb->id_proceso = contadorProcesoId;
+	contadorProcesoId++;
 	pcb->lista_instrucciones = lista_instrucciones;
 
 	return pcb;

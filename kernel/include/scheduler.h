@@ -8,23 +8,11 @@
 #ifndef SCHEDULER_H_
 #define SCHEDULER_H_
 
-#include "kernel.h"
-
-/*
-#include <stdio.h> // Para las funciones de entrada/salida estándar
-#include <stdlib.h> // Para funciones de uso general, como malloc y free
-#include <pthread.h> // Para el uso de hilos (threads)
-#include <semaphore.h> // Para el uso de semáforos
-#include <string.h> // Para las funciones de manipulación de cadenas de caracteres
-#include <unistd.h> // Para funciones relacionadas con el sistema operativo, como sleep
-// #include "../include/t_recurso.h" // Archivo de encabezado personalizado para la definición de recursos
-// #include "../include/dictionary.h" // Archivo de encabezado personalizado para el uso de diccionarios
-#include<commons/collections/list.h>
-#include<commons/log.h>
-#include <commons/config.h>
-
-#include "pcb.h"
-*/
+#include <pthread.h>
+#include <semaphore.h>
+#include <commons/collections/dictionary.h>
+#include "../../shared/structs.h"
+#include "variablesGlobales.h"
 
 pthread_t planificador_corto_plazo;
 pthread_t thread_memoria;
@@ -64,4 +52,4 @@ void cambio_de_estado(PCB*, pcb_estado, t_list*, pthread_mutex_t);
 void cambiar_estado_pcb_a(PCB*, pcb_estado);
 void agregar_a_lista(PCB*, t_list*, pthread_mutex_t);
 
-#endif /* SCHEDULER_H_ */
+#endif
