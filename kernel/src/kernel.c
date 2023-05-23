@@ -1,4 +1,6 @@
 #include "../include/kernel.h"
+#include "../include/pcb.h"
+#include "../include/scheduler.h"
 
 int main(int argc, char** argv) {
     logger = iniciar_logger(PATH_LOG_KERNEL, ENUM_KERNEL);
@@ -10,8 +12,7 @@ int main(int argc, char** argv) {
 
     inicializar_semaforos();
 
-    t_list* lista_estados[CANTIDAD_ESTADOS];
-    inicializar_listas_estados(lista_estados);
+    inicializar_listas_estados();
     inicializar_diccionario_recursos(kernel_config);
 
     // Conexiones con los demas modulos
@@ -66,21 +67,21 @@ void inicializar_escucha_conexiones_consolas(int servidorKernel){
         int clienteAceptado = esperar_cliente(servidorKernel, logger);
         log_info(logger, cantidad_strings_a_mostrar(2), "Consola conectada!", ENTER);
         pthread_t hilo_consola;
-        pthread_create(&hilo_consola, NULL, (void *) recibir_de_consola, (void *) clienteAceptado);
+        pthread_create(&hilo_consola, NULL, recibir_de_consola, (void*) &clienteAceptado);
         pthread_detach(hilo_consola);  //Los recursos asociados se liberan automáticamente al finalizar.
     }
 }
 
-void recibir_de_consola(int clienteAceptado) {
+void* recibir_de_consola(void *clienteAceptado) {
+    int socketAceptado = (int)clienteAceptado;
     while(1){  // Queda en un estado de espera activa para la comunicación continua entre los módulos.
-        int codigoDeOperacion = recibir_operacion(clienteAceptado);
-        PCB* pcb;
-        switch(codigoDeOperacion){
+        int codigoDeOperacion = recibir_operacion(socketAceptado);
+        switch(codigoDeOperacion) {
             case PAQUETE:
-                t_list* listaInstrucciones = recibir_paquete(clienteAceptado);
+                t_list* listaInstrucciones = recibir_paquete(socketAceptado);
                 log_info(logger, cantidad_strings_a_mostrar(2), "Me llegaron los siguientes valores:", ENTER);
                 list_iterate(listaInstrucciones, (void*) iterator);
-                pcb = inicializar_pcb(clienteAceptado, listaInstrucciones);
+                PCB* pcb = inicializar_pcb(socketAceptado, listaInstrucciones);
                 list_destroy(listaInstrucciones);
                 break;
         }
@@ -89,14 +90,14 @@ void recibir_de_consola(int clienteAceptado) {
 
 PCB* inicializar_pcb(int clienteAceptado, t_list* listaInstrucciones){  // chequear que se lee bien de consola
 
-    wait(&sem_creacion_pcb);
+	sem_wait(&sem_creacion_pcb);
 
-    PCB* pcb = new_pcb(clienteAceptado, *listaInstrucciones);
+    PCB* pcb = new_pcb(clienteAceptado, listaInstrucciones);
 
-    
+
     log_info(logger, "valor id: %d", pcb->id_proceso);
 
-    signal(&sem_creacion_pcb);
+    sem_post(&sem_creacion_pcb);
 
     return pcb;
 }

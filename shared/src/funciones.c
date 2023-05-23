@@ -163,3 +163,10 @@ char** leer_string_array(char* buffer, int* desp) {
 
     return arr;
 }
+
+const char* obtener_nombre_estado(pcb_estado estado){
+	if (estado >= ENUM_NEW) {
+		return nombres_estados[estado];
+	}
+	return "EL ESTADO NO ESTÁ REGISTRADO";
+}

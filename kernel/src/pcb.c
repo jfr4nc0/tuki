@@ -4,24 +4,15 @@
  *  Created on: Apr 27, 2023
  *      Author: @jfr4nc0
  */
-
-#include <stdlib.h>
-#include "../include/pcb.h"
-#include "../../shared/constructor.h"
+#include "../include/kernel.h"
 
 // TODO Cuando se instancia un nuevo PCB, se crea tambien las listas de los elementos necesarios
-PCB* new_pcb(int clienteAceptado, t_list lista_instrucciones)
+PCB* new_pcb(int clienteAceptado, t_list* lista_instrucciones)
 {
 	NUEVO(pcb,PCB);
 	pcb->id_proceso = contadorProcessId;
 	contadorProcessId++;
 	pcb->lista_instrucciones = lista_instrucciones;
-	pcb->program_counter = set_program_counter();
-	pcb->cpu_register = set_registro_cpu();
-	pcb->lista_segmentos = set_lista_segmentos();
-	pcb->processor_burst = set_processor_burst();
-	pcb->ready_timestamp = set_ready_timestamp();
-	pcb->lista_archivos_abiertos = set_lista_archivos_abiertos();
 
 	return pcb;
 }

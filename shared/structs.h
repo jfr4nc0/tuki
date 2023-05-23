@@ -3,24 +3,20 @@
 
 #include <stddef.h>
 
-typedef enum
-{
+typedef enum {
     MENSAJE,
     PAQUETE
 }op_code;
 
-typedef struct
-{
+typedef struct {
     int size;
     void* stream;
 }t_buffer;
 
-typedef struct
-{
+typedef struct {
     op_code codigo_operacion;
     t_buffer* buffer;
 }t_paquete;
-
 
 typedef struct {
     // Registros de 4 bytes
@@ -41,5 +37,13 @@ typedef struct {
     char RCX[sizeof(long long)];
     char RDX[sizeof(long long)];
 } cpu_registers;
+
+typedef enum {
+    ENUM_NEW,
+    ENUM_READY,
+    ENUM_BLOCKED,
+    ENUM_EXECUTING,
+    ENUM_EXIT,
+} pcb_estado;
 
 #endif

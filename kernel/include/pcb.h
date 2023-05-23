@@ -7,10 +7,6 @@
 
 #ifndef PCB_H_
 #define PCB_H_
-#include <stdbool.h>
-#include <string.h>
-#include <commons/collections/list.h>
-#include "../../shared/structs.h"
 
 // Cada hilo seria por procesos, no interesa el set de instrucciones que tiene el proceso (PCB)
 
@@ -20,7 +16,7 @@ int contadorProcessId = 0;
 
 typedef struct {
 	int id_proceso; // Identificador del proceso, unico en todo el sistema
-	char* estado;
+	pcb_estado estado;
 	t_list* lista_instrucciones; // Lista de instrucciones a ejecutar
 	int program_counter; // Numero de la proxima instruccion a ejecutar
 	cpu_registers* cpu_register;
@@ -43,7 +39,7 @@ typedef struct {
 
 /*************************** Getters && Setters of PCB ***************************/
 
-PCB* new_pcb(int, t_list);
+PCB* new_pcb(int, t_list*);
 int set_pid();
 int get_pid();
 int set_program_counter();

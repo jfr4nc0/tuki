@@ -20,7 +20,8 @@ void liberar_conexion(int);
 bool obtener_valores_para_logger(int, bool*, t_log_level*, char**);
 char** leer_string_array(char* buffer, int* desp);
 int leer_int(char* buffer, int* desp);
-char* leer_string(char* buffer, int* desp); 
+char* leer_string(char* buffer, int* desp);
 char** leer_string_array(char* buffer, int* desp);
+const char* obtener_nombre_estado(pcb_estado);
 
 #endif

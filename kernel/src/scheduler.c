@@ -4,7 +4,7 @@
  *  Created on: Apr 29, 2023
  *      Author: utnso
  */
-#include "../include/kernel.h"
+#include "../include/scheduler.h"
 
 void inicializar_planificador() {
     log_info(logger, "Inicialización del planificador FIFO...");
@@ -15,18 +15,18 @@ void inicializar_planificador() {
 
 }
 
-void inicializar_listas_estados(t_list* lista_estados[CANTIDAD_ESTADOS]) {
+void inicializar_listas_estados() {
 	for (int estado = 0; estado < CANTIDAD_ESTADOS; estado++) {
 		lista_estados[estado] = list_create();
 	}
 }
 
-void inicializar_diccionario_recursos(t_kernel_config* kernel_config) {
+void inicializar_diccionario_recursos() {
     diccionario_recursos = dictionary_create();
 
     int indice = 0;
-    while(kernel_config->RECURSOS[indice] != NULL && kernel_config->INSTANCIAS_RECURSOS[indice] != NULL) {
-        crear_cola_recursos(kernel_config->RECURSOS[indice], kernel_config->INSTANCIAS_RECURSOS[indice]);
+    while(kernel_config.RECURSOS[indice] != NULL && kernel_config.INSTANCIAS_RECURSOS[indice] != NULL) {
+        crear_cola_recursos(kernel_config.RECURSOS[indice], atoi(kernel_config.INSTANCIAS_RECURSOS[indice]));
 
         indice++;
     }
@@ -68,7 +68,7 @@ void proximo_a_ejecutar(){
 	        PCB* pcb_a_ejecutar = list_remove(lista_estados[ENUM_READY], 0);
 	        pthread_mutex_unlock(&m_lista_READY);
 
-	        cambio_de_estado(pcb_a_ejecutar, EXECUTING, lista_estados[ENUM_EXECUTING], m_lista_EXECUTING);
+	        cambio_de_estado(pcb_a_ejecutar, ENUM_EXECUTING, lista_estados[ENUM_EXECUTING], m_lista_EXECUTING);
 
 	        log_info(logger, "El proceso %d cambio su estado a RUNNING", pcb_a_ejecutar->id_proceso);
 	        log_info(logger,"PID: %d - Estado Anterior: READY - Estado Actual: RUNNING", pcb_a_ejecutar->id_proceso);
@@ -93,11 +93,4 @@ void agregar_a_lista(PCB* pcb, t_list* lista, pthread_mutex_t m_sem){
     pthread_mutex_lock(&m_sem);
     list_add(lista, pcb);
     pthread_mutex_unlock(&m_sem);
-}
-
-char* obtener_nombre_estado(pcb_estado estado){
-	if (estado >= ENUM_NEW) {
-		return string_duplicate(nombres_estados[estado]);
-	}
-	return string_duplicate("EL ESTADO NO ESTÁ REGISTRADO");
 }
