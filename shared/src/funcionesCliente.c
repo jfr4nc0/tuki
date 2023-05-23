@@ -1,20 +1,5 @@
 #include "../funcionesCliente.h"
 
-void paquete(int conexion, t_log* logger)
-{
-    t_paquete* paquete;
-
-    if(!(paquete = crear_paquete())) {
-        log_error(logger, E__PAQUETE_CREATE);
-    }
-
-    // Leemos y esta vez agregamos las lineas al paquete
-    printf("Los siguientes valores que ingreses se enviaran al servidor, ingrese enter para terminar de ingresar valores", ENTER);
-
-    enviar_paquete(paquete, conexion);
-    eliminar_paquete(paquete);
-}
-
 void eliminar_paquete(t_paquete* paquete)
 {
     free(paquete->buffer->stream);
@@ -27,7 +12,7 @@ int armar_conexion(t_config* config, char* modulo, t_log* logger)
     char* ip = extraer_de_modulo_config(config, IP_CONFIG, modulo, logger);
     char* puerto = extraer_de_modulo_config(config, PUERTO_CONFIG, modulo, logger);
 
-    log_debug(logger, D__ESTABLECIENDO_CONEXION, ENTER);
+    log_debug(logger, cantidad_strings_a_mostrar(2), D__ESTABLECIENDO_CONEXION, ENTER);
 
     return crear_conexion(ip, puerto, logger);
 }
@@ -59,23 +44,23 @@ int crear_conexion(char *ip, char* puerto, t_log* logger)
     getaddrinfo(ip, puerto, &hints, &server_info);
 
     // Vamos a crear el socket.
-    int socket_cliente = socket(server_info->ai_family,
+    int clienteAceptado = socket(server_info->ai_family,
             server_info->ai_socktype,
             server_info->ai_protocol);
 
     // Ahora que tenemos el socket, vamos a conectarlo
-    if (connect(socket_cliente, server_info->ai_addr, server_info->ai_addrlen) == -1) {
-        log_error(logger, E__CONEXION_CONNECT, ENTER);
+    if (connect(clienteAceptado, server_info->ai_addr, server_info->ai_addrlen) == -1) {
+        log_error(logger, cantidad_strings_a_mostrar(2), E__CONEXION_CONNECT, ENTER);
     }else {
-        log_info(logger, I__CONEXION_CREATE, ENTER);
+        log_info(logger, cantidad_strings_a_mostrar(2), I__CONEXION_CREATE, ENTER);
     }
 
     freeaddrinfo(server_info);
 
-    return socket_cliente;
+    return clienteAceptado;
 }
 
-void enviar_mensaje(char* mensaje, int socket_cliente, t_log* logger)
+void enviar_mensaje(char* mensaje, int clienteAceptado, t_log* logger)
 {
     t_paquete* paquete = malloc(sizeof(t_paquete));
 
@@ -89,9 +74,9 @@ void enviar_mensaje(char* mensaje, int socket_cliente, t_log* logger)
 
     void* a_enviar = serializar_paquete(paquete, bytes);
 
-    send(socket_cliente, a_enviar, bytes, 0);
+    send(clienteAceptado, a_enviar, bytes, 0);
 
-    log_debug(logger, "Se envió valor %s\n", mensaje);
+    log_debug(logger, cantidad_strings_a_mostrar(3), "Se envió valor ", mensaje, ENTER);
 
     free(a_enviar);
     eliminar_paquete(paquete);
@@ -122,12 +107,12 @@ void agregar_a_paquete(t_paquete* paquete, void* valor, int tamanio)
     paquete->buffer->size += tamanio + sizeof(int);
 }
 
-void enviar_paquete(t_paquete* paquete, int socket_cliente)
+void enviar_paquete(t_paquete* paquete, int clienteAceptado)
 {
     int bytes = paquete->buffer->size + 2*sizeof(int);
     void* a_enviar = serializar_paquete(paquete, bytes);
 
-    send(socket_cliente, a_enviar, bytes, 0);
+    send(clienteAceptado, a_enviar, bytes, 0);
 
     free(a_enviar);
 }

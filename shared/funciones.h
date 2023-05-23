@@ -8,6 +8,8 @@
 #include "structs.h"
 #include "configuraciones.h"
 
+
+char* cantidad_strings_a_mostrar(int);
 char* extraer_de_config(t_config*, char*, t_log* logger);
 char* extraer_de_modulo_config(t_config*, char*, char*, t_log* logger);
 char* concatenar_strings(char*, char*);

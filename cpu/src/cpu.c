@@ -1,6 +1,8 @@
 #include "../include/cpu.h"
-#include "../../kernel/include/pcb.h"
+#include "../../kernel/src/pcb.c"
 #include "../../shared/src/funciones.c"
+#include "../../shared/src/funcionesServidor.c"
+#include "../../shared/src/funcionesCliente.c"
 
 int main(int argc, char** argv)
 {
@@ -35,11 +37,11 @@ int main(int argc, char** argv)
 
 void cargar_config(t_config* config)
 {
-	cpu_config->RETARDO_INSTRUCCION = config_get_string_value(config, "RETARDO_INSTRUCCION");
-	cpu_config->IP_MEMORIA = config_get_string_value(config, "IP_MEMORIA");
-	cpu_config->PUERTO_MEMORIA = config_get_string_value(config, "PUERTO_MEMORIA");
-	cpu_config->PUERTO_ESCUCHA = config_get_string_value(config, "PUERTO_ESCUCHA");
-	cpu_config->TAM_MAX_SEGMENTO = config_get_int_value(config, "TAM_MAX_SEGMENTO");
+	cpuConfig->RETARDO_INSTRUCCION = config_get_string_value(config, "RETARDO_INSTRUCCION");
+	cpuConfig->IP_MEMORIA = config_get_string_value(config, "IP_MEMORIA");
+	cpuConfig->PUERTO_MEMORIA = config_get_string_value(config, "PUERTO_MEMORIA");
+	cpuConfig->PUERTO_ESCUCHA = config_get_string_value(config, "PUERTO_ESCUCHA");
+	cpuConfig->TAM_MAX_SEGMENTO = config_get_int_value(config, "TAM_MAX_SEGMENTO");
 }
 
 /*
@@ -88,7 +90,7 @@ PCB* recibir_pcb(int servidor, t_log* logger)
 
 	buffer = recibir_buffer(&tamanio, servidor);
 
-	pcb->pid = leer_int(buffer, &desplazamiento);
+	pcb->id_proceso = leer_int(buffer, &desplazamiento);
 	pcb->lista_instrucciones = leer_string_array(buffer, &desplazamiento);
 	pcb->program_counter = leer_int(buffer, &desplazamiento);
 	pcb->cpu_register->[AX] = leer_string(buffer, &desplazamiento);

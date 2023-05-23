@@ -20,6 +20,8 @@
 #include "constantes.h"
 #include "../../shared/constantes.h"
 #include "../../shared/funciones.h"
+#include "../../shared/funcionesCliente.h"
+#include "../../shared/funcionesServidor.h"
 #include "../../shared/structs.h"
 #include "pcb.h"
 #include "scheduler.h"
@@ -58,7 +60,8 @@ extern t_log* logger;
 t_kernel_config inicializar_config(char*, t_log*);
 t_kernel_config cargar_config_kernel(t_config*, t_log*);
 void inicializar_escucha_conexiones_consolas(int);
-PCB* inicializar_pcb(int);
+PCB* inicializar_pcb(int, t_list*);
 void recibir_de_consola(int);
+void iterator(char* value);
 
 #endif

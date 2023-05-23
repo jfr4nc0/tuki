@@ -3,6 +3,14 @@
 
 #include "configuraciones.h"
 
+const char* nombres_estados[] = {
+        "NEW",
+        "READY",
+        "BLOCKED",
+        "EXECUTING",
+        "EXIT"
+};
+
 #define LOCALHOST           "127.0.0.1"
 #define PUERTO_LOCAL        "PUERTO_ESCUCHA"
 
@@ -48,7 +56,7 @@
 // INFO MENSAJES
 #define I__CONEXION_CREATE          "Conexion creada"
 #define I__DESCONEXION_CLIENTE      "El cliente se desconecto. Terminando servidor"
-#define I__SERVER_READY             "Servidor listo para recibir al cliente: "
+#define I__SERVER_READY             "Servidor listo para recibir al cliente:"
 
 
 // ERROR MENSAJES

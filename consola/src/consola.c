@@ -28,11 +28,11 @@ int main(int argc, char** argv)
 // TODO: Mover todas las funciones a funciones.c
 void validarArgumentos(int argc, char** argv) {
     if (argc <= 2) {
-            printf(E__BAD_REQUEST, ENTER);
+            printf(E__BAD_REQUEST);
             printf("Dos parametros son obligatorios (pathConfig y pathInstrucciones), parametros enviados: %d\n", argc);
 
             for(int i=1; i<argc; i++) {
-                    printf("%s\n", argv[i]);
+                    printf(cantidad_strings_a_mostrar(2), ENTER, argv[i]);
             }
             abort();
     }
@@ -45,7 +45,7 @@ void enviarInstrucciones(char* pathInstrucciones, int conexion_kernel, t_log* lo
 	// TODO: Funcion rota, arreglar
 	FILE *instrucciones;
 	if( (instrucciones = fopen(pathInstrucciones, MODO_LECTURA_ARCHIVO)) == NULL ){
-		log_error(logger, E__ARCHIVO_CREATE, ENTER);
+		log_error(logger, E__ARCHIVO_CREATE);
 	} else {
 
 	    char instruccion[LONGITUD_MAXIMA_CADENA];

@@ -36,13 +36,6 @@ typedef enum {
     ENUM_EXIT,
 } pcb_estado;
 
-typedef struct {
-	int pid;
-	pcb_estado estado;
-} t_pcb;
-
-t_pcb* pcb;
-
 typedef struct{
     char* nombre;
     int instancias;
@@ -65,9 +58,9 @@ sem_t sem_proceso_a_ready;
 void inicializar_planificador();
 void inicializar_listas_estados();
 void proximo_a_ejecutar();
-void cambio_de_estado(t_pcb*, pcb_estado, t_list*, pthread_mutex_t);
-void cambiar_estado_pcb_a(t_pcb*, pcb_estado);
-void agregar_a_lista(t_pcb*, t_list*, pthread_mutex_t);
+void cambio_de_estado(PCB*, pcb_estado, t_list*, pthread_mutex_t);
+void cambiar_estado_pcb_a(PCB*, pcb_estado);
+void agregar_a_lista(PCB*, t_list*, pthread_mutex_t);
 char* obtener_nombre_estado(pcb_estado);
 
 

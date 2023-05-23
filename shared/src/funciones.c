@@ -1,5 +1,20 @@
 #include "../funciones.h"
 
+/*
+* Para que no salgan warning se especifica cuantos strings
+* se van a mostrar
+*/
+char* cantidad_strings_a_mostrar(int cantidad) {
+    char mostrarStrings[cantidad + 1];
+    mostrarStrings[0] = '\0'; // Inicializar la cadena vacía
+
+    for (int i = 0; i < cantidad; i++) {
+        strcat(mostrarStrings, "%s ");
+    }
+
+    return mostrarStrings;
+}
+
 char* extraer_de_config(t_config* config, char* property, t_log* logger) {
     if(config_has_property(config, property)) {
             char* valor = config_get_string_value(config, property);
@@ -32,38 +47,38 @@ char* concatenar_strings(char *p1, char *p2 ) {
 
 bool obtener_valores_para_logger(int moduloPos, bool *mostrarConsola, t_log_level *log_level, char* *modulo) {
     switch(moduloPos) {
-            case ENUM_KERNEL:
-                    *modulo = KERNEL;
-                    *mostrarConsola = !!(MOSTRAR_OCULTAR_MENSAJES_LOG_KERNEL);
-                    *log_level = LOG_LEVEL_KERNEL;
-                    break;
-            case ENUM_CPU:
-                    *modulo = CPU;
-                    *mostrarConsola = !!(MOSTRAR_OCULTAR_MENSAJES_LOG_CPU);
-                    *log_level = LOG_LEVEL_CPU;
-                    break;
-            case ENUM_MEMORIA:
-                    *modulo = MEMORIA;
-                    *mostrarConsola = !!(MOSTRAR_OCULTAR_MENSAJES_LOG_MEMORIA);
-                    *log_level = LOG_LEVEL_MEMORIA;
-                    break;
-            case ENUM_FILE_SYSTEM:
-                    *modulo = FILE_SYSTEM;
-                    *mostrarConsola = !!(MOSTRAR_OCULTAR_MENSAJES_LOG_FILE_SYSTEM);
-                    *log_level = LOG_LEVEL_FILE_SYSTEM;
-                    break;
-            case ENUM_CONSOLA:
-                    *modulo = CONSOLA;
-                    *mostrarConsola = !!(MOSTRAR_OCULTAR_MENSAJES_LOG_CONSOLA);
-                    *log_level = LOG_LEVEL_CONSOLA;
-              break;
-            default:
-                    *modulo = "LOG";
-                    *mostrarConsola = true;
-                    *log_level = LOG_LEVEL_DEFAULT;
-                    return true;
+        case ENUM_KERNEL:
+            *modulo = KERNEL;
+            *mostrarConsola = !!(MOSTRAR_OCULTAR_MENSAJES_LOG_KERNEL);
+            *log_level = LOG_LEVEL_KERNEL;
+            break;
+        case ENUM_CPU:
+            *modulo = CPU;
+            *mostrarConsola = !!(MOSTRAR_OCULTAR_MENSAJES_LOG_CPU);
+            *log_level = LOG_LEVEL_CPU;
+            break;
+        case ENUM_MEMORIA:
+            *modulo = MEMORIA;
+            *mostrarConsola = !!(MOSTRAR_OCULTAR_MENSAJES_LOG_MEMORIA);
+            *log_level = LOG_LEVEL_MEMORIA;
+            break;
+        case ENUM_FILE_SYSTEM:
+            *modulo = FILE_SYSTEM;
+            *mostrarConsola = !!(MOSTRAR_OCULTAR_MENSAJES_LOG_FILE_SYSTEM);
+            *log_level = LOG_LEVEL_FILE_SYSTEM;
+            break;
+        case ENUM_CONSOLA:
+            *modulo = CONSOLA;
+            *mostrarConsola = !!(MOSTRAR_OCULTAR_MENSAJES_LOG_CONSOLA);
+            *log_level = LOG_LEVEL_CONSOLA;
+            break;
+        default:
+            *modulo = "LOG";
+            *mostrarConsola = true;
+            *log_level = LOG_LEVEL_DEFAULT;
+            return false;
     }
-    return false;
+    return true;
 }
 
 t_log* iniciar_logger(char* pathLog, int moduloPos)
@@ -75,14 +90,14 @@ t_log* iniciar_logger(char* pathLog, int moduloPos)
 
     t_log *logger;
     if (( logger = log_create(pathLog, modulo, mostrarConsola, log_level)) == NULL ) {
-        printf(E__LOGGER_CREATE, ENTER);
+        printf(cantidad_strings_a_mostrar(2), E__LOGGER_CREATE);
         exit(1);
     }
 
     if (valoresPorDefecto) {
-        log_warning(logger, D__LOG_CREADO, "-> ", pathLog, " con valores por defecto", ENTER);
+        log_debug(logger, cantidad_strings_a_mostrar(4), D__LOG_CREADO, "-> ", pathLog, ENTER);
     }else {
-        log_debug(logger, D__LOG_CREADO, "-> ", pathLog, ENTER);
+        log_warning(logger, cantidad_strings_a_mostrar(5), D__LOG_CREADO, "-> ", pathLog, " con valores por defecto", ENTER);
     }
 
     return logger;
@@ -92,11 +107,11 @@ t_config* iniciar_config(char* pathConfig, t_log* logger)
 {
     t_config* nuevo_config;
     if ((nuevo_config = config_create(pathConfig)) == NULL) {
-        log_error(logger, E__CONFIG_CREATE, ENTER);
+        log_error(logger, cantidad_strings_a_mostrar(2), E__CONFIG_CREATE, ENTER);
         exit(1);
     }
 
-    log_debug(logger, D__CONFIG_CREADO, "-> ", pathConfig, ENTER);
+    log_debug(logger, cantidad_strings_a_mostrar(4), D__CONFIG_CREADO, "-> ", pathConfig, ENTER);
     return nuevo_config;
 }
 
@@ -114,9 +129,9 @@ void terminar_programa(int conexion, t_log* logger, t_config* config)
     liberar_conexion(conexion);
 }
 
-void liberar_conexion(int socket_cliente)
+void liberar_conexion(int clienteAceptado)
 {
-    close(socket_cliente);
+    close(clienteAceptado);
 }
 
 int leer_int(char* buffer, int* desp) {

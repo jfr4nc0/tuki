@@ -18,8 +18,6 @@
 #include<sys/types.h>
 #include<netdb.h>
 
-
-void paquete(int, t_log*);
 int crear_conexion(char*, char*, t_log*);
 void enviar_mensaje(char*, int, t_log*);
 t_paquete* crear_paquete(void);

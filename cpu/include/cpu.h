@@ -7,10 +7,15 @@
     #include <commons/log.h>
     #include <commons/string.h>
     #include <commons/config.h>
-    #include <readline/readline.h>
 
+	// Internas
+    #include "../../shared/constantes.h"
+	#include "../../shared/funciones.h"
+	#include "../../shared/funcionesCliente.h"
+	#include "../../shared/funcionesServidor.h"
+	#include "../../shared/structs.h"
     #include "constantes.h"
-	//#include "../../kernel/include/pcb.h"
+	#include "../../kernel/include/pcb.h"
 
 typedef struct {
 	char* RETARDO_INSTRUCCION;
@@ -20,9 +25,9 @@ typedef struct {
 	int TAM_MAX_SEGMENTO;
 }cpu_config_t;
 
-cpu_config_t* cpu_config;
+cpu_config_t* cpuConfig;
 
-extern cpu_registers* registrosCPU;
+cpu_registers* registrosCPU;
 
 void handshakeConMemoria(int);
 void inicializar_registros(cpu_registers*);

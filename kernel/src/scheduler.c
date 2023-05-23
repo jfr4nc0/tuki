@@ -65,13 +65,13 @@ void proximo_a_ejecutar(){
 	    	log_info(logger, "Entre por FIFO");
 
 	        pthread_mutex_lock(&m_lista_READY);
-	        t_pcb* pcb_a_ejecutar = list_remove(lista_estados[ENUM_READY], 0);
+	        PCB* pcb_a_ejecutar = list_remove(lista_estados[ENUM_READY], 0);
 	        pthread_mutex_unlock(&m_lista_READY);
 
 	        cambio_de_estado(pcb_a_ejecutar, EXECUTING, lista_estados[ENUM_EXECUTING], m_lista_EXECUTING);
 
-	        log_info(logger, "El proceso %d cambio su estado a RUNNING", pcb_a_ejecutar->pid);
-	        log_info(logger,"PID: %d - Estado Anterior: READY - Estado Actual: RUNNING", pcb_a_ejecutar->pid);
+	        log_info(logger, "El proceso %d cambio su estado a RUNNING", pcb_a_ejecutar->id_proceso);
+	        log_info(logger,"PID: %d - Estado Anterior: READY - Estado Actual: RUNNING", pcb_a_ejecutar->id_proceso);
 
 	    } else {
             log_error(logger, "No es posible utilizar el algoritmo especificado.");
@@ -79,43 +79,25 @@ void proximo_a_ejecutar(){
     }
 }
 
-void cambio_de_estado(t_pcb* pcb, pcb_estado estado, t_list* lista, pthread_mutex_t mutex) {
+void cambio_de_estado(PCB* pcb, pcb_estado estado, t_list* lista, pthread_mutex_t mutex) {
     cambiar_estado_pcb_a(pcb, estado);
     agregar_a_lista(pcb, lista, mutex);
-    log_info(logger, "El pcb entro en la cola de %s", obtener_nombre_estado(estado));
+    log_info(logger, cantidad_strings_a_mostrar(2), "El pcb entro en la cola de ", obtener_nombre_estado(estado));
 }
 
-void cambiar_estado_pcb_a(t_pcb* pcb, pcb_estado nuevoEstado){
+void cambiar_estado_pcb_a(PCB* pcb, pcb_estado nuevoEstado){
     pcb->estado = nuevoEstado;
 }
 
-void agregar_a_lista(t_pcb* pcb, t_list* lista, pthread_mutex_t m_sem){
+void agregar_a_lista(PCB* pcb, t_list* lista, pthread_mutex_t m_sem){
     pthread_mutex_lock(&m_sem);
     list_add(lista, pcb);
     pthread_mutex_unlock(&m_sem);
 }
 
 char* obtener_nombre_estado(pcb_estado estado){
-	char* valor_estado;
-	switch(estado){
-		case ENUM_NEW:
-			valor_estado = string_duplicate(NEW);
-			break;
-		case ENUM_READY:
-			valor_estado = string_duplicate(READY);
-			break;
-		case ENUM_BLOCKED:
-			valor_estado = string_duplicate(BLOCKED);
-			break;
-		case ENUM_EXECUTING:
-			valor_estado = string_duplicate(EXECUTING);
-			break;
-		case ENUM_EXIT:
-			valor_estado = string_duplicate(EXIT);
-			break;
-		default:
-			valor_estado = string_duplicate("EL ESTADO NO ESTÁ REGISTRADO");
-			break;
+	if (estado >= ENUM_NEW) {
+		return string_duplicate(nombres_estados[estado]);
 	}
-	return valor_estado;
+	return string_duplicate("EL ESTADO NO ESTÁ REGISTRADO");
 }

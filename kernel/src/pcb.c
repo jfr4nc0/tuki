@@ -10,19 +10,20 @@
 #include "../../shared/constructor.h"
 
 // TODO Cuando se instancia un nuevo PCB, se crea tambien las listas de los elementos necesarios
-PCB* new_PCB(int pid, t_list lista_instrucciones,int program_counter, cpu_registers cpu_register, t_list lista_segmentos,float processor_burst, int ready_timestamp, t_list lista_archivos_abiertos)
+PCB* new_pcb(int clienteAceptado, t_list lista_instrucciones)
 {
-	NUEVO(new_pcb,PCB);
-	new_pcb->pid = set_pid();
-	new_pcb->lista_instrucciones = set_lista_instrucciones(lista_instrucciones);
-	new_pcb->program_counter = set_program_counter();
-	new_pcb->cpu_register = set_registro_cpu();
-	new_pcb->lista_segmentos = set_lista_segmentos();
-	new_pcb->processor_burst = set_processor_burst();
-	new_pcb->ready_timestamp = set_ready_timestamp();
-	new_pcb->lista_archivos_abiertos = set_lista_archivos_abiertos();
+	NUEVO(pcb,PCB);
+	pcb->id_proceso = contadorProcessId;
+	contadorProcessId++;
+	pcb->lista_instrucciones = lista_instrucciones;
+	pcb->program_counter = set_program_counter();
+	pcb->cpu_register = set_registro_cpu();
+	pcb->lista_segmentos = set_lista_segmentos();
+	pcb->processor_burst = set_processor_burst();
+	pcb->ready_timestamp = set_ready_timestamp();
+	pcb->lista_archivos_abiertos = set_lista_archivos_abiertos();
 
-	return new_pcb;
+	return pcb;
 }
 
 
@@ -48,7 +49,7 @@ int set_pid()
 }
 
 int get_pid(PCB* pcb){
-	return pcb->pid;
+	return pcb->id_proceso;
 }
 
 int set_program_counter(){
