@@ -3,12 +3,12 @@
  *
  *  Created on: Apr 29, 2023
  *      Author: utnso
- */
+
 #include "../include/scheduler.h"
 
 
 void inicializar_planificador() {
-    log_info(logger, "Inicialización del planificador FIFO...");
+    log_info(kernelLogger, "Inicialización del planificador FIFO...");
     pthread_create(&planificador_corto_plazo, NULL, (void*) proximo_a_ejecutar, NULL);
     pthread_detach(planificador_corto_plazo);
 
@@ -63,7 +63,7 @@ void proximo_a_ejecutar(){
 		sem_wait(&sem_proceso_en_ready);
 	    sem_wait(&sem_cpu_disponible);
 	    if(strcmp(kernel_config.ALGORITMO_PLANIFICACION, "FIFO") == 0) {
-	    	log_info(logger, "Entre por FIFO");
+	    	log_info(kernelLogger, "Entre por FIFO");
 
 	        pthread_mutex_lock(&m_lista_READY);
 	        PCB* pcb_a_ejecutar = list_remove(lista_estados[ENUM_READY], 0);
@@ -71,11 +71,11 @@ void proximo_a_ejecutar(){
 
 	        cambio_de_estado(pcb_a_ejecutar, ENUM_EXECUTING, lista_estados[ENUM_EXECUTING], m_lista_EXECUTING);
 
-	        log_info(logger, "El proceso %d cambio su estado a RUNNING", pcb_a_ejecutar->id_proceso);
-	        log_info(logger,"PID: %d - Estado Anterior: READY - Estado Actual: RUNNING", pcb_a_ejecutar->id_proceso);
+	        log_info(kernelLogger, "El proceso %d cambio su estado a RUNNING", pcb_a_ejecutar->id_proceso);
+	        log_info(kernelLogger,"PID: %d - Estado Anterior: READY - Estado Actual: RUNNING", pcb_a_ejecutar->id_proceso);
 
 	    } else {
-            log_error(logger, "No es posible utilizar el algoritmo especificado.");
+            log_error(kernelLogger, "No es posible utilizar el algoritmo especificado.");
         }
     }
 }
@@ -83,7 +83,7 @@ void proximo_a_ejecutar(){
 void cambio_de_estado(PCB* pcb, pcb_estado estado, t_list* lista, pthread_mutex_t mutex) {
     cambiar_estado_pcb_a(pcb, estado);
     agregar_a_lista(pcb, lista, mutex);
-    log_info(logger, cantidad_strings_a_mostrar(2), "El pcb entro en la cola de ", obtener_nombre_estado(estado));
+    log_info(kernelLogger, cantidad_strings_a_mostrar(2), "El pcb entro en la cola de ", obtener_nombre_estado(estado));
 }
 
 void cambiar_estado_pcb_a(PCB* pcb, pcb_estado nuevoEstado){
@@ -95,3 +95,4 @@ void agregar_a_lista(PCB* pcb, t_list* lista, pthread_mutex_t m_sem){
     list_add(lista, pcb);
     pthread_mutex_unlock(&m_sem);
 }
+ */

@@ -8,11 +8,12 @@
 #include<sys/socket.h>
 #include<unistd.h>
 #include<commons/collections/list.h>
+#include <commons/collections/dictionary.h>
 #include<commons/log.h>
 #include <commons/config.h>
 #include <stdbool.h>
 #include <pthread.h>
 #include <semaphore.h>
-
+#include <pthread.h>
 
 #endif

@@ -22,7 +22,7 @@
 #define WAIT                        "PID: <PID> - Wait: <NOMBRE RECURSO> - Instancias: <INSTANCIAS RECURSO>" // Nota: El valor de las instancias es después de ejecutar el Wait
 ////////////////////////////////////
 
-#define PATH_LOG_KERNEL             "logs/kernel.log"
+#define PATH_LOG_KERNEL             "../logs/kernel.log"
 #define PATH_CONFIG_KERNEL          "kernel.config"
 
 #endif

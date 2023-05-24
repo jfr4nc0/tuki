@@ -8,10 +8,16 @@
 #ifndef SCHEDULER_H_
 #define SCHEDULER_H_
 
+
+
+/*
+#include <stdlib.h>
+#include <string.h>
 #include <pthread.h>
 #include <semaphore.h>
 #include <commons/collections/dictionary.h>
 #include "../../shared/structs.h"
+#include "../../shared/funciones.h"
 #include "variablesGlobales.h"
 
 pthread_t planificador_corto_plazo;
@@ -51,5 +57,6 @@ void proximo_a_ejecutar();
 void cambio_de_estado(PCB*, pcb_estado, t_list*, pthread_mutex_t);
 void cambiar_estado_pcb_a(PCB*, pcb_estado);
 void agregar_a_lista(PCB*, t_list*, pthread_mutex_t);
+*/
 
 #endif

@@ -5,8 +5,8 @@
  *      Author: @jfr4nc0
  */
 #include "../include/pcb.h"
-
-// TODO Cuando se instancia un nuevo PCB, se crea tambien las listas de los elementos necesarios
+/*
+// TODO: Cuando se instancia un nuevo PCB, se crea tambien las listas de los elementos necesarios
 PCB* new_pcb(int clienteAceptado, t_list* lista_instrucciones)
 {
 //	NUEVO(pcb,PCB);

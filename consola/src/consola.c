@@ -5,11 +5,11 @@
 int main(int argc, char** argv)
 {
     // Comentar este if si se quiere tomar los valores por defecto
-    validarArgumentos(argc, argv);
+    // validarArgumentos(argc, argv);
 
     // Se setean los parametros que se pasan, con valores por defecto si no encuentra parametros
-    char* pathConfig = argv[1] ? argv[1] : PATH_DEFAULT_CONEXION_KERNEL;
-    char* pathInstrucciones = argv[2] ? argv[2] : DEFAULT_INSTRUCCIONES_PATH;
+    char* pathConfig = (argc >= 2) ? argv[1] : PATH_DEFAULT_CONEXION_KERNEL;
+    char* pathInstrucciones = (argc >= 3) ? argv[2] : DEFAULT_INSTRUCCIONES_PATH;
 
     t_log* logger;
     t_config* config;
@@ -29,7 +29,7 @@ int main(int argc, char** argv)
 void validarArgumentos(int argc, char** argv) {
     if (argc <= 2) {
             printf(E__BAD_REQUEST);
-            printf("Dos parametros son obligatorios (pathConfig y pathInstrucciones), parametros enviados: %d\n", argc);
+            printf("\nDos parametros son obligatorios (pathConfig y pathInstrucciones), parametros enviados: %d\n", argc);
 
             for(int i=1; i<argc; i++) {
                     printf(cantidad_strings_a_mostrar(2), ENTER, argv[i]);

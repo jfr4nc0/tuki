@@ -3,6 +3,12 @@
 #include<commons/log.h>
 #include<commons/collections/list.h>
 
+
+int conexionCPU;
+int conexionMemoria;
+int conexionFileSystem;
+int servidorKernel;
+
 typedef struct
 {
     //char* IP_KERNEL;
@@ -23,7 +29,5 @@ typedef struct
 } t_kernel_config;
 
 t_list* lista_estados[5]; // TODO: Usar constante CANTIDAD_ESTADOS
-extern t_kernel_config kernel_config;
-extern t_log* logger;
 
 #endif

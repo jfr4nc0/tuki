@@ -5,7 +5,8 @@
 * se van a mostrar
 */
 char* cantidad_strings_a_mostrar(int cantidad) {
-    char mostrarStrings[cantidad + 1];
+    int tamaño = cantidad * 3 + 1;
+    char* mostrarStrings = malloc(tamaño);
     mostrarStrings[0] = '\0'; // Inicializar la cadena vacía
 
     for (int i = 0; i < cantidad; i++) {
@@ -76,9 +77,9 @@ bool obtener_valores_para_logger(int moduloPos, bool *mostrarConsola, t_log_leve
             *modulo = "LOG";
             *mostrarConsola = true;
             *log_level = LOG_LEVEL_DEFAULT;
-            return false;
+            return true;
     }
-    return true;
+    return false;
 }
 
 t_log* iniciar_logger(char* pathLog, int moduloPos)
@@ -95,9 +96,9 @@ t_log* iniciar_logger(char* pathLog, int moduloPos)
     }
 
     if (valoresPorDefecto) {
-        log_debug(logger, cantidad_strings_a_mostrar(4), D__LOG_CREADO, "-> ", pathLog, ENTER);
+    	log_warning(logger, cantidad_strings_a_mostrar(5), D__LOG_CREADO, "-> ", pathLog, " con valores por defecto", ENTER);
     }else {
-        log_warning(logger, cantidad_strings_a_mostrar(5), D__LOG_CREADO, "-> ", pathLog, " con valores por defecto", ENTER);
+        log_debug(logger, cantidad_strings_a_mostrar(4), D__LOG_CREADO, "-> ", pathLog, ENTER);
     }
 
     return logger;

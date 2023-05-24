@@ -25,7 +25,7 @@ typedef struct {
     char BX[sizeof(int)];
     char CX[sizeof(int)];
     char DX[sizeof(int)];
-   
+
     // Registros de 8 bytes
     char EAX[sizeof(long)];
     char EBX[sizeof(long)];

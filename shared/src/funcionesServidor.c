@@ -1,5 +1,15 @@
 #include "../funcionesServidor.h"
 
+/*
+void recibir_mensaje(int clienteAceptado, )
+{
+    int size;
+    char* buffer = recibir_buffer(&size, clienteAceptado);
+    log_info(logger, "Me llego el mensaje %s", buffer);
+    free(buffer);
+}
+*/
+
 int iniciar_servidor(t_config* config, t_log* logger)
 {
     int socket_servidor;
@@ -24,7 +34,7 @@ int iniciar_servidor(t_config* config, t_log* logger)
 
     // Escuchamos las conexiones entrantes
     listen(socket_servidor, SOMAXCONN);
-    log_info(logger, I__SERVER_READY, ENTER);
+    log_info(logger, cantidad_strings_a_mostrar(2), I__SERVER_READY, ENTER);
 
     freeaddrinfo(servinfo);
 
@@ -65,16 +75,6 @@ void* recibir_buffer(int* size, int clienteAceptado)
 
     return buffer;
 }
-
-/*
-void recibir_mensaje(int clienteAceptado, )
-{
-    int size;
-    char* buffer = recibir_buffer(&size, clienteAceptado);
-    log_info(logger, "Me llego el mensaje %s", buffer);
-    free(buffer);
-}
-*/
 
 t_list* recibir_paquete(int clienteAceptado)
 {

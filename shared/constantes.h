@@ -3,14 +3,6 @@
 
 #include "configuraciones.h"
 
-const char* nombres_estados[] = {
-        "NEW",
-        "READY",
-        "BLOCKED",
-        "EXECUTING",
-        "EXIT"
-};
-
 #define LOCALHOST           "127.0.0.1"
 #define PUERTO_LOCAL        "PUERTO_ESCUCHA"
 
@@ -67,5 +59,13 @@ const char* nombres_estados[] = {
 #define E__LOGGER_CREATE       "No se pudo crear logger"
 #define E__CONFIG_CREATE       "No se pudo crear config"
 #define E__PAQUETE_CREATE      "Error al crear paquete"
+
+const char* nombres_estados[] = {
+        NEW,
+        READY,
+        BLOCKED,
+        EXECUTING,
+        EXIT
+};
 
 #endif
