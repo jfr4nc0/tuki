@@ -9,8 +9,9 @@ int conexionMemoria;
 int conexionFileSystem;
 int servidorKernel;
 
-typedef struct
-{
+t_list* lista_estados[5]; // TODO: Usar constante CANTIDAD_ESTADOS
+
+typedef struct {
     //char* IP_KERNEL;
 	//char* PUERTO_KERNEL;
 	char* IP_MEMORIA;
@@ -28,6 +29,8 @@ typedef struct
     char** INSTANCIAS_RECURSOS;
 } t_kernel_config;
 
-t_list* lista_estados[5]; // TODO: Usar constante CANTIDAD_ESTADOS
+extern t_log* kernelLogger;
+extern t_kernel_config* kernel_config;
+int contadorProcesoId = 0;
 
 #endif

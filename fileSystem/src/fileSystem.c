@@ -1,8 +1,7 @@
 #include "../include/fileSystem.h"
 #include "../../shared/src/funciones.c"
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
     t_log* logger = iniciar_logger(DEFAULT_LOG_PATH, ENUM_FILE_SYSTEM);
     t_config* config = iniciar_config(DEFAULT_CONFIG_PATH, logger);
 

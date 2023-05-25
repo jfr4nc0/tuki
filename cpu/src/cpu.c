@@ -1,52 +1,49 @@
 #include "../include/cpu.h"
-#include "../../kernel/src/pcb.c"
-#include "../../shared/src/funciones.c"
-#include "../../shared/src/funcionesServidor.c"
-#include "../../shared/src/funcionesCliente.c"
 
-int main(int argc, char** argv)
-{
-    t_log* logger = iniciar_logger(DEFAULT_LOG_PATH, ENUM_CPU);
-    t_config* config = iniciar_config(DEFAULT_CONFIG_PATH, logger);
+t_log* loggerCpu;
+cpu_config_t* configCpu;
+
+int conexionCpuKernel;
+registros_cpu* registrosCpu;
+
+int main(int argc, char** argv) {
+    t_log* loggerCpu = iniciar_logger(DEFAULT_LOG_PATH, ENUM_CPU);
+    t_config* config = iniciar_config(DEFAULT_CONFIG_PATH, loggerCpu);
     cargar_config(config);
 
-    int servidorCPU = iniciar_servidor(config, logger);
+    int servidorCPU = iniciar_servidor(config, loggerCpu);
 
 
-    int conexionMemoria = armar_conexion(config, MEMORIA, logger);
-    /*
-    handshakeConMemoria(conexionMemoria);
+    int conexionCpuMemoria = armar_conexion(config, MEMORIA, loggerCpu);
+	conexionCpuKernel = armar_conexion(config, KERNEL, loggerCpu);
+
+    handshake_memoria(conexionCpuMemoria);
     // int clienteAceptado = esperar_cliente(servidorCpu, logger);
+    inicializar_registros();
 
-    cpu_registers registros;
-    inicializar_registros(registros);
-   
 
     //pthread_t hilo_ejecucion;
-    pthread_t hilo_dispatcher, hilo_interrupcion;
+    pthread_t hilo_dispatcher;
 
 	//pthread_create(&hilo_ejecucion, NULL, (void *) procesar_instruccion, int servidorCPU); //  TODO: Avisar posibles errores o si el kernel se desconecto.
-    pthread_create(&hilo_dispatcher, NULL, (void *) procesar_dispatcher, NULL); 
-    pthread_create(&hilo_interrupcion, NULL, (void *) procesar_interrupcion, NULL);
+    pthread_create(&hilo_dispatcher, NULL, (void *) procesar_instruccion, NULL);
+
     pthread_join(hilo_dispatcher, NULL);
-    pthread_join(hilo_interrupcion, NULL);
-    */
+
     return 0;
-    //terminar_programa(servidorCpu, logger, config);
+    //terminar_programa(servidorCpu, loggerCpu, config);
 }
 
-void cargar_config(t_config* config)
-{
-	cpuConfig->RETARDO_INSTRUCCION = config_get_string_value(config, "RETARDO_INSTRUCCION");
-	cpuConfig->IP_MEMORIA = config_get_string_value(config, "IP_MEMORIA");
-	cpuConfig->PUERTO_MEMORIA = config_get_string_value(config, "PUERTO_MEMORIA");
-	cpuConfig->PUERTO_ESCUCHA = config_get_string_value(config, "PUERTO_ESCUCHA");
-	cpuConfig->TAM_MAX_SEGMENTO = config_get_int_value(config, "TAM_MAX_SEGMENTO");
+void cargar_config(t_config* config) {
+	configCpu->RETARDO_INSTRUCCION = config_get_string_value(config, "RETARDO_INSTRUCCION");
+	configCpu->IP_MEMORIA = config_get_string_value(config, "IP_MEMORIA");
+	configCpu->PUERTO_MEMORIA = config_get_string_value(config, "PUERTO_MEMORIA");
+	configCpu->PUERTO_ESCUCHA = config_get_string_value(config, "PUERTO_ESCUCHA");
+	configCpu->TAM_MAX_SEGMENTO = config_get_int_value(config, "TAM_MAX_SEGMENTO");
 }
 
-/*
-
-void handshakeConMemoria(int socket){
+void handshake_memoria(int socket){
+	/* TODO: Joako: Lo voy a modificar el fin de semana del 28/05
 	send(socket, "CPU", 3, 0);
 	char* respuesta_de_memoria = receive(socket);
 	if (strcmp(respuesta_de_memoria, "MEMORIA") == 0) {
@@ -55,34 +52,33 @@ void handshakeConMemoria(int socket){
 	    printf("Error en el handshake.\n");
 	}
 	free(respuesta_de_memoria);
+	*/
 }
 
-void inicializar_registros(registros* registros)
-{
-	registros->AX = 0;
-	registros->BX = 0;
-	registros->CX = 0;
-	registros->DX = 0;
-	registros->EAX = 0;
-	registros->EBX = 0;
-	registros->ECX = 0;
-	registros->EDX = 0;
-	registros->RAX = 0;
-	registros->RBX = 0;
-	registros->RCX = 0;
-	registros->RDX = 0;
+void inicializar_registros() {
+	registrosCpu = malloc(sizeof(registros_cpu));
+	registrosCpu->AX = 0;
+	registrosCpu->BX = 0;
+	registrosCpu->CX = 0;
+	registrosCpu->DX = 0;
+	registrosCpu->EAX = 0;
+	registrosCpu->EBX = 0;
+	registrosCpu->ECX = 0;
+	registrosCpu->EDX = 0;
+	registrosCpu->RAX = 0;
+	registrosCpu->RBX = 0;
+	registrosCpu->RCX = 0;
+	registrosCpu->RDX = 0;
 }
 
-void procesar_instruccion(int servidorCPU)
-{
+void* procesar_instruccion(int servidorCPU) {
 	int socket_kernel = accept(servidorCPU, NULL, NULL);
 	PCB* pcb;
-	pcb = recibir_pcb(servidorCPU, logger);
+	pcb = recibir_pcb(servidorCPU);
 	ejecutar_proceso(pcb);
 }
 
-PCB* recibir_pcb(int servidor, t_log* logger)
-{
+PCB* recibir_pcb(int servidor) {
 	PCB* pcb = malloc(sizeof(PCB));
 	char* buffer;
 	int tamanio = 0;
@@ -92,19 +88,19 @@ PCB* recibir_pcb(int servidor, t_log* logger)
 
 	pcb->id_proceso = leer_int(buffer, &desplazamiento);
 	pcb->lista_instrucciones = leer_string_array(buffer, &desplazamiento);
-	pcb->program_counter = leer_int(buffer, &desplazamiento);
-	pcb->cpu_register->[AX] = leer_string(buffer, &desplazamiento);
-	pcb->cpu_register->[BX] = leer_string(buffer, &desplazamiento);
-	pcb->cpu_register->[CX] = leer_string(buffer, &desplazamiento);
-	pcb->cpu_register->[DX] = leer_string(buffer, &desplazamiento);
-	pcb->cpu_register->[EAX] = leer_string(buffer, &desplazamiento);
-	pcb->cpu_register->[EBX] = leer_string(buffer, &desplazamiento);
-	pcb->cpu_register->[ECX] = leer_string(buffer, &desplazamiento);
-	pcb->cpu_register->[EDX] = leer_string(buffer, &desplazamiento);
-	pcb->cpu_register->[RAX] = leer_string(buffer, &desplazamiento);
-	pcb->cpu_register->[RBX] = leer_string(buffer, &desplazamiento);
-	pcb->cpu_register->[RCX] = leer_string(buffer, &desplazamiento);
-	pcb->cpu_register->[RDX] = leer_string(buffer, &desplazamiento);
+	pcb->contador_instrucciones = leer_int(buffer, &desplazamiento);
+	pcb->registrosCpu->AX = leer_int(buffer, &desplazamiento);
+	pcb->registrosCpu->BX = leer_int(buffer, &desplazamiento);
+	pcb->registrosCpu->CX = leer_int(buffer, &desplazamiento);
+	pcb->registrosCpu->DX = leer_int(buffer, &desplazamiento);
+	pcb->registrosCpu->EAX = leer_long(buffer, &desplazamiento);
+	pcb->registrosCpu->EBX = leer_long(buffer, &desplazamiento);
+	pcb->registrosCpu->ECX = leer_long(buffer, &desplazamiento);
+	pcb->registrosCpu->EDX = leer_long(buffer, &desplazamiento);
+	pcb->registrosCpu->RAX = leer_long_long(buffer, &desplazamiento);
+	pcb->registrosCpu->RBX = leer_long_long(buffer, &desplazamiento);
+	pcb->registrosCpu->RCX = leer_long_long(buffer, &desplazamiento);
+	pcb->registrosCpu->RDX = leer_long_long(buffer, &desplazamiento);
 
 	pcb->lista_segmentos = list_create();
 	int cantidad_de_segmentos = leer_int(buffer, &desplazamiento);
@@ -118,7 +114,7 @@ PCB* recibir_pcb(int servidor, t_log* logger)
 	    list_add(pcb->lista_segmentos, segmento);
 	}
 
-	pcb->processor_burst = read_float(buffer, &desplazamiento);
+	pcb->processor_burst = leer_float(buffer, &desplazamiento);
 	pcb->ready_timestamp = leer_int(buffer, &desplazamiento);
 
 	pcb->lista_archivos_abiertos = list_create();
@@ -135,17 +131,16 @@ PCB* recibir_pcb(int servidor, t_log* logger)
 	return pcb;
 }
 
-void ejecutar_proceso(PCB* pcb)
-{
+void ejecutar_proceso(PCB* pcb) {
 
 	set_registros(pcb);
 
 	char* instruccion = malloc(sizeof(char*));
 	char** instruccion_decodificada = malloc(sizeof(char*));
 
-	//int cantidad_instrucciones = list_size(pcb->lista_instrucciones);
-	//int posicion_actual = 0;
-    
+	int cantidad_instrucciones = list_size(pcb->lista_instrucciones);
+	int posicion_actual = 0;
+
     // Se tienen en cuenta las posibles causas de interrupciones al proceso
     // 1. Termina el proceso (f_eop)
     // 2. Se produce una interrupcion (f_interruption)
@@ -153,132 +148,120 @@ void ejecutar_proceso(PCB* pcb)
     // 4. Page Fault Exception (f_pagefault)
     // 5. Segmentation Fault (f_segfault)
     // Denotamos con f_<var> (f: Flag)
-	
-    //while (posicion_actual < cantidad_instrucciones){
-	while(f_eop!=1 && f_interruption!=1 && f_io!=1 && f_pagefault!=1 && f_segfault!=1){
-        instruccion = string_duplicate(fetch_siguiente_instruccion(pcb));
+
+	// while(f_eop!=1 && f_interruption!=1 && f_io!=1 && f_pagefault!=1 && f_segfault!=1){
+
+    while (posicion_actual < cantidad_instrucciones){
+	    instruccion = string_duplicate((char *)list_get(pcb->lista_instrucciones, pcb->contador_instrucciones));
 		instruccion_decodificada = decode_instruccion(instruccion);
-        
-        log_info(logger, "Ejecutando instruccion: %s", instruccion_decodificada[0];
+
+        log_info(loggerCpu, "Ejecutando instruccion: %s", instruccion_decodificada[0]);
         ejecutar_instruccion(instruccion_decodificada, pcb);
 
         // Evaluar si la instruccion genero una excepcion "f_pagefault"
         // Caso afirmativo => No se actualiza el program counter del pcb
-        if(f_pagefault!=1){ actualizar_program_counter(pcb); }
+        pcb->contador_instrucciones++;
+		posicion_actual++;
 
-        log_info(logger, "PROGRAM COUNTER: %d", pcb->program_counter);
+        log_info(loggerCpu, "PROGRAM COUNTER: %d", pcb->contador_instrucciones);
 
-        usleep(atoi(cpu->RETARDO_INSTRUCCION)*1000);
-        log_info(logger, "Se suspendio el proceso por retardo de la instruccion...", ENTER);
+        usleep(atoi(configCpu->RETARDO_INSTRUCCION)*1000);
+        log_info(loggerCpu, "Se suspendio el proceso por retardo de la instruccion...", ENTER);
 	}
 
-    log_info(logger, "Se salio de la ejecucion. Guardando el contexto de ejecucion...", ENTER);
+    log_info(loggerCpu, "Se salio de la ejecucion. Guardando el contexto de ejecucion...", ENTER);
 	guardar_contexto_de_ejecucion(pcb);
 
+/*
     if(f_eop){
         f_eop = 0;
         f_interruption = 0;
-    }    
+    }
+*/
 }
 
-void actualizar_program_counter(pcb)
-{
-    pcb->program_counter++;
-	posicion_actual++;
+void set_registros(PCB* pcb) {
+	registrosCpu->AX = pcb->registrosCpu->AX;
+	registrosCpu->BX = pcb->registrosCpu->BX;
+	registrosCpu->CX = pcb->registrosCpu->CX;
+	registrosCpu->DX = pcb->registrosCpu->DX;
+	registrosCpu->AX = pcb->registrosCpu->EAX;
+	registrosCpu->BX = pcb->registrosCpu->EBX;
+	registrosCpu->CX = pcb->registrosCpu->ECX;
+	registrosCpu->DX = pcb->registrosCpu->EDX;
+	registrosCpu->AX = pcb->registrosCpu->RAX;
+	registrosCpu->BX = pcb->registrosCpu->RBX;
+	registrosCpu->CX = pcb->registrosCpu->RCX;
+	registrosCpu->DX = pcb->registrosCpu->RDX;
 }
 
-void set_registros(PCB* pcb)
-{
-	registrosCPU->AX = pcb->cpu_register->AX;
-	registrosCPU->BX = pcb->cpu_register->BX;
-	registrosCPU->CX = pcb->cpu_register->CX;
-	registrosCPU->DX = pcb->cpu_register->DX;
-	registrosCPU->AX = pcb->cpu_register->EAX;
-	registrosCPU->BX = pcb->cpu_register->EBX;
-	registrosCPU->CX = pcb->cpu_register->ECX;
-	registrosCPU->DX = pcb->cpu_register->EDX;
-	registrosCPU->AX = pcb->cpu_register->RAX;
-	registrosCPU->BX = pcb->cpu_register->RBX;
-	registrosCPU->CX = pcb->cpu_register->RCX;
-	registrosCPU->DX = pcb->cpu_register->RDX;
+void ejecutar_instruccion(char** instruccion_decodificada, PCB* pcb) {
+	char* comandoInstruccion = instruccion_decodificada[0];
+
+    if (comandoInstruccion) {
+		if(strcmp(comandoInstruccion, "SET")) {
+			set_registro(instruccion_decodificada[1],instruccion_decodificada[2]);
+		} else if(strcmp(comandoInstruccion, "EXIT")) {
+			guardar_contexto_de_ejecucion(pcb);
+			t_paquete* paquete = crear_paquete(OP_EXIT);
+			agregar_a_paquete(paquete, pcb, sizeof(PCB));
+			enviar_paquete(paquete, conexionCpuKernel);
+			free(paquete);
+		}
+	}
 }
 
-void ejecutar_instruccion(char** instruccion_decodificada, PCB* pcb)
-{
-
-	 switch(instruccion_decodificada[0]){
-	 	 case "SET":
-	 		 asignar_valor_a_registro(instruccion_decodificada[1],instruccion_decodificada[2]);
-	 		 break;
-	 	 case "YIELD":
-	 		 break;
-	 	 case "EXIT":
-	 		send_pcb_package(socket_kernel, pcb);
-	 		break;
-     }
-}
-
-void asignar_valor_a_registro(char* registro,char* valor)
-{
+void set_registro(char* registro,char* valor) {
 
 	int set_valor = atoi(valor);
 
 	if (strcmp(registro, "AX") == 0) {
-		registrosCPU->AX = set_valor;
+		registrosCpu->AX = set_valor;
 	} else if (strcmp(registro, "BX") == 0) {
-		registrosCPU->BX = set_valor;
+		registrosCpu->BX = set_valor;
 	} else if (strcmp(registro, "CX") == 0) {
-		registrosCPU->CX = set_valor;
+		registrosCpu->CX = set_valor;
 	} else if (strcmp(registro, "DX") == 0) {
-		registrosCPU->DX = set_valor;
+		registrosCpu->DX = set_valor;
 	} else if (strcmp(registro, "EAX") == 0) {
-		registrosCPU->EAX = set_valor;
+		registrosCpu->EAX = set_valor;
 	} else if (strcmp(registro, "EBX") == 0) {
-		registrosCPU->EBX = set_valor;
+		registrosCpu->EBX = set_valor;
 	} else if (strcmp(registro, "ECX") == 0) {
-		registrosCPU->ECX = set_valor;
+		registrosCpu->ECX = set_valor;
 	} else if (strcmp(registro, "EDX") == 0) {
-		registrosCPU->EDX = set_valor;
+		registrosCpu->EDX = set_valor;
 	} else if (strcmp(registro, "RAX") == 0) {
-		registrosCPU->RAX = set_valor;
+		registrosCpu->RAX = set_valor;
 	} else if (strcmp(registro, "RBX") == 0) {
-		registrosCPU->RBX = set_valor;
+		registrosCpu->RBX = set_valor;
 	} else if (strcmp(registro, "RCX") == 0) {
-		registrosCPU->RCX = set_valor;
+		registrosCpu->RCX = set_valor;
 	} else if (strcmp(registro, "RDX") == 0) {
-		registrosCPU->RDX = set_valor;
+		registrosCpu->RDX = set_valor;
 	}
+
 }
 
-char* fetch_siguiente_instruccion(PCB* pcb)
-{
-	return pcb->lista_instrucciones[pcb->program_counter];
-}
-
-char** decode_instruccion(char* linea_a_parsear)
-{
+char** decode_instruccion(char* linea_a_parsear) {
 	char** instruccion = string_split(linea_a_parsear, " ");
 	if(instruccion[0] == NULL){
-	    log_info(logger, "Hay linea vacía.");
+	    log_info(loggerCpu, "Se ignora linea vacía.");
 	}
 	return instruccion;
 }
 
-void guardar_contexto_de_ejecucion(PCB* pcb)
-{
-	cpu_register->AX = pcb->registrosCPU->AX;
-	cpu_register->BX = pcb->registrosCPU->BX;
-	cpu_register->CX = pcb->registrosCPU->CX;
-	cpu_register->DX = pcb->registrosCPU->DX;
-	cpu_register->EAX = pcb->registrosCPU->EAX;
-	cpu_register->EBX = pcb->registrosCPU->EBX;
-	cpu_register->ECX = pcb->registrosCPU->ECX;
-	cpu_register->EDX = pcb->registrosCPU->EDX;
-	cpu_register->RAX = pcb->registrosCPU->RAX;
-	cpu_register->RBX = pcb->registrosCPU->RBX;
-	cpu_register->RCX = pcb->registrosCPU->RCX;
-	cpu_register->RDX = pcb->registrosCPU->RDX;
+void guardar_contexto_de_ejecucion(PCB* pcb) {
+	registrosCpu->AX = pcb->registrosCpu->AX;
+	registrosCpu->BX = pcb->registrosCpu->BX;
+	registrosCpu->CX = pcb->registrosCpu->CX;
+	registrosCpu->DX = pcb->registrosCpu->DX;
+	registrosCpu->EAX = pcb->registrosCpu->EAX;
+	registrosCpu->EBX = pcb->registrosCpu->EBX;
+	registrosCpu->ECX = pcb->registrosCpu->ECX;
+	registrosCpu->EDX = pcb->registrosCpu->EDX;
+	registrosCpu->RAX = pcb->registrosCpu->RAX;
+	registrosCpu->RBX = pcb->registrosCpu->RBX;
+	registrosCpu->RCX = pcb->registrosCpu->RCX;
+	registrosCpu->RDX = pcb->registrosCpu->RDX;
 }
-*/
-
-

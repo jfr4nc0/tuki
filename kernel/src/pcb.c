@@ -7,8 +7,7 @@
 #include "../include/pcb.h"
 /*
 // TODO: Cuando se instancia un nuevo PCB, se crea tambien las listas de los elementos necesarios
-PCB* new_pcb(int clienteAceptado, t_list* lista_instrucciones)
-{
+PCB* new_pcb(int clienteAceptado, t_list* lista_instrucciones) {
 //	NUEVO(pcb,PCB);
 	PCB* pcb = malloc(sizeof(PCB));
 	pcb->id_proceso = contadorProcesoId;
@@ -22,8 +21,7 @@ PCB* new_pcb(int clienteAceptado, t_list* lista_instrucciones)
 /*************************** Getters && Setters of PCB **************************
 
 // Funcion que genere un pid unico en el sistema
-int set_pid()
-{
+int set_pid() {
 	int new_pid,size;
 
 	if(list_is_empty(pid_list)){
@@ -44,13 +42,13 @@ int get_pid(PCB* pcb){
 	return pcb->id_proceso;
 }
 
-int set_program_counter(){
-	int program_counter;
+int set_contador_instrucciones(){
+	int contador_instrucciones;
 
-	return program_counter;
+	return contador_instrucciones;
 }
-int get_program_counter(PCB* pcb){
-	return pcb->program_counter;
+int get_contador_instrucciones(PCB* pcb){
+	return pcb->contador_instrucciones;
 }
 
 // TODO set_lista_instrucciones
@@ -63,14 +61,14 @@ t_list* get_lista_instrucciones(PCB* pcb){
 }
 
 // TODO set_registro_cpu
-cpu_registers* set_registro_cpu(){
-	cpu_registers* registro_cpu;
+registros_cpu* set_registro_cpu(){
+	registros_cpu* registro_cpu;
 
 	return registro_cpu;
 }
 
-cpu_registers* get_registro_cpu(PCB* pcb){
-	return pcb->cpu_register;
+registros_cpu* get_registro_cpu(PCB* pcb){
+	return pcb->registrosCpu;
 }
 
 // TODO set_lista_segmentos

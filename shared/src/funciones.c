@@ -82,8 +82,7 @@ bool obtener_valores_para_logger(int moduloPos, bool *mostrarConsola, t_log_leve
     return false;
 }
 
-t_log* iniciar_logger(char* pathLog, int moduloPos)
-{
+t_log* iniciar_logger(char* pathLog, int moduloPos) {
         bool mostrarConsola = true;
         t_log_level log_level;
         char* modulo;
@@ -104,8 +103,7 @@ t_log* iniciar_logger(char* pathLog, int moduloPos)
     return logger;
 }
 
-t_config* iniciar_config(char* pathConfig, t_log* logger)
-{
+t_config* iniciar_config(char* pathConfig, t_log* logger) {
     t_config* nuevo_config;
     if ((nuevo_config = config_create(pathConfig)) == NULL) {
         log_error(logger, cantidad_strings_a_mostrar(2), E__CONFIG_CREATE, ENTER);
@@ -117,8 +115,7 @@ t_config* iniciar_config(char* pathConfig, t_log* logger)
 }
 
 
-void terminar_programa(int conexion, t_log* logger, t_config* config)
-{
+void terminar_programa(int conexion, t_log* logger, t_config* config) {
     if (logger != NULL) {
         log_destroy(logger);
     }
@@ -130,26 +127,46 @@ void terminar_programa(int conexion, t_log* logger, t_config* config)
     liberar_conexion(conexion);
 }
 
-void liberar_conexion(int clienteAceptado)
-{
+void liberar_conexion(int clienteAceptado) {
     close(clienteAceptado);
 }
 
+long leer_long(char* buffer, int* desp) {
+	long respuesta;
+	memcpy(&respuesta, buffer + (*desp), sizeof(long));
+	(*desp)+=sizeof(long);
+	return respuesta;
+}
+
+long long leer_long_long(char* buffer, int* desp) {
+	long long respuesta;
+	memcpy(&respuesta, buffer + (*desp), sizeof(long long));
+	(*desp)+=sizeof(long long);
+	return respuesta;
+}
+
+float leer_float(char* buffer, int* desp) {
+	float respuesta;
+	memcpy(&respuesta, buffer + (*desp), sizeof(float));
+	(*desp)+=sizeof(float);
+	return respuesta;
+}
+
 int leer_int(char* buffer, int* desp) {
-	int ret;
-	memcpy(&ret, buffer + (*desp), sizeof(int));
+	int respuesta;
+	memcpy(&respuesta, buffer + (*desp), sizeof(int));
 	(*desp)+=sizeof(int);
-	return ret;
+	return respuesta;
 }
 
 char* leer_string(char* buffer, int* desp){
-	int size = leer_int(buffer, desp);
+	int size = leer_int(buffer, desp); // TODO: ¿No modifica acá también desplazamiento? Probar
 
-	char* valor = malloc(size);
-	memcpy(valor, buffer+(*desp), size);
+	char* respuesta = malloc(size);
+	memcpy(respuesta, buffer+(*desp), size);
 	(*desp)+=size;
 
-	return valor;
+	return respuesta;
 }
 
 char** leer_string_array(char* buffer, int* desp) {

@@ -2,10 +2,9 @@
 #include "../../shared/src/funciones.c"
 #include "../../shared/src/funcionesCliente.c"
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
     // Comentar este if si se quiere tomar los valores por defecto
-    // validarArgumentos(argc, argv);
+    validarArgumentos(argc, argv);
 
     // Se setean los parametros que se pasan, con valores por defecto si no encuentra parametros
     char* pathConfig = (argc >= 2) ? argv[1] : PATH_DEFAULT_CONEXION_KERNEL;
@@ -39,7 +38,7 @@ void validarArgumentos(int argc, char** argv) {
 }
 
 void enviarInstrucciones(char* pathInstrucciones, int conexion_kernel, t_log* logger){
-	t_paquete* paquete = crear_paquete();
+	t_paquete* paquete = crear_paquete(OP_PAQUETE);
 
 	// Se extraen las instrucciones del .txt y se envian a Kernel
 	// TODO: Funcion rota, arreglar

@@ -34,12 +34,12 @@ PCB* new_pcb(int, t_list*);
 /*
 int set_pid();
 int get_pid();
-int set_program_counter();
-int get_program_counter();
+int set_contador_instrucciones();
+int get_contador_instrucciones();
 t_list* set_lista_instrucciones();
 t_list* get_lista_instrucciones();
-cpu_registers* set_registro_cpu();
-cpu_registers* get_registro_cpu();
+registros_cpu* set_registro_cpu();
+registros_cpu* get_registro_cpu();
 t_list* set_lista_segmentos();
 t_list* get_lista_segmentos();
 float set_processor_burst();

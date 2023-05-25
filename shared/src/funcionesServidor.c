@@ -1,8 +1,7 @@
 #include "../funcionesServidor.h"
 
 /*
-void recibir_mensaje(int clienteAceptado, )
-{
+void recibir_mensaje(int clienteAceptado, ) {
     int size;
     char* buffer = recibir_buffer(&size, clienteAceptado);
     log_info(logger, "Me llego el mensaje %s", buffer);
@@ -10,8 +9,7 @@ void recibir_mensaje(int clienteAceptado, )
 }
 */
 
-int iniciar_servidor(t_config* config, t_log* logger)
-{
+int iniciar_servidor(t_config* config, t_log* logger) {
     int socket_servidor;
     char* puerto = extraer_de_config(config, PUERTO_LOCAL, logger);
 
@@ -41,8 +39,7 @@ int iniciar_servidor(t_config* config, t_log* logger)
     return socket_servidor;
 }
 
-int esperar_cliente(int socket_servidor, t_log* logger)
-{
+int esperar_cliente(int socket_servidor, t_log* logger) {
     // Aceptamos un nuevo cliente
     int clienteAceptado = accept(socket_servidor, NULL, NULL);
     if (clienteAceptado == -1) {
@@ -54,8 +51,7 @@ int esperar_cliente(int socket_servidor, t_log* logger)
     return clienteAceptado;
 }
 
-int recibir_operacion(int clienteAceptado)
-{
+int recibir_operacion(int clienteAceptado) {
     int cod_op;
     if(recv(clienteAceptado, &cod_op, sizeof(int), MSG_WAITALL) > 0) {
         return cod_op;
@@ -65,8 +61,7 @@ int recibir_operacion(int clienteAceptado)
     }
 }
 
-void* recibir_buffer(int* size, int clienteAceptado)
-{
+void* recibir_buffer(int* size, int clienteAceptado) {
     void * buffer;
 
     recv(clienteAceptado, size, sizeof(int), MSG_WAITALL);
@@ -76,8 +71,7 @@ void* recibir_buffer(int* size, int clienteAceptado)
     return buffer;
 }
 
-t_list* recibir_paquete(int clienteAceptado)
-{
+t_list* recibir_paquete(int clienteAceptado) {
     int size;
     int desplazamiento = 0;
     void * buffer;

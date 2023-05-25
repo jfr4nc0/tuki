@@ -1,14 +1,12 @@
 #include "../funcionesCliente.h"
 
-void eliminar_paquete(t_paquete* paquete)
-{
+void eliminar_paquete(t_paquete* paquete) {
     free(paquete->buffer->stream);
     free(paquete->buffer);
     free(paquete);
 }
 
-int armar_conexion(t_config* config, char* modulo, t_log* logger)
-{
+int armar_conexion(t_config* config, char* modulo, t_log* logger) {
     char* ip = extraer_de_modulo_config(config, IP_CONFIG, modulo, logger);
     char* puerto = extraer_de_modulo_config(config, PUERTO_CONFIG, modulo, logger);
 
@@ -17,12 +15,11 @@ int armar_conexion(t_config* config, char* modulo, t_log* logger)
     return crear_conexion(ip, puerto, logger);
 }
 
-void* serializar_paquete(t_paquete* paquete, int bytes)
-{
+void* serializar_paquete(t_paquete* paquete, int bytes) {
     void * magic = malloc(bytes);
     int desplazamiento = 0;
 
-    memcpy(magic + desplazamiento, &(paquete->codigo_operacion), sizeof(int));
+    memcpy(magic + desplazamiento, &(paquete->codigoOperacion), sizeof(int));
     desplazamiento += sizeof(int);
     memcpy(magic + desplazamiento, &(paquete->buffer->size), sizeof(int));
     desplazamiento += sizeof(int);
@@ -32,8 +29,7 @@ void* serializar_paquete(t_paquete* paquete, int bytes)
     return magic;
 }
 
-int crear_conexion(char *ip, char* puerto, t_log* logger)
-{
+int crear_conexion(char *ip, char* puerto, t_log* logger) {
     struct addrinfo hints, *server_info;
 
     memset(&hints, 0, sizeof(hints));
@@ -60,11 +56,10 @@ int crear_conexion(char *ip, char* puerto, t_log* logger)
     return clienteAceptado;
 }
 
-void enviar_mensaje(char* mensaje, int clienteAceptado, t_log* logger)
-{
+void enviar_mensaje(char* mensaje, int clienteAceptado, t_log* logger) {
     t_paquete* paquete = malloc(sizeof(t_paquete));
 
-    paquete->codigo_operacion = MENSAJE;
+    paquete->codigoOperacion = OP_MENSAJE;
     paquete->buffer = malloc(sizeof(t_buffer));
     paquete->buffer->size = strlen(mensaje) + 1;
     paquete->buffer->stream = malloc(paquete->buffer->size);
@@ -82,23 +77,20 @@ void enviar_mensaje(char* mensaje, int clienteAceptado, t_log* logger)
     eliminar_paquete(paquete);
 }
 
-void crear_buffer(t_paquete* paquete)
-{
+void crear_buffer(t_paquete* paquete) {
     paquete->buffer = malloc(sizeof(t_buffer));
     paquete->buffer->size = 0;
     paquete->buffer->stream = NULL;
 }
 
-t_paquete* crear_paquete(void)
-{
+t_paquete* crear_paquete(codigo_operacion codigoOperacion) {
     t_paquete* paquete = malloc(sizeof(t_paquete));
-    paquete->codigo_operacion = PAQUETE;
+    paquete->codigoOperacion = codigoOperacion;
     crear_buffer(paquete);
     return paquete;
 }
 
-void agregar_a_paquete(t_paquete* paquete, void* valor, int tamanio)
-{
+void agregar_a_paquete(t_paquete* paquete, void* valor, int tamanio) {
     paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + tamanio + sizeof(int));
 
     memcpy(paquete->buffer->stream + paquete->buffer->size, &tamanio, sizeof(int));
@@ -107,8 +99,7 @@ void agregar_a_paquete(t_paquete* paquete, void* valor, int tamanio)
     paquete->buffer->size += tamanio + sizeof(int);
 }
 
-void enviar_paquete(t_paquete* paquete, int clienteAceptado)
-{
+void enviar_paquete(t_paquete* paquete, int clienteAceptado) {
     int bytes = paquete->buffer->size + 2*sizeof(int);
     void* a_enviar = serializar_paquete(paquete, bytes);
 
@@ -116,4 +107,3 @@ void enviar_paquete(t_paquete* paquete, int clienteAceptado)
 
     free(a_enviar);
 }
-

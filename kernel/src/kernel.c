@@ -79,7 +79,7 @@ void* recibir_de_consola(void *clienteAceptado) {
     while(1){  // Queda en un estado de espera activa para la comunicación continua entre los módulos.
         int codigoDeOperacion = recibir_operacion(socketAceptado);
         switch(codigoDeOperacion) {
-            case PAQUETE:
+            case OP_MENSAJE:
                 t_list* listaInstrucciones = recibir_paquete(socketAceptado);
                 log_info(kernelLogger, cantidad_strings_a_mostrar(2), "Me llegaron los siguientes valores:", ENTER);
                 list_iterate(listaInstrucciones, (void*) iterator);
@@ -90,7 +90,7 @@ void* recibir_de_consola(void *clienteAceptado) {
     }
 }
 
-PCB* inicializar_pcb(int clienteAceptado, t_list* listaInstrucciones){  // chequear que se lee bien de consola
+PCB* inicializar_pcb(int clienteAceptado, t_list* listaInstrucciones) {
 
 	sem_wait(&sem_creacion_pcb);
 
@@ -109,8 +109,7 @@ void iterator(char* value) {
 }
 
 // TODO: Cuando se instancia un nuevo PCB, se crea tambien las listas de los elementos necesarios
-PCB* new_pcb(int clienteAceptado, t_list* lista_instrucciones)
-{
+PCB* new_pcb(int clienteAceptado, t_list* lista_instrucciones) {
 //	NUEVO(pcb,PCB);
 	PCB* pcb = malloc(sizeof(PCB));
 	pcb->id_proceso = contadorProcesoId;

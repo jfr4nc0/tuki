@@ -5,19 +5,14 @@
 #include "includesExternas.h"
 
 // Librerias Internas
+#include "constantes.h"
 #include "../../shared/funciones.h"
 #include "../../shared/funcionesCliente.h"
 #include "../../shared/funcionesServidor.h"
-#include "constantes.h"
 #include "../../shared/constructor.h"
 #include "../../shared/constantes.h"
 #include "../../shared/structs.h"
 #include "variablesGlobales.h"
-
-extern t_log* kernelLogger;
-extern t_kernel_config* kernel_config;
-
-
 
 t_list* procesar_instrucciones(int, t_list*, t_log*, t_config*);
 void cargar_config_kernel(t_config*, t_log*);
@@ -26,12 +21,6 @@ void* recibir_de_consola(void*);
 void iterator(char* value);
 
 PCB* inicializar_pcb(int, t_list*);
-
-
-/* PCB */
-t_list* pid_list;
-
-int contadorProcesoId = 0;
 
 typedef struct {
 	int ID;
