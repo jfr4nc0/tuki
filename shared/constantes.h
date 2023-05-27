@@ -5,6 +5,9 @@
 
 #define LOCALHOST           "127.0.0.1"
 #define PUERTO_LOCAL        "PUERTO_ESCUCHA"
+#define ERROR               "ERROR"
+#define OK                  "OK"
+#define HANDSHAKE           "HANDSHAKE"
 
 // Signos
 #define ENTER             "\n"
@@ -16,6 +19,7 @@
 #define IP_CONFIG                 "IP_"
 #define PUERTO_CONFIG             "PUERTO_"
 #define LONGITUD_MAXIMA_CADENA    1000
+#define CANTIDAD_ESTADOS          5
 
 // Modulos
 #define CONSOLA                    "CONSOLA"
@@ -24,11 +28,20 @@
 #define KERNEL                     "KERNEL"
 #define MEMORIA                    "MEMORIA"
 
-#define ENUM_CONSOLA              0
-#define ENUM_CPU                  1
-#define ENUM_FILE_SYSTEM          2
-#define ENUM_KERNEL               3
-#define ENUM_MEMORIA              4
+// ENUMS
+
+#define ENUM_CONSOLA              	0
+#define ENUM_CPU                    1
+#define ENUM_FILE_SYSTEM            2
+#define ENUM_KERNEL               	3
+#define ENUM_MEMORIA              	4
+
+#define NEW                             "NEW"
+#define READY                           "READY"
+#define BLOCKED                         "BLOCKED"
+#define EXECUTING                       "EXECUTING"
+#define EXIT                            "EXIT"
+#define IO                              "I0"
 
 // DEBUG MENSAJES
 #define D__ESTABLECIENDO_CONEXION   "Estableciendo conexion"
@@ -37,8 +50,10 @@
 
 // INFO MENSAJES
 #define I__CONEXION_CREATE          "Conexion creada"
+#define I__CONEXION_ACCEPT          "Se conecto un cliente"
 #define I__DESCONEXION_CLIENTE      "El cliente se desconecto. Terminando servidor"
 #define I__SERVER_READY             "Servidor listo para recibir al cliente: "
+#define I_ESPERANDO_CONEXION        "Esperando conexiones..."
 
 
 // ERROR MENSAJES
@@ -46,8 +61,17 @@
 #define E__BAD_REQUEST         "BAD REQUEST"
 #define E__CONEXION_CREATE     "Error al crear conexion"
 #define E__CONEXION_CONNECT    "Error al conectar conexion"
+#define E__CONEXION_ACEPTAR    "Error al aceptar conexion"
 #define E__LOGGER_CREATE       "No se pudo crear logger"
 #define E__CONFIG_CREATE       "No se pudo crear config"
 #define E__PAQUETE_CREATE      "Error al crear paquete"
+
+const char* nombres_estados[] = {
+        NEW,
+        READY,
+        BLOCKED,
+        EXECUTING,
+        EXIT
+};
 
 #endif

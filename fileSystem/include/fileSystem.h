@@ -11,7 +11,6 @@
 #include<signal.h>
 #include<unistd.h>
 #include<sys/socket.h>
-#include<netdb.h>
 
 // Internas
 #include "../../shared/constantes.h"
