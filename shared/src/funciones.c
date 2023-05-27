@@ -19,10 +19,10 @@ char* cantidad_strings_a_mostrar(int cantidad) {
 char* extraer_de_config(t_config* config, char* property, t_log* logger) {
     if(config_has_property(config, property)) {
             char* valor = config_get_string_value(config, property);
-            log_trace(logger, "Se obtuvo el valor -> %s. En el config %s (%s)\n", valor, config->path, property);
+            log_trace(logger, "Se obtuvo el valor -> %s. En el config %s (%s)", valor, config->path, property);
             return valor;
     }
-    log_warning(logger, "No se pudo encontrar en el config (%s), la propiedad -> %s\n", config->path, property);
+    log_warning(logger, "No se pudo encontrar en el config (%s), la propiedad -> %s", config->path, property);
 
     return NULL;
 }
@@ -95,9 +95,9 @@ t_log* iniciar_logger(char* pathLog, int moduloPos) {
     }
 
     if (valoresPorDefecto) {
-    	log_warning(logger, cantidad_strings_a_mostrar(5), D__LOG_CREADO, "-> ", pathLog, " con valores por defecto", ENTER);
+    	log_warning(logger, cantidad_strings_a_mostrar(4), D__LOG_CREADO, "-> ", pathLog, " con valores por defecto");
     }else {
-        log_debug(logger, cantidad_strings_a_mostrar(4), D__LOG_CREADO, "-> ", pathLog, ENTER);
+        log_debug(logger, cantidad_strings_a_mostrar(3), D__LOG_CREADO, "-> ", pathLog);
     }
 
     return logger;
@@ -106,11 +106,11 @@ t_log* iniciar_logger(char* pathLog, int moduloPos) {
 t_config* iniciar_config(char* pathConfig, t_log* logger) {
     t_config* nuevo_config;
     if ((nuevo_config = config_create(pathConfig)) == NULL) {
-        log_error(logger, cantidad_strings_a_mostrar(2), E__CONFIG_CREATE, ENTER);
+        log_error(logger, E__CONFIG_CREATE);
         exit(1);
     }
 
-    log_debug(logger, cantidad_strings_a_mostrar(4), D__CONFIG_CREADO, "-> ", pathConfig, ENTER);
+    log_debug(logger, cantidad_strings_a_mostrar(3), D__CONFIG_CREADO, "-> ", pathConfig);
     return nuevo_config;
 }
 
@@ -135,6 +135,7 @@ long leer_long(char* buffer, int* desp) {
 	long respuesta;
 	memcpy(&respuesta, buffer + (*desp), sizeof(long));
 	(*desp)+=sizeof(long);
+
 	return respuesta;
 }
 
@@ -142,6 +143,7 @@ long long leer_long_long(char* buffer, int* desp) {
 	long long respuesta;
 	memcpy(&respuesta, buffer + (*desp), sizeof(long long));
 	(*desp)+=sizeof(long long);
+
 	return respuesta;
 }
 
@@ -149,6 +151,7 @@ float leer_float(char* buffer, int* desp) {
 	float respuesta;
 	memcpy(&respuesta, buffer + (*desp), sizeof(float));
 	(*desp)+=sizeof(float);
+
 	return respuesta;
 }
 
@@ -156,6 +159,7 @@ int leer_int(char* buffer, int* desp) {
 	int respuesta;
 	memcpy(&respuesta, buffer + (*desp), sizeof(int));
 	(*desp)+=sizeof(int);
+
 	return respuesta;
 }
 
@@ -186,5 +190,5 @@ const char* obtener_nombre_estado(pcb_estado estado){
 	if (estado >= ENUM_NEW) {
 		return nombres_estados[estado];
 	}
-	return "EL ESTADO NO ESTÁ REGISTRADO";
+	return "EL ESTADO NO ESTÁ REGISTRADO"; //TODO: Mejorar este mensaje
 }

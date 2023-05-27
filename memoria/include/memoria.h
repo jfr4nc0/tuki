@@ -9,6 +9,4 @@
 #include "../../shared/funcionesCliente.h"
 #include "../../shared/funcionesServidor.h"
 
-void handshakeConCPU(int);
-
 #endif

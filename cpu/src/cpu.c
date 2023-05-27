@@ -20,7 +20,6 @@ int main(int argc, char** argv) {
     int conexionCpuMemoria = armar_conexion(config, MEMORIA, loggerCpu);
 	conexionCpuKernel = armar_conexion(config, KERNEL, loggerCpu);
 
-    handshake_memoria(conexionCpuMemoria);
     // int clienteAceptado = esperar_cliente(servidorCpu, logger);
     inicializar_registros();
 
@@ -43,19 +42,6 @@ void cargar_config(t_config* config) {
 	configCpu->PUERTO_MEMORIA = config_get_string_value(config, "PUERTO_MEMORIA");
 	configCpu->PUERTO_ESCUCHA = config_get_string_value(config, "PUERTO_ESCUCHA");
 	configCpu->TAM_MAX_SEGMENTO = config_get_int_value(config, "TAM_MAX_SEGMENTO");
-}
-
-void handshake_memoria(int socket){
-	/* TODO: Joako: Lo voy a modificar el fin de semana del 28/05
-	send(socket, "CPU", 3, 0);
-	char* respuesta_de_memoria = receive(socket);
-	if (strcmp(respuesta_de_memoria, "MEMORIA") == 0) {
-	    printf("Handshake exitoso.\n");
-	} else {
-	    printf("Error en el handshake.\n");
-	}
-	free(respuesta_de_memoria);
-	*/
 }
 
 void inicializar_registros() {
@@ -169,10 +155,10 @@ void ejecutar_proceso(PCB* pcb) {
         log_info(loggerCpu, "PROGRAM COUNTER: %d", pcb->contador_instrucciones);
 
         usleep(atoi(configCpu->RETARDO_INSTRUCCION)*1000);
-        log_info(loggerCpu, cantidad_strings_a_mostrar(2), "Se suspendio el proceso por retardo de la instruccion...", ENTER);
+        log_info(loggerCpu, "Se suspendio el proceso por retardo de la instruccion...");
 	}
 
-    log_info(loggerCpu, cantidad_strings_a_mostrar(2), "Se salio de la ejecucion. Guardando el contexto de ejecucion...", ENTER);
+    log_info(loggerCpu, "Se salio de la ejecucion. Guardando el contexto de ejecucion...");
 	guardar_contexto_de_ejecucion(pcb);
 
 /*

@@ -5,6 +5,9 @@
 
 #define LOCALHOST           "127.0.0.1"
 #define PUERTO_LOCAL        "PUERTO_ESCUCHA"
+#define ERROR               "ERROR"
+#define OK                  "OK"
+#define HANDSHAKE           "HANDSHAKE"
 
 // Signos
 #define ENTER             "\n"
@@ -47,8 +50,10 @@
 
 // INFO MENSAJES
 #define I__CONEXION_CREATE          "Conexion creada"
+#define I__CONEXION_ACCEPT          "Se conecto un cliente"
 #define I__DESCONEXION_CLIENTE      "El cliente se desconecto. Terminando servidor"
-#define I__SERVER_READY             "Servidor listo para recibir al cliente:"
+#define I__SERVER_READY             "Servidor listo para recibir al cliente: "
+#define I_ESPERANDO_CONEXION        "Esperando conexiones..."
 
 
 // ERROR MENSAJES
@@ -56,6 +61,7 @@
 #define E__BAD_REQUEST         "BAD REQUEST"
 #define E__CONEXION_CREATE     "Error al crear conexion"
 #define E__CONEXION_CONNECT    "Error al conectar conexion"
+#define E__CONEXION_ACEPTAR    "Error al aceptar conexion"
 #define E__LOGGER_CREATE       "No se pudo crear logger"
 #define E__CONFIG_CREATE       "No se pudo crear config"
 #define E__PAQUETE_CREATE      "Error al crear paquete"

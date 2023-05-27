@@ -55,11 +55,8 @@ void cargar_config_kernel(t_config* config, t_log* kernelLogger) {
 
 void inicializar_escucha_conexiones_consolas(int servidorKernel){
 
-    log_info(kernelLogger, cantidad_strings_a_mostrar(2), "Esperando conexiones de las consolas...", ENTER);
-
     while(1){
         int clienteAceptado = esperar_cliente(servidorKernel, kernelLogger);
-        log_info(kernelLogger, cantidad_strings_a_mostrar(2), "Consola conectada!", ENTER);
         pthread_t hilo_consola;
         pthread_create(&hilo_consola, NULL, recibir_de_consola, (void*) (intptr_t) clienteAceptado);
         pthread_detach(hilo_consola);  //Los recursos asociados se liberan automáticamente al finalizar.

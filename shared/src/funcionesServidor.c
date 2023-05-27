@@ -32,7 +32,7 @@ int iniciar_servidor(t_config* config, t_log* logger) {
 
     // Escuchamos las conexiones entrantes
     listen(socket_servidor, SOMAXCONN);
-    log_info(logger, cantidad_strings_a_mostrar(2), I__SERVER_READY, ENTER);
+    log_info(logger, I__SERVER_READY);
 
     freeaddrinfo(servinfo);
 
@@ -43,23 +43,26 @@ int esperar_cliente(int socket_servidor, t_log* logger) {
     uint32_t handshake;
     uint32_t resultOk = 0;
     uint32_t resultError = -1;
+
+    log_info(logger, I_ESPERANDO_CONEXION);
+
     // Aceptamos un nuevo cliente
     int clienteAceptado = accept(socket_servidor, NULL, NULL);
     if (clienteAceptado == -1) {
-        log_error(logger, "Error al esperar cliente");
+        log_error(logger, E__CONEXION_ACEPTAR);
         return -1;
     }
 
-    log_info(logger, "¡Se conecto un cliente!\n");
+    log_info(logger, I__CONEXION_ACCEPT);
 
-    log_debug(logger, "Se realiza un handshake de parte del servidor\n");
+    log_debug(logger, "Se realiza un handshake de parte del servidor");
     recv(clienteAceptado, &handshake, sizeof(uint32_t), MSG_WAITALL);
 
     if(handshake == 1) {
         send(clienteAceptado, &resultOk, sizeof(uint32_t), 0);
-        log_info(logger, "Handshake OK\n");
+        log_info(logger, cantidad_strings_a_mostrar(2), HANDSHAKE, OK);
     } else {
-        log_error(logger, "Handshake ERROR\n");
+        log_error(logger, cantidad_strings_a_mostrar(2), HANDSHAKE, ERROR);
         send(clienteAceptado, &resultError, sizeof(uint32_t), 0);
     }
 
