@@ -21,7 +21,6 @@
 int iniciar_servidor(t_config*, t_log*);
 int esperar_cliente(int, t_log*);
 t_list* recibir_paquete(int);
-void recibir_mensaje(int);
 int recibir_operacion(int);
 void* recibir_buffer(int*, int);
 

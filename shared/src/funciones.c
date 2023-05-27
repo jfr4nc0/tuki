@@ -90,7 +90,7 @@ t_log* iniciar_logger(char* pathLog, int moduloPos) {
 
     t_log *logger;
     if (( logger = log_create(pathLog, modulo, mostrarConsola, log_level)) == NULL ) {
-        printf(cantidad_strings_a_mostrar(2), E__LOGGER_CREATE);
+        printf(cantidad_strings_a_mostrar(2), E__LOGGER_CREATE, ENTER);
         exit(1);
     }
 

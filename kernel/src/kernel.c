@@ -70,7 +70,7 @@ void* recibir_de_consola(void *clienteAceptado) {
         switch(codigoDeOperacion) {
             case OP_MENSAJE:
                 t_list* listaInstrucciones = recibir_paquete(socketAceptado);
-                log_info(kernelLogger, cantidad_strings_a_mostrar(2), "Me llegaron los siguientes valores:", ENTER);
+                log_info(kernelLogger, cantidad_strings_a_mostrar(2), "Me llegaron los siguientes valores: ");
                 list_iterate(listaInstrucciones, (void*) iterator);
                 PCB* pcb = inicializar_pcb(socketAceptado, listaInstrucciones);
                 list_destroy(listaInstrucciones);
@@ -94,7 +94,7 @@ PCB* inicializar_pcb(int clienteAceptado, t_list* listaInstrucciones) {
 }
 
 void iterator(char* value) {
-    log_info(kernelLogger,"%s", value);
+    log_info(kernelLogger, value);
 }
 
 // TODO: Cuando se instancia un nuevo PCB, se crea tambien las listas de los elementos necesarios

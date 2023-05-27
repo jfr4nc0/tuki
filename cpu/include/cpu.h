@@ -1,26 +1,24 @@
 #ifndef CPU_H_
 #define CPU_H_
 
-    #include <stdio.h>
-    #include <stdlib.h>
-    #include <string.h>
-    #include <unistd.h>
-    #include <commons/log.h>
-    #include <commons/string.h>
-    #include <commons/config.h>
-	#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <commons/log.h>
+#include <commons/string.h>
+#include <commons/config.h>
+#include <pthread.h>
 
-	// Internas
-//	#include "../../kernel/include/kernel.h"
-
-	#include "../../shared/funciones.h"
-	#include "../../shared/funcionesCliente.h"
-	#include "../../shared/funcionesServidor.h"
-	#include "../../shared/constructor.h"
-	#include "../../shared/constantes.h"
-	#include "../../shared/structs.h"
-    #include "../../shared/variablesGlobales.h"
-    #include "constantes.h"
+// Internas
+#include "../../shared/funciones.h"
+#include "../../shared/funcionesCliente.h"
+#include "../../shared/funcionesServidor.h"
+#include "../../shared/constructor.h"
+#include "../../shared/constantes.h"
+#include "../../shared/structs.h"
+#include "../../shared/variablesGlobales.h"
+#include "constantes.h"
 
 typedef struct {
 	char* RETARDO_INSTRUCCION;

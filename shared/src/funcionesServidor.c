@@ -1,14 +1,5 @@
 #include "../funcionesServidor.h"
 
-/*
-void recibir_mensaje(int clienteAceptado, ) {
-    int size;
-    char* buffer = recibir_buffer(&size, clienteAceptado);
-    log_info(logger, "Me llego el mensaje %s", buffer);
-    free(buffer);
-}
-*/
-
 int iniciar_servidor(t_config* config, t_log* logger) {
     int socket_servidor;
     char* puerto = extraer_de_config(config, PUERTO_LOCAL, logger);

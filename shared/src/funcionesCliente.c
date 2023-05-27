@@ -10,7 +10,7 @@ int armar_conexion(t_config* config, char* modulo, t_log* logger) {
     char* ip = extraer_de_modulo_config(config, IP_CONFIG, modulo, logger);
     char* puerto = extraer_de_modulo_config(config, PUERTO_CONFIG, modulo, logger);
 
-    log_debug(logger, cantidad_strings_a_mostrar(2), D__ESTABLECIENDO_CONEXION, ENTER);
+    log_debug(logger, D__ESTABLECIENDO_CONEXION);
 
     return crear_conexion(ip, puerto, logger);
 }
@@ -31,8 +31,6 @@ void* serializar_paquete(t_paquete* paquete, int bytes) {
 
 int crear_conexion(char *ip, char* puerto, t_log* logger) {
     struct addrinfo hints, *server_info;
-    uint32_t handshake = 1;
-    uint32_t result;
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;
@@ -48,15 +46,18 @@ int crear_conexion(char *ip, char* puerto, t_log* logger) {
 
     // Ahora que tenemos el socket, vamos a conectarlo
     if (connect(clienteAceptado, server_info->ai_addr, server_info->ai_addrlen) != -1) {
-        log_info(logger, cantidad_strings_a_mostrar(2), I__CONEXION_CREATE, ENTER);
+        uint32_t handshake = 1;
+        uint32_t result;
+
+        log_info(logger, I__CONEXION_CREATE);
+
+        send(clienteAceptado, &handshake, sizeof(uint32_t), 0);
+        recv(clienteAceptado, &result, sizeof(uint32_t), MSG_WAITALL);
     } else {
-        log_error(logger, cantidad_strings_a_mostrar(2), E__CONEXION_CONNECT, ENTER);
+        log_error(logger, E__CONEXION_CONNECT);
     }
 
     freeaddrinfo(server_info);
-
-    send(clienteAceptado, &handshake, sizeof(uint32_t), 0);
-    recv(clienteAceptado, &result, sizeof(uint32_t), MSG_WAITALL);
 
     return clienteAceptado;
 }
@@ -76,7 +77,7 @@ void enviar_mensaje(char* mensaje, int clienteAceptado, t_log* logger) {
 
     send(clienteAceptado, a_enviar, bytes, 0);
 
-    log_debug(logger, cantidad_strings_a_mostrar(3), "Se envió valor ", mensaje, ENTER);
+    log_debug(logger, cantidad_strings_a_mostrar(2), "Se envió valor ", mensaje);
 
     free(a_enviar);
     eliminar_paquete(paquete);
