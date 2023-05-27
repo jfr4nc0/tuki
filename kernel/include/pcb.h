@@ -17,13 +17,13 @@ t_list* pid_list;
 int contadorProcesoId = 0;
 
 typedef struct {
-	int ID;
+	int  id;
 	// direccion_base, de que tipo??
 	int tamanio;
 }t_segmento;
 
 typedef struct {
-    int ID; // File descriptor
+    int  id; // File descriptor
     int posicion_puntero;
 } archivo_abierto_t;
 

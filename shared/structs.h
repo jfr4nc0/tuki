@@ -20,6 +20,18 @@ typedef struct {
     t_buffer* buffer;
 }t_paquete;
 
+
+typedef struct {
+    int  id; // File descriptor
+    int posicion_puntero;
+} archivo_abierto_t;
+
+typedef struct {
+	int  id; // direccion_base, de que tipo??
+	int tamanio;
+}t_segmento;
+
+
 //TODO: POSIBLE CAMBIO
 /*
 typedef struct {
@@ -82,5 +94,23 @@ typedef struct {
 	float processor_burst; // Estimacion utilizada para planificar los procesos en el algoritmo HRRN, la misma tendra un valor inicial definido por archivo de config y sera recalculada bajo la formula de promedio ponderado
 	int ready_timestamp; // Timestamp en que el proceso llegó a ready por última vez (utilizado para el cálculo de tiempo de espera del algoritmo HRRN).
 }PCB;
+
+typedef struct {
+    //char* IP_KERNEL;
+	//char* PUERTO_KERNEL;
+	char* IP_MEMORIA;
+	char* PUERTO_MEMORIA;
+    char* IP_FILE_SYSTEM;
+    char* PUERTO_FILE_SYSTEM;
+    char* IP_CPU;
+    char* PUERTO_CPU;
+    char* PUERTO_ESCUCHA;
+    char* ALGORITMO_PLANIFICACION;
+    char* ESTIMACION_INICIAL;
+    double HRRN_ALFA;
+    int GRADO_MAX_MULTIPROGRAMACION;
+    char** RECURSOS;
+    char** INSTANCIAS_RECURSOS;
+} t_kernel_config;
 
 #endif

@@ -8,6 +8,7 @@
     #include <commons/log.h>
     #include <commons/string.h>
     #include <commons/config.h>
+	#include <pthread.h>
 
 	// Internas
 //	#include "../../kernel/include/kernel.h"
@@ -18,7 +19,7 @@
 	#include "../../shared/constructor.h"
 	#include "../../shared/constantes.h"
 	#include "../../shared/structs.h"
-    #include "../../kernel/include/variablesGlobales.h"
+    #include "../../shared/variablesGlobales.h"
     #include "constantes.h"
 
 typedef struct {

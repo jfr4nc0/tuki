@@ -1,4 +1,7 @@
 #include "../include/cpu.h"
+#include "../../shared/src/funciones.c"
+#include "../../shared/src/funcionesServidor.c"
+#include "../../shared/src/funcionesCliente.c"
 
 t_log* loggerCpu;
 cpu_config_t* configCpu;
@@ -72,19 +75,19 @@ void inicializar_registros() {
 }
 
 void* procesar_instruccion(int servidorCPU) {
-	int socket_kernel = accept(servidorCPU, NULL, NULL);
+	int clienteAceptado = esperar_cliente(servidorCPU, loggerCpu);
 	PCB* pcb;
-	pcb = recibir_pcb(servidorCPU);
+	pcb = recibir_pcb(clienteAceptado);
 	ejecutar_proceso(pcb);
 }
 
-PCB* recibir_pcb(int servidor) {
+PCB* recibir_pcb(int clienteAceptado) {
 	PCB* pcb = malloc(sizeof(PCB));
 	char* buffer;
 	int tamanio = 0;
 	int desplazamiento = 0;
 
-	buffer = recibir_buffer(&tamanio, servidor);
+	buffer = recibir_buffer(&tamanio, clienteAceptado);
 
 	pcb->id_proceso = leer_int(buffer, &desplazamiento);
 	pcb->lista_instrucciones = leer_string_array(buffer, &desplazamiento);
@@ -107,7 +110,7 @@ PCB* recibir_pcb(int servidor) {
 	for (int i = 0; i < cantidad_de_segmentos; i++) {
 	    t_segmento* segmento = malloc(sizeof(t_segmento));
 
-	    segmento->ID = leer_int(buffer, &desplazamiento);
+	    segmento-> id = leer_int(buffer, &desplazamiento);
 	    //segmento->direccion_base = leer_int(buffer, &desplazamiento);
 	    segmento->tamanio = leer_int(buffer, &desplazamiento);
 
@@ -122,7 +125,7 @@ PCB* recibir_pcb(int servidor) {
 	for (int i = 0; i < cantidad_de_archivos; i++) {
 			archivo_abierto_t* archivo_abierto = malloc(sizeof(archivo_abierto_t));
 
-		    archivo_abierto->ID = leer_int(buffer, &desplazamiento);
+		    archivo_abierto-> id = leer_int(buffer, &desplazamiento);
 		    archivo_abierto->posicion_puntero = leer_int(buffer, &desplazamiento);
 
 		    list_add(pcb->lista_archivos_abiertos, archivo_abierto);
@@ -166,10 +169,10 @@ void ejecutar_proceso(PCB* pcb) {
         log_info(loggerCpu, "PROGRAM COUNTER: %d", pcb->contador_instrucciones);
 
         usleep(atoi(configCpu->RETARDO_INSTRUCCION)*1000);
-        log_info(loggerCpu, "Se suspendio el proceso por retardo de la instruccion...", ENTER);
+        log_info(loggerCpu, cantidad_strings_a_mostrar(2), "Se suspendio el proceso por retardo de la instruccion...", ENTER);
 	}
 
-    log_info(loggerCpu, "Se salio de la ejecucion. Guardando el contexto de ejecucion...", ENTER);
+    log_info(loggerCpu, cantidad_strings_a_mostrar(2), "Se salio de la ejecucion. Guardando el contexto de ejecucion...", ENTER);
 	guardar_contexto_de_ejecucion(pcb);
 
 /*

@@ -40,13 +40,28 @@ int iniciar_servidor(t_config* config, t_log* logger) {
 }
 
 int esperar_cliente(int socket_servidor, t_log* logger) {
+    uint32_t handshake;
+    uint32_t resultOk = 0;
+    uint32_t resultError = -1;
     // Aceptamos un nuevo cliente
     int clienteAceptado = accept(socket_servidor, NULL, NULL);
     if (clienteAceptado == -1) {
         log_error(logger, "Error al esperar cliente");
+        return -1;
     }
 
-    log_info(logger, "Se conecto un cliente!\n");
+    log_info(logger, "¡Se conecto un cliente!\n");
+
+    log_debug(logger, "Se realiza un handshake de parte del servidor\n");
+    recv(clienteAceptado, &handshake, sizeof(uint32_t), MSG_WAITALL);
+
+    if(handshake == 1) {
+        send(clienteAceptado, &resultOk, sizeof(uint32_t), 0);
+        log_info(logger, "Handshake OK\n");
+    } else {
+        log_error(logger, "Handshake ERROR\n");
+        send(clienteAceptado, &resultError, sizeof(uint32_t), 0);
+    }
 
     return clienteAceptado;
 }

@@ -31,6 +31,8 @@ void* serializar_paquete(t_paquete* paquete, int bytes) {
 
 int crear_conexion(char *ip, char* puerto, t_log* logger) {
     struct addrinfo hints, *server_info;
+    uint32_t handshake = 1;
+    uint32_t result;
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;
@@ -45,13 +47,16 @@ int crear_conexion(char *ip, char* puerto, t_log* logger) {
             server_info->ai_protocol);
 
     // Ahora que tenemos el socket, vamos a conectarlo
-    if (connect(clienteAceptado, server_info->ai_addr, server_info->ai_addrlen) == -1) {
-        log_error(logger, cantidad_strings_a_mostrar(2), E__CONEXION_CONNECT, ENTER);
-    }else {
+    if (connect(clienteAceptado, server_info->ai_addr, server_info->ai_addrlen) != -1) {
         log_info(logger, cantidad_strings_a_mostrar(2), I__CONEXION_CREATE, ENTER);
+    } else {
+        log_error(logger, cantidad_strings_a_mostrar(2), E__CONEXION_CONNECT, ENTER);
     }
 
     freeaddrinfo(server_info);
+
+    send(clienteAceptado, &handshake, sizeof(uint32_t), 0);
+    recv(clienteAceptado, &result, sizeof(uint32_t), MSG_WAITALL);
 
     return clienteAceptado;
 }

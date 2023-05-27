@@ -16,6 +16,7 @@ int main(int argc, char** argv) {
     inicializar_semaforos();
     inicializar_listas_estados();
     inicializar_diccionario_recursos();
+    inicializar_planificador();
 
     // Conexiones con los demas modulos
     int conexionCPU = armar_conexion(config, CPU, kernelLogger);
@@ -23,8 +24,6 @@ int main(int argc, char** argv) {
     int conexionFileSystem = armar_conexion(config, FILE_SYSTEM, kernelLogger);
 
     int servidorKernel = iniciar_servidor(config, kernelLogger);
-
-    inicializar_planificador();
 
     // TODO: Manejar multiples instancias de conexiones de consola al kernel
     inicializar_escucha_conexiones_consolas(servidorKernel);
@@ -54,13 +53,6 @@ void cargar_config_kernel(t_config* config, t_log* kernelLogger) {
     return;
 }
 
-t_list* procesar_instrucciones(int clienteAceptado,t_list* lista_instrucciones, t_log* kernelLogger, t_config* config){
-    int instruccion = recibir_operacion(clienteAceptado);
-    lista_instrucciones = recibir_paquete(clienteAceptado);
-
-    return lista_instrucciones;
-}
-
 void inicializar_escucha_conexiones_consolas(int servidorKernel){
 
     log_info(kernelLogger, cantidad_strings_a_mostrar(2), "Esperando conexiones de las consolas...", ENTER);
@@ -75,7 +67,7 @@ void inicializar_escucha_conexiones_consolas(int servidorKernel){
 }
 
 void* recibir_de_consola(void *clienteAceptado) {
-	int  socketAceptado = (int) (intptr_t )clienteAceptado;
+	int  socketAceptado = (int) (intptr_t)clienteAceptado;
     while(1){  // Queda en un estado de espera activa para la comunicación continua entre los módulos.
         int codigoDeOperacion = recibir_operacion(socketAceptado);
         switch(codigoDeOperacion) {

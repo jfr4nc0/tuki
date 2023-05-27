@@ -12,7 +12,7 @@
 #include "../../shared/constructor.h"
 #include "../../shared/constantes.h"
 #include "../../shared/structs.h"
-#include "variablesGlobales.h"
+#include "../../shared/variablesGlobales.h"
 
 t_list* procesar_instrucciones(int, t_list*, t_log*, t_config*);
 void cargar_config_kernel(t_config*, t_log*);
@@ -21,17 +21,6 @@ void* recibir_de_consola(void*);
 void iterator(char* value);
 
 PCB* inicializar_pcb(int, t_list*);
-
-typedef struct {
-	int ID;
-	// direccion_base, de que tipo??
-	int tamanio;
-}t_segmento;
-
-typedef struct {
-    int ID; // File descriptor
-    int posicion_puntero;
-} archivo_abierto_t;
 
 PCB* new_pcb(int, t_list*);
 ///////////////////////////

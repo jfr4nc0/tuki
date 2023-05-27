@@ -37,11 +37,13 @@ void validarArgumentos(int argc, char** argv) {
     }
 }
 
+/*
+ * Se extraen las instrucciones del .txt y se envian a Kernel
+ *
+ */
 void enviarInstrucciones(char* pathInstrucciones, int conexion_kernel, t_log* logger){
 	t_paquete* paquete = crear_paquete(OP_PAQUETE);
 
-	// Se extraen las instrucciones del .txt y se envian a Kernel
-	// TODO: Funcion rota, arreglar
 	FILE *instrucciones;
 	if( (instrucciones = fopen(pathInstrucciones, MODO_LECTURA_ARCHIVO)) == NULL ){
 		log_error(logger, E__ARCHIVO_CREATE);
@@ -51,7 +53,6 @@ void enviarInstrucciones(char* pathInstrucciones, int conexion_kernel, t_log* lo
 
 	    while (fgets(instruccion, LONGITUD_MAXIMA_CADENA, instrucciones) != NULL) {
 	        strtok(instruccion, "$"); // Removemos el salto de linea
-	        printf(instruccion);
 	        agregar_a_paquete(paquete, instruccion, strlen(instruccion));
 	    }
 
