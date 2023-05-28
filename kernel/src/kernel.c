@@ -4,14 +4,23 @@
 #include "../../shared/src/funcionesServidor.c"
 
 t_log* kernelLogger;
-t_kernel_config* kernel_config;
+t_kernel_config* kernelConfig;
+
+void liberar_recursos_kernel() {
+    free(kernelConfig);
+    liberar_listas_estados();
+    liberar_conexion(conexionCPU);
+    liberar_conexion(conexionMemoria);
+    liberar_conexion(conexionFileSystem);
+}
+
 
 int main(int argc, char** argv) {
 	kernelLogger = iniciar_logger(PATH_LOG_KERNEL, ENUM_KERNEL);
     t_config* config = iniciar_config(PATH_CONFIG_KERNEL, kernelLogger);
     cargar_config_kernel(config, kernelLogger);
 
-    log_debug(kernelLogger, "Vamos a usar el algoritmo %s", kernel_config->ALGORITMO_PLANIFICACION);
+    log_debug(kernelLogger, "Vamos a usar el algoritmo %s", kernelConfig->ALGORITMO_PLANIFICACION);
 
     inicializar_semaforos();
     inicializar_listas_estados();
@@ -19,42 +28,45 @@ int main(int argc, char** argv) {
     inicializar_planificador();
 
     // Conexiones con los demas modulos
-    int conexionCPU = armar_conexion(config, CPU, kernelLogger);
-    int conexionMemoria = armar_conexion(config, MEMORIA, kernelLogger);
-    int conexionFileSystem = armar_conexion(config, FILE_SYSTEM, kernelLogger);
+    conexionCPU = armar_conexion(config, CPU, kernelLogger);
+    conexionMemoria = armar_conexion(config, MEMORIA, kernelLogger);
+    conexionFileSystem = armar_conexion(config, FILE_SYSTEM, kernelLogger);
 
     int servidorKernel = iniciar_servidor(config, kernelLogger);
 
     // TODO: Manejar multiples instancias de conexiones de consola al kernel
     inicializar_escucha_conexiones_consolas(servidorKernel);
 
+
+    terminar_programa(servidorKernel, kernelLogger, config);
+    liberar_recursos_kernel();
+
     return 0;
 }
 
 void cargar_config_kernel(t_config* config, t_log* kernelLogger) {
-	kernel_config = malloc(sizeof(t_kernel_config));
+    kernelConfig = malloc(sizeof(t_kernel_config));
 
-    kernel_config->IP_MEMORIA = extraer_de_config(config, "IP_MEMORIA", kernelLogger);
-    kernel_config->PUERTO_MEMORIA = extraer_de_config(config, "PUERTO_MEMORIA", kernelLogger);
-    kernel_config->IP_FILE_SYSTEM = extraer_de_config(config, "IP_FILE_SYSTEM", kernelLogger);
-    kernel_config->PUERTO_FILE_SYSTEM = extraer_de_config(config, "PUERTO_FILE_SYSTEM", kernelLogger);
-    kernel_config->IP_CPU = extraer_de_config(config, "IP_CPU", kernelLogger);
-    kernel_config->PUERTO_CPU = extraer_de_config(config, "PUERTO_CPU", kernelLogger);
-    kernel_config->PUERTO_ESCUCHA = extraer_de_config(config, "PUERTO_ESCUCHA", kernelLogger);
-    kernel_config->ALGORITMO_PLANIFICACION = extraer_de_config(config, "ALGORITMO_PLANIFICACION", kernelLogger);
-    kernel_config->ESTIMACION_INICIAL = extraer_de_config(config, "ESTIMACION_INICIAL", kernelLogger);
-    kernel_config->HRRN_ALFA = config_get_double_value(config, "HRRN_ALFA");
-    kernel_config->GRADO_MAX_MULTIPROGRAMACION = config_get_int_value(config, "GRADO_MAX_MULTIPROGRAMACION");
-    kernel_config->RECURSOS = config_get_array_value(config, "RECURSOS");
-    kernel_config->INSTANCIAS_RECURSOS = config_get_array_value(config, "INSTANCIAS_RECURSOS");
+    kernelConfig->IP_MEMORIA = extraer_de_config(config, "IP_MEMORIA", kernelLogger);
+    kernelConfig->PUERTO_MEMORIA = extraer_de_config(config, "PUERTO_MEMORIA", kernelLogger);
+    kernelConfig->IP_FILE_SYSTEM = extraer_de_config(config, "IP_FILE_SYSTEM", kernelLogger);
+    kernelConfig->PUERTO_FILE_SYSTEM = extraer_de_config(config, "PUERTO_FILE_SYSTEM", kernelLogger);
+    kernelConfig->IP_CPU = extraer_de_config(config, "IP_CPU", kernelLogger);
+    kernelConfig->PUERTO_CPU = extraer_de_config(config, "PUERTO_CPU", kernelLogger);
+    kernelConfig->PUERTO_ESCUCHA = extraer_de_config(config, "PUERTO_ESCUCHA", kernelLogger);
+    kernelConfig->ALGORITMO_PLANIFICACION = extraer_de_config(config, "ALGORITMO_PLANIFICACION", kernelLogger);
+    kernelConfig->ESTIMACION_INICIAL = extraer_de_config(config, "ESTIMACION_INICIAL", kernelLogger);
+    kernelConfig->HRRN_ALFA = config_get_double_value(config, "HRRN_ALFA");
+    kernelConfig->GRADO_MAX_MULTIPROGRAMACION = config_get_int_value(config, "GRADO_MAX_MULTIPROGRAMACION");
+    kernelConfig->RECURSOS = config_get_array_value(config, "RECURSOS");
+    kernelConfig->INSTANCIAS_RECURSOS = config_get_array_value(config, "INSTANCIAS_RECURSOS");
 
-    log_info(kernelLogger, "Config cargada en  'kernel_config' ");
+    log_info(kernelLogger, "Config cargada en  'kernelConfig' ");
 
     return;
 }
 
 void inicializar_escucha_conexiones_consolas(int servidorKernel){
-
     while(1){
         int clienteAceptado = esperar_cliente(servidorKernel, kernelLogger);
         pthread_t hilo_consola;
@@ -65,45 +77,46 @@ void inicializar_escucha_conexiones_consolas(int servidorKernel){
 
 void* recibir_de_consola(void *clienteAceptado) {
 	int  socketAceptado = (int) (intptr_t)clienteAceptado;
-    while(1){  // Queda en un estado de espera activa para la comunicación continua entre los módulos.
-        int codigoDeOperacion = recibir_operacion(socketAceptado);
-        switch(codigoDeOperacion) {
-            case OP_MENSAJE:
-                t_list* listaInstrucciones = recibir_paquete(socketAceptado);
-                log_info(kernelLogger, cantidad_strings_a_mostrar(2), "Me llegaron los siguientes valores: ");
-                list_iterate(listaInstrucciones, (void*) iterator);
-                PCB* pcb = inicializar_pcb(socketAceptado, listaInstrucciones);
-                list_destroy(listaInstrucciones);
-                break;
-        }
+    int codigoDeOperacion = recibir_operacion(socketAceptado);
+
+    switch(codigoDeOperacion) {
+        case OP_PAQUETE:
+            t_list* listaInstrucciones = recibir_paquete(socketAceptado);
+
+            log_info(kernelLogger, "Me llegaron los siguientes valores: ");
+            list_iterate(listaInstrucciones, (void*) iterator);
+
+            PCB* pcb = inicializar_pcb(socketAceptado, listaInstrucciones);
+            proximo_a_ejecutar();
+
+            list_destroy(listaInstrucciones);
+            break;
     }
+
+    liberar_conexion(socketAceptado);
 }
 
 PCB* inicializar_pcb(int clienteAceptado, t_list* listaInstrucciones) {
-
 	sem_wait(&sem_creacion_pcb);
-
     PCB* pcb = new_pcb(clienteAceptado, listaInstrucciones);
-
-
     log_info(kernelLogger, "valor id: %d", pcb->id_proceso);
-
     sem_post(&sem_creacion_pcb);
 
     return pcb;
 }
 
 void iterator(char* value) {
-    log_info(kernelLogger, value);
+    log_info(kernelLogger, "%s ", value);
 }
 
 // TODO: Cuando se instancia un nuevo PCB, se crea tambien las listas de los elementos necesarios
 PCB* new_pcb(int clienteAceptado, t_list* lista_instrucciones) {
-//	NUEVO(pcb,PCB);
 	PCB* pcb = malloc(sizeof(PCB));
 	pcb->id_proceso = contadorProcesoId;
 	contadorProcesoId++;
-	pcb->lista_instrucciones = lista_instrucciones;
+    pcb->lista_instrucciones = lista_instrucciones;
+    pcb->estado = ENUM_NEW;
+    agregar_a_lista(pcb, lista_estados[ENUM_NEW], m_listas[ENUM_NEW]);
 
 	return pcb;
 }
@@ -123,6 +136,13 @@ void inicializar_planificador() {
 void inicializar_listas_estados() {
 	for (int estado = 0; estado < CANTIDAD_ESTADOS; estado++) {
 		lista_estados[estado] = list_create();
+        sem_init(&m_listas[estado], 0, 1);
+	}
+}
+
+void liberar_listas_estados() {
+    for (int estado = 0; estado < CANTIDAD_ESTADOS; estado++) {
+        sem_destroy(&m_listas[estado]);
 	}
 }
 
@@ -130,8 +150,8 @@ void inicializar_diccionario_recursos() {
     diccionario_recursos = dictionary_create();
 
     int indice = 0;
-    while(kernel_config->RECURSOS[indice] != NULL && kernel_config->INSTANCIAS_RECURSOS[indice] != NULL) {
-        crear_cola_recursos(kernel_config->RECURSOS[indice], atoi(kernel_config->INSTANCIAS_RECURSOS[indice]));
+    while(kernelConfig->RECURSOS[indice] != NULL && kernelConfig->INSTANCIAS_RECURSOS[indice] != NULL) {
+        crear_cola_recursos(kernelConfig->RECURSOS[indice], atoi(kernelConfig->INSTANCIAS_RECURSOS[indice]));
 
         indice++;
     }
@@ -155,49 +175,54 @@ void crear_cola_recursos(char* nombre_recurso, int instancias) {
 }
 
 void inicializar_semaforos() {
-	sem_init(&sem_grado_multiprogamacion, 0, kernel_config->GRADO_MAX_MULTIPROGRAMACION);
+	sem_init(&sem_grado_multiprogamacion, 0, kernelConfig->GRADO_MAX_MULTIPROGRAMACION);
 	sem_init(&sem_proceso_en_ready, 0, 0);
 	sem_init(&sem_cpu_disponible, 0, 1);
 	sem_init(&sem_creacion_pcb, 0, 1);
 	// sem_init(&sem_proceso_a_ready,0,1);
 }
 
-void proximo_a_ejecutar(){
+void proximo_a_ejecutar() {
 	while(1){
 		sem_wait(&sem_proceso_en_ready);
 	    sem_wait(&sem_cpu_disponible);
-	    if(strcmp(kernel_config->ALGORITMO_PLANIFICACION, "FIFO") == 0) {
-	    	log_info(kernelLogger, "Entre por FIFO");
-
-	        pthread_mutex_lock(&m_lista_READY);
-	        PCB* pcb_a_ejecutar = list_remove(lista_estados[ENUM_READY], 0);
-	        pthread_mutex_unlock(&m_lista_READY);
-
-	        cambio_de_estado(pcb_a_ejecutar, ENUM_EXECUTING, lista_estados[ENUM_EXECUTING], m_lista_EXECUTING);
-
-	        log_info(kernelLogger, "El proceso %d cambio su estado a RUNNING", pcb_a_ejecutar->id_proceso);
-	        log_info(kernelLogger,"PID: %d - Estado Anterior: READY - Estado Actual: RUNNING", pcb_a_ejecutar->id_proceso);
-
+	    if(strcmp(kernelConfig->ALGORITMO_PLANIFICACION, "FIFO") == 0) {
+	    	log_info(kernelLogger, "Planificación FIFO escogida.");
+	        PCB* pcbProximo = cambio_de_estado(0, ENUM_READY, ENUM_EXECUTING);
+            sem_post(&sem_proceso_en_ready);
 	    } else {
             log_error(kernelLogger, "No es posible utilizar el algoritmo especificado.");
         }
     }
 }
 
-void cambio_de_estado(PCB* pcb, pcb_estado estado, t_list* lista, pthread_mutex_t mutex) {
-    cambiar_estado_pcb_a(pcb, estado);
-    agregar_a_lista(pcb, lista, mutex);
-    log_info(kernelLogger, cantidad_strings_a_mostrar(2), "El pcb entro en la cola de ", obtener_nombre_estado(estado));
+PCB* cambio_de_estado(int posicion, pcb_estado estadoAnterior, pcb_estado estadoNuevo) {
+    // TODO: ¿No puede saberse por el pcb el estado anterior? No se si anda la idea de que devuelva un PCB*
+    PCB* pcb = remover_de_lista(posicion, lista_estados[estadoAnterior], m_listas[estadoAnterior]);
+    agregar_a_lista(pcb, lista_estados[estadoNuevo], m_listas[estadoNuevo]);
+    pcb->estado = estadoNuevo;
+
+    // TODO: ¿No son demasiados logs?
+    const char* estadoActual = obtener_nombre_estado(estadoNuevo);
+    const char* estadoViejo = obtener_nombre_estado(estadoAnterior);
+    log_info(kernelLogger, cantidad_strings_a_mostrar(2), "El pcb entró en la cola de ", estadoActual);
+    log_info(kernelLogger, "El proceso %d cambio su estado a %s ", pcb->id_proceso, estadoActual);
+    log_info(kernelLogger,"PID: %d - Estado Anterior: %s - Estado Actual: %s", pcb->id_proceso, estadoViejo, estadoActual);
+
+    return pcb;
 }
 
-void cambiar_estado_pcb_a(PCB* pcb, pcb_estado nuevoEstado){
-    pcb->estado = nuevoEstado;
-}
-
-void agregar_a_lista(PCB* pcb, t_list* lista, pthread_mutex_t m_sem){
-    pthread_mutex_lock(&m_sem);
+void agregar_a_lista(PCB* pcb, t_list* lista, sem_t m_sem) {
+    sem_wait(&m_sem);
     list_add(lista, pcb);
-    pthread_mutex_unlock(&m_sem);
+    sem_post(&m_sem);
+}
+
+PCB* remover_de_lista(int posicion, t_list* lista, sem_t m_sem) {
+	sem_wait(&m_sem);
+    PCB* pcb = list_remove(lista, posicion);
+    sem_post(&m_sem);
+    return pcb;
 }
 
 /////////////

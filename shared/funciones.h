@@ -18,13 +18,12 @@ t_config* iniciar_config(char*, t_log*);
 void terminar_programa(int, t_log*, t_config*);
 void liberar_conexion(int);
 bool obtener_valores_para_logger(int, bool*, t_log_level*, char**);
-char** leer_string_array(char* buffer, int* desp);
 long leer_long(char* buffer, int* desp);
 long long leer_long_long(char* buffer, int* desp);
 float leer_float(char* buffer, int* desp);
 int leer_int(char* buffer, int* desp);
 char* leer_string(char* buffer, int* desp);
-char** leer_string_array(char* buffer, int* desp);
+t_list* leer_string_array(char* buffer, int* desp);
 const char* obtener_nombre_estado(pcb_estado);
 
 #endif

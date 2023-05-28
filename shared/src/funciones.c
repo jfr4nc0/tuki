@@ -127,8 +127,10 @@ void terminar_programa(int conexion, t_log* logger, t_config* config) {
     liberar_conexion(conexion);
 }
 
-void liberar_conexion(int clienteAceptado) {
-    close(clienteAceptado);
+void liberar_conexion(int conexion) {
+    if (conexion > 0) {
+        close(conexion);
+    }
 }
 
 long leer_long(char* buffer, int* desp) {
@@ -173,17 +175,16 @@ char* leer_string(char* buffer, int* desp){
 	return respuesta;
 }
 
-char** leer_string_array(char* buffer, int* desp) {
+t_list* leer_string_array(char* buffer, int* desp) {
     int length = leer_int(buffer, desp);
-    char** arr = malloc((length + 1) * sizeof(char*));
+    t_list* lista_instrucciones = list_create();
 
     for(int i = 0; i < length; i++)
     {
-        arr[i] = leer_string(buffer, desp);
+        list_add(lista_instrucciones, leer_string(buffer, desp));
     }
-    arr[length] = NULL;
 
-    return arr;
+    return lista_instrucciones;
 }
 
 const char* obtener_nombre_estado(pcb_estado estado){

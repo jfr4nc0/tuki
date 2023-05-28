@@ -1,7 +1,7 @@
 #ifndef FILE_SYSTEM_CONSTANTES_H_
 #define FILE_SYSTEM_CONSTANTES_H_
 
-#define DEFAULT_LOG_PATH        "logs/file_system.log"
+#define DEFAULT_LOG_PATH        "../logs/file_system.log"
 #define DEFAULT_CONFIG_PATH     "file_system.config"
 
 //// LOGS

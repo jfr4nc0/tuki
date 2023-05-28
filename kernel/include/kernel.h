@@ -32,14 +32,6 @@ pthread_t planificador_corto_plazo;
 pthread_t thread_memoria;
 pthread_t thread_cpu;
 
-pthread_mutex_t m_lista_NEW;
-pthread_mutex_t m_lista_READY;
-pthread_mutex_t m_lista_READY_FIFO;
-pthread_mutex_t m_lista_BLOCKED;
-pthread_mutex_t m_lista_EXECUTING;
-pthread_mutex_t m_lista_EXIT;
-pthread_mutex_t m_lista_IO;
-
 typedef struct{
     char* nombre;
     int instancias;
@@ -62,9 +54,11 @@ sem_t sem_proceso_a_ready;
 void inicializar_planificador();
 void inicializar_listas_estados();
 void proximo_a_ejecutar();
-void cambio_de_estado(PCB*, pcb_estado, t_list*, pthread_mutex_t);
-void cambiar_estado_pcb_a(PCB*, pcb_estado);
-void agregar_a_lista(PCB*, t_list*, pthread_mutex_t);
+PCB* cambio_de_estado(int, pcb_estado estadoAnterior, pcb_estado estadoNuevo);
+void agregar_a_lista(PCB*, t_list*, sem_t);
+void liberar_listas_estados();
+
+PCB* remover_de_lista(int, t_list*, sem_t);
 ////////////////////
 
 #endif

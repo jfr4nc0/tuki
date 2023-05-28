@@ -1,6 +1,7 @@
 #include "../include/memoria.h"
 
 #include "../../shared/src/funciones.c"
+#include "../../shared/src/funcionesServidor.c"
 
 int main(int argc, char** argv) {
     t_log* logger = iniciar_logger(DEFAULT_LOG_PATH, ENUM_MEMORIA);
@@ -9,5 +10,7 @@ int main(int argc, char** argv) {
     int servidorMemoria = iniciar_servidor(config, logger);
     esperar_cliente(servidorMemoria, logger);
 
-    //terminar_programa(cliente_aceptado, logger, config);
+    terminar_programa(servidorMemoria, logger, config);
+
+	return 0;
 }

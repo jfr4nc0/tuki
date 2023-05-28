@@ -13,7 +13,10 @@
 #include<sys/socket.h>
 
 // Internas
-#include "../../shared/constantes.h"
 #include "constantes.h"
+#include "../../shared/constantes.h"
+#include "../../shared/funciones.h"
+#include "../../shared/funcionesServidor.h"
+#include "../../shared/funcionesCliente.h"
 
 #endif

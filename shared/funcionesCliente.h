@@ -26,5 +26,6 @@ void agregar_a_paquete(t_paquete*, void*, int);
 void enviar_paquete(t_paquete*, int);
 void eliminar_paquete(t_paquete*);
 int armar_conexion(t_config*, char*, t_log*);
+void notificar_instruccion(PCB*, int, codigo_operacion);
 
 #endif

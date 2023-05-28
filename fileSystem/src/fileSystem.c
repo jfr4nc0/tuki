@@ -1,5 +1,7 @@
 #include "../include/fileSystem.h"
 #include "../../shared/src/funciones.c"
+#include "../../shared/src/funcionesServidor.c"
+#include "../../shared/src/funcionesCliente.c"
 
 int main(int argc, char** argv) {
     t_log* logger = iniciar_logger(DEFAULT_LOG_PATH, ENUM_FILE_SYSTEM);
@@ -12,4 +14,6 @@ int main(int argc, char** argv) {
     int clienteAceptado = esperar_cliente(servidorFileSystem, logger);
 
     terminar_programa(servidorFileSystem, logger, config);
+    liberar_conexion(conexionMemoria);
+    liberar_conexion(clienteAceptado);
 }

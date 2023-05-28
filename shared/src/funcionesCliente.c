@@ -113,3 +113,10 @@ void enviar_paquete(t_paquete* paquete, int clienteAceptado) {
 
     free(a_enviar);
 }
+
+void notificar_instruccion(PCB* pcb, int conexion, codigo_operacion codOperacion) {
+	t_paquete* paquete = crear_paquete(codOperacion);
+	agregar_a_paquete(paquete, pcb, sizeof(PCB));
+	enviar_paquete(paquete, conexion);
+	free(paquete);
+}

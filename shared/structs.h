@@ -8,6 +8,7 @@ typedef enum {
     OP_PAQUETE,
     OP_EXIT,
     OP_MENSAJE,
+    OP_YIELD
 }codigo_operacion;
 
 typedef struct {

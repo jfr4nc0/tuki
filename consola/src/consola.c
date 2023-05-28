@@ -17,11 +17,11 @@ int main(int argc, char** argv) {
 
     config = iniciar_config(pathConfig, logger);
 
-    int conexion_kernel = armar_conexion(config, KERNEL, logger);
+    int conexionKernel = armar_conexion(config, KERNEL, logger);
 
-    enviarInstrucciones(pathInstrucciones, conexion_kernel, logger);
+    enviarInstrucciones(pathInstrucciones, conexionKernel, logger);
 
-    terminar_programa(conexion_kernel, logger, config);
+    terminar_programa(conexionKernel, logger, config);
 }
 
 // TODO: Mover todas las funciones a funciones.c

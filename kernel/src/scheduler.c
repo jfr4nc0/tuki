@@ -26,8 +26,8 @@ void inicializar_diccionario_recursos() {
     diccionario_recursos = dictionary_create();
 
     int indice = 0;
-    while(kernel_config.RECURSOS[indice] != NULL && kernel_config.INSTANCIAS_RECURSOS[indice] != NULL) {
-        crear_cola_recursos(kernel_config.RECURSOS[indice], atoi(kernel_config.INSTANCIAS_RECURSOS[indice]));
+    while(kernelConfig.RECURSOS[indice] != NULL && kernelConfig.INSTANCIAS_RECURSOS[indice] != NULL) {
+        crear_cola_recursos(kernelConfig.RECURSOS[indice], atoi(kernelConfig.INSTANCIAS_RECURSOS[indice]));
 
         indice++;
     }
@@ -51,7 +51,7 @@ void crear_cola_recursos(char* nombre_recurso, int instancias) {
 }
 
 void inicializar_semaforos() {
-	sem_init(&sem_grado_multiprogamacion, 0, kernel_config.GRADO_MAX_MULTIPROGRAMACION);
+	sem_init(&sem_grado_multiprogamacion, 0, kernelConfig.GRADO_MAX_MULTIPROGRAMACION);
 	sem_init(&sem_proceso_en_ready, 0, 0);
 	sem_init(&sem_cpu_disponible, 0, 1);
 	sem_init(&sem_creacion_pcb, 0, 1);
@@ -62,7 +62,7 @@ void proximo_a_ejecutar(){
 	while(1){
 		sem_wait(&sem_proceso_en_ready);
 	    sem_wait(&sem_cpu_disponible);
-	    if(strcmp(kernel_config.ALGORITMO_PLANIFICACION, "FIFO") == 0) {
+	    if(strcmp(kernelConfig.ALGORITMO_PLANIFICACION, "FIFO") == 0) {
 	    	log_info(kernelLogger, "Entre por FIFO");
 
 	        pthread_mutex_lock(&m_lista_READY);

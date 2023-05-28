@@ -9,6 +9,8 @@ cpu_config_t* configCpu;
 int conexionCpuKernel;
 registros_cpu* registrosCpu;
 
+bool exitInstruccion, desalojoOpcional = false;
+
 int main(int argc, char** argv) {
     t_log* loggerCpu = iniciar_logger(DEFAULT_LOG_PATH, ENUM_CPU);
     t_config* config = iniciar_config(DEFAULT_CONFIG_PATH, loggerCpu);
@@ -20,7 +22,6 @@ int main(int argc, char** argv) {
     int conexionCpuMemoria = armar_conexion(config, MEMORIA, loggerCpu);
 	conexionCpuKernel = armar_conexion(config, KERNEL, loggerCpu);
 
-    // int clienteAceptado = esperar_cliente(servidorCpu, logger);
     inicializar_registros();
 
 
@@ -28,15 +29,21 @@ int main(int argc, char** argv) {
     pthread_t hilo_dispatcher;
 
 	//pthread_create(&hilo_ejecucion, NULL, (void *) procesar_instruccion, int servidorCPU); //  TODO: Avisar posibles errores o si el kernel se desconecto.
-    pthread_create(&hilo_dispatcher, NULL, (void *) procesar_instruccion, NULL);
+    pthread_create(&hilo_dispatcher, NULL, (void *) procesar_instruccion, &servidorCPU);
 
     pthread_join(hilo_dispatcher, NULL);
 
+    terminar_programa(conexionCpuKernel, loggerCpu, config);
+
+    liberar_conexion(conexionCpuMemoria);
+    free(registrosCpu);
+    free(configCpu);
+
     return 0;
-    //terminar_programa(servidorCpu, loggerCpu, config);
 }
 
 void cargar_config(t_config* config) {
+	configCpu = malloc(sizeof(cpu_config_t));
 	configCpu->RETARDO_INSTRUCCION = config_get_string_value(config, "RETARDO_INSTRUCCION");
 	configCpu->IP_MEMORIA = config_get_string_value(config, "IP_MEMORIA");
 	configCpu->PUERTO_MEMORIA = config_get_string_value(config, "PUERTO_MEMORIA");
@@ -65,6 +72,9 @@ void* procesar_instruccion(int servidorCPU) {
 	PCB* pcb;
 	pcb = recibir_pcb(clienteAceptado);
 	ejecutar_proceso(pcb);
+	free(pcb);
+
+	return NULL;
 }
 
 PCB* recibir_pcb(int clienteAceptado) {
@@ -96,11 +106,13 @@ PCB* recibir_pcb(int clienteAceptado) {
 	for (int i = 0; i < cantidad_de_segmentos; i++) {
 	    t_segmento* segmento = malloc(sizeof(t_segmento));
 
-	    segmento-> id = leer_int(buffer, &desplazamiento);
+	    segmento->id = leer_int(buffer, &desplazamiento);
 	    //segmento->direccion_base = leer_int(buffer, &desplazamiento);
 	    segmento->tamanio = leer_int(buffer, &desplazamiento);
 
 	    list_add(pcb->lista_segmentos, segmento);
+
+	    free(segmento);
 	}
 
 	pcb->processor_burst = leer_float(buffer, &desplazamiento);
@@ -111,10 +123,11 @@ PCB* recibir_pcb(int clienteAceptado) {
 	for (int i = 0; i < cantidad_de_archivos; i++) {
 			archivo_abierto_t* archivo_abierto = malloc(sizeof(archivo_abierto_t));
 
-		    archivo_abierto-> id = leer_int(buffer, &desplazamiento);
+		    archivo_abierto->id = leer_int(buffer, &desplazamiento);
 		    archivo_abierto->posicion_puntero = leer_int(buffer, &desplazamiento);
 
 		    list_add(pcb->lista_archivos_abiertos, archivo_abierto);
+		    free(archivo_abierto);
 		}
 
 	return pcb;
@@ -140,7 +153,7 @@ void ejecutar_proceso(PCB* pcb) {
 
 	// while(f_eop!=1 && f_interruption!=1 && f_io!=1 && f_pagefault!=1 && f_segfault!=1){
 
-    while (posicion_actual < cantidad_instrucciones){
+    while ((posicion_actual < cantidad_instrucciones) && !exitInstruccion && !desalojoOpcional) {
 	    instruccion = string_duplicate((char *)list_get(pcb->lista_instrucciones, pcb->contador_instrucciones));
 		instruccion_decodificada = decode_instruccion(instruccion);
 
@@ -156,17 +169,20 @@ void ejecutar_proceso(PCB* pcb) {
 
         usleep(atoi(configCpu->RETARDO_INSTRUCCION)*1000);
         log_info(loggerCpu, "Se suspendio el proceso por retardo de la instruccion...");
-	}
+    }
+    free(instruccion);
+    free(instruccion_decodificada);
 
-    log_info(loggerCpu, "Se salio de la ejecucion. Guardando el contexto de ejecucion...");
+    log_info(loggerCpu, "Se salió de la ejecucion en la instrucción %s. Guardando el contexto de ejecucion...", instruccion);
 	guardar_contexto_de_ejecucion(pcb);
 
-/*
-    if(f_eop){
-        f_eop = 0;
-        f_interruption = 0;
-    }
-*/
+	if (exitInstruccion) {
+		exitInstruccion = false;
+		notificar_instruccion(pcb, conexionCpuKernel, OP_EXIT);
+	} else if(desalojoOpcional) {
+		desalojoOpcional = false;
+		notificar_instruccion(pcb, conexionCpuKernel, OP_YIELD);
+	}
 }
 
 void set_registros(PCB* pcb) {
@@ -190,13 +206,12 @@ void ejecutar_instruccion(char** instruccion_decodificada, PCB* pcb) {
     if (comandoInstruccion) {
 		if(strcmp(comandoInstruccion, "SET")) {
 			set_registro(instruccion_decodificada[1],instruccion_decodificada[2]);
+		} else if(strcmp(comandoInstruccion, "YIELD")) {
+			desalojoOpcional = true;
 		} else if(strcmp(comandoInstruccion, "EXIT")) {
-			guardar_contexto_de_ejecucion(pcb);
-			t_paquete* paquete = crear_paquete(OP_EXIT);
-			agregar_a_paquete(paquete, pcb, sizeof(PCB));
-			enviar_paquete(paquete, conexionCpuKernel);
-			free(paquete);
+			exitInstruccion = true;
 		}
+		log_debug(loggerCpu, cantidad_strings_a_mostrar(2),"Instruccion ejecutada: ", comandoInstruccion);
 	}
 }
 
