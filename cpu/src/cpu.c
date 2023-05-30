@@ -207,12 +207,28 @@ void ejecutar_instruccion(char** instruccion_decodificada, PCB* pcb) {
 		if(strcmp(comandoInstruccion, "SET")) {
 			set_registro(instruccion_decodificada[1],instruccion_decodificada[2]);
 		} else if(strcmp(comandoInstruccion, "YIELD")) {
-			desalojoOpcional = true;
+			// Esta instrucción desaloja voluntariamente el proceso de la CPU. Se deberá devolver el Contexto de Ejecución actualizado al Kernel.
+
+
+
+			// desalojoOpcional = true;
 		} else if(strcmp(comandoInstruccion, "EXIT")) {
 			exitInstruccion = true;
+		} else if(strcmp(comandoInstruccion, "I/O")) {
+
+		} else if(strcmp(comandoInstruccion, "WAIT")) {
+
+		} else if(strcmp(comandoInstruccion, "SIGNAL")) {
+
 		}
+
+
+
+
 		log_debug(loggerCpu, cantidad_strings_a_mostrar(2),"Instruccion ejecutada: ", comandoInstruccion);
 	}
+
+
 }
 
 void set_registro(char* registro,char* valor) {
