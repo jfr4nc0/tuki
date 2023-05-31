@@ -59,6 +59,15 @@ void agregar_a_lista(PCB*, t_list*, sem_t);
 void liberar_listas_estados();
 
 PCB* remover_de_lista(int, t_list*, sem_t);
+
+typedef enum{
+    NEW,
+    READY,
+    BLOCKED,
+    RUNNING,
+    EXIT,
+} pcb_status;
+
 ////////////////////
 
 #endif

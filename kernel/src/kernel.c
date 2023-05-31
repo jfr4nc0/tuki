@@ -184,18 +184,47 @@ void inicializar_semaforos() {
 
 void proximo_a_ejecutar() {
 	while(1){
-		sem_wait(&sem_proceso_en_ready);
-	    sem_wait(&sem_cpu_disponible);
+		//sem_wait(&sem_proceso_en_ready);
+	    //sem_wait(&sem_cpu_disponible);
 	    if(strcmp(kernelConfig->ALGORITMO_PLANIFICACION, "FIFO") == 0) {
 	    	log_info(kernelLogger, "Planificación FIFO escogida.");
-	        PCB* pcbProximo = cambio_de_estado(0, ENUM_READY, ENUM_EXECUTING);
-            sem_post(&sem_proceso_en_ready);
+	        //PCB* pcbProximo = cambio_de_estado(0, ENUM_READY, ENUM_EXECUTING);
+            //sem_post(&sem_proceso_en_ready);
+
+	    	pthread_mutex_lock(&m_lista_READY);
+	    	PCB* pcb = list_remove(lista_READY, 0);
+	    	pthread_mutex_unlock(&m_lista_READY);
+
+	    	cambiar_a(pcb, EXECUTING, lista_EXECUTING, m_lista_EXECUTING);
+            log_info(logger, "El proceso %d cambio su estado a RUNNING", pcb_to_execute->process_id);
+            log_info(mandatory_logger,"PID: %d - Estado Anterior: READY - Estado Actual: RUNNING",pcb_to_execute->process_id);
+
+            send_pcb_package(connection_cpu_dispatch, pcb_to_execute, EXECUTE_PCB);
+
+
 	    } else {
             log_error(kernelLogger, "No es posible utilizar el algoritmo especificado.");
         }
     }
 }
 
+void cambiar_a(PCB* pcb, pcb_status estado, t_list* lista, pthread_mutex_t mutex){
+	cambio_de_estado(pcb, estado);
+	agregar_a_lista_con_sem(pcb, lista, mutex);
+	log_info("El pcb entro en la cola de %d", estado);
+}
+
+void cambio_de_estado(PCB* pcb, pcb_status nuevo_estado){
+	pcb->estado = nuevo_estado;
+}
+
+void agregar_a_lista_con_sem(PCB* pcb, t_list* lista, pthread_mutex_t mutex){
+	pthread_mutex_lock(&mutex);
+	list_add(list, pcb_to_add);
+	pthread_mutex_unlock(&mutex);
+}
+
+/*
 PCB* cambio_de_estado(int posicion, pcb_estado estadoAnterior, pcb_estado estadoNuevo) {
     // TODO: ¿No puede saberse por el pcb el estado anterior? No se si anda la idea de que devuelva un PCB*
     PCB* pcb = remover_de_lista(posicion, lista_estados[estadoAnterior], m_listas[estadoAnterior]);
@@ -211,6 +240,7 @@ PCB* cambio_de_estado(int posicion, pcb_estado estadoAnterior, pcb_estado estado
 
     return pcb;
 }
+*/
 
 void agregar_a_lista(PCB* pcb, t_list* lista, sem_t m_sem) {
     sem_wait(&m_sem);

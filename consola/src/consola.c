@@ -58,6 +58,7 @@ void enviarInstrucciones(char* pathInstrucciones, int conexion_kernel, t_log* lo
 	    }
 
 	    enviar_paquete(paquete, conexion_kernel);
+	    log_info(logger, "ENVIO INSTRUCCIONES.");
 	}
 
 	eliminar_paquete(paquete);
