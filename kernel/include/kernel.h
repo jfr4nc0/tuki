@@ -4,15 +4,10 @@
 // Librerias externas
 #include "includesExternas.h"
 
+
 // Librerias Internas
 #include "constantes.h"
-#include "../../shared/funciones.h"
-#include "../../shared/funcionesCliente.h"
-#include "../../shared/funcionesServidor.h"
-#include "../../shared/constructor.h"
-#include "../../shared/constantes.h"
-#include "../../shared/structs.h"
-#include "../../shared/variablesGlobales.h"
+#include "../../shared/shared.h"
 
 t_list* procesar_instrucciones(int, t_list*, t_log*, t_config*);
 void cargar_config_kernel(t_config*, t_log*);
@@ -59,6 +54,9 @@ void agregar_a_lista(PCB*, t_list*, sem_t);
 void liberar_listas_estados();
 
 PCB* remover_de_lista(int, t_list*, sem_t);
+
+t_list* lista_estados[CANTIDAD_ESTADOS];
+sem_t sem_lista_estados[CANTIDAD_ESTADOS];
 
 ////////////////////
 

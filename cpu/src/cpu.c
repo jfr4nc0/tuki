@@ -1,8 +1,5 @@
 #include "../include/cpu.h"
-#include "../../shared/src/funciones.c"
-#include "../../shared/src/funcionesServidor.c"
-#include "../../shared/src/funcionesCliente.c"
-#include "shared.h"
+#include "../../shared/shared.h"
 
 t_log* loggerCpu;
 cpu_config_t* configCpu;
@@ -225,7 +222,7 @@ void guardar_contexto_de_ejecucion(PCB* pcb) {
 
 void ejecutar_instruccion(char** instruccion, PCB* pcb) {
 
-	switch(keyfromstring(instruccion[0])){
+	switch(keyFromString(instruccion[0])){
 		case I_SET:
 			// SET (Registro, Valor)
 			instruccion_set(instruccion[1],instruccion[2]);
