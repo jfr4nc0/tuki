@@ -2,6 +2,7 @@
 #include "../../shared/src/funciones.c"
 #include "../../shared/src/funcionesServidor.c"
 #include "../../shared/src/funcionesCliente.c"
+#include "shared.h"
 
 t_log* loggerCpu;
 cpu_config_t* configCpu;
@@ -135,7 +136,7 @@ PCB* recibir_pcb(int clienteAceptado) {
 
 void ejecutar_proceso(PCB* pcb) {
 
-	set_registros(pcb);
+	cargar_registros(pcb);
 
 	char* instruccion = malloc(sizeof(char*));
 	char** instruccion_decodificada = malloc(sizeof(char*));
@@ -167,8 +168,7 @@ void ejecutar_proceso(PCB* pcb) {
 
         log_info(loggerCpu, "PROGRAM COUNTER: %d", pcb->contador_instrucciones);
 
-        usleep(atoi(configCpu->RETARDO_INSTRUCCION)*1000);
-        log_info(loggerCpu, "Se suspendio el proceso por retardo de la instruccion...");
+
     }
     free(instruccion);
     free(instruccion_decodificada);
@@ -185,7 +185,7 @@ void ejecutar_proceso(PCB* pcb) {
 	}
 }
 
-void set_registros(PCB* pcb) {
+void cargar_registros(PCB* pcb) {
 	registrosCpu->AX = pcb->registrosCpu->AX;
 	registrosCpu->BX = pcb->registrosCpu->BX;
 	registrosCpu->CX = pcb->registrosCpu->CX;
@@ -200,38 +200,100 @@ void set_registros(PCB* pcb) {
 	registrosCpu->DX = pcb->registrosCpu->RDX;
 }
 
-void ejecutar_instruccion(char** instruccion_decodificada, PCB* pcb) {
-	char* comandoInstruccion = instruccion_decodificada[0];
-
-    if (comandoInstruccion) {
-		if(strcmp(comandoInstruccion, "SET")) {
-			set_registro(instruccion_decodificada[1],instruccion_decodificada[2]);
-		} else if(strcmp(comandoInstruccion, "YIELD")) {
-			// Esta instrucción desaloja voluntariamente el proceso de la CPU. Se deberá devolver el Contexto de Ejecución actualizado al Kernel.
-
-
-
-			// desalojoOpcional = true;
-		} else if(strcmp(comandoInstruccion, "EXIT")) {
-			exitInstruccion = true;
-		} else if(strcmp(comandoInstruccion, "I/O")) {
-
-		} else if(strcmp(comandoInstruccion, "WAIT")) {
-
-		} else if(strcmp(comandoInstruccion, "SIGNAL")) {
-
-		}
-
-
-
-
-		log_debug(loggerCpu, cantidad_strings_a_mostrar(2),"Instruccion ejecutada: ", comandoInstruccion);
+char** decode_instruccion(char* linea_a_parsear) {
+	char** instruccion = string_split(linea_a_parsear, " ");
+	if(instruccion[0] == NULL){
+	    log_info(loggerCpu, "Se ignora linea vacía.");
 	}
-
-
+	return instruccion;
 }
 
-void set_registro(char* registro,char* valor) {
+void guardar_contexto_de_ejecucion(PCB* pcb) {
+	registrosCpu->AX = pcb->registrosCpu->AX;
+	registrosCpu->BX = pcb->registrosCpu->BX;
+	registrosCpu->CX = pcb->registrosCpu->CX;
+	registrosCpu->DX = pcb->registrosCpu->DX;
+	registrosCpu->EAX = pcb->registrosCpu->EAX;
+	registrosCpu->EBX = pcb->registrosCpu->EBX;
+	registrosCpu->ECX = pcb->registrosCpu->ECX;
+	registrosCpu->EDX = pcb->registrosCpu->EDX;
+	registrosCpu->RAX = pcb->registrosCpu->RAX;
+	registrosCpu->RBX = pcb->registrosCpu->RBX;
+	registrosCpu->RCX = pcb->registrosCpu->RCX;
+	registrosCpu->RDX = pcb->registrosCpu->RDX;
+}
+
+void ejecutar_instruccion(char** instruccion, PCB* pcb) {
+
+	switch(keyfromstring(instruccion[0])){
+		case I_SET:
+			// SET (Registro, Valor)
+			instruccion_set(instruccion[1],instruccion[2]);
+			break;
+		case I_MOV_IN:
+			// MOV_IN (Registro, Dirección Lógica)
+			instruccion_mov_in(instruccion[1],instruccion[2]);
+			break;
+		case I_MOV_OUT:
+			// MOV_OUT (Dirección Lógica, Registro)
+			instruccion_mov_out(instruccion[1],instruccion[2]);
+			break;
+		case I_IO:
+			// I/O (Tiempo)
+			instruccion_io(instruccion[1]);
+			break;
+		case I_F_OPEN:
+			// F_OPEN (Nombre Archivo)
+			instruccion_f_open(instruccion[1]);
+			break;
+		case I_F_CLOSE:
+			// F_CLOSE (Nombre Archivo)
+			instruccion_f_close(instruccion[1]);
+			break;
+		case I_F_SEEK:
+			// F_SEEK (Nombre Archivo, Posición)
+			instruccion_f_seek(instruccion[1],instruccion[2]);
+			break;
+		case I_F_READ:
+			// F_READ (Nombre Archivo, Dirección Lógica, Cantidad de Bytes)
+			instruccion_f_read(instruccion[1],instruccion[2],instruccion[3]);
+			break;
+		case I_F_WRITE:
+			// F_WRITE (Nombre Archivo, Dirección Lógica, Cantidad de bytes)
+			instruccion_f_write(instruccion[1],instruccion[2],instruccion[3]);
+			break;
+		case I_TRUNCATE:
+			// F_TRUNCATE (Nombre Archivo, Tamaño)
+			instruccion_f_truncate(instruccion[1],instruccion[2]);
+			break;
+		case I_WAIT:
+			// WAIT (Recurso)
+			instruccion_wait(instruccion[1]);
+			break;
+		case I_SIGNAL:
+			// SIGNAL (Recurso)
+			instruccion_signal(instruccion[1]);
+			break;
+		case I_CREATE_SEGMENT:
+			// CREATE_SEGMENT (Id del Segmento, Tamaño)
+			instruccion_create_segment(instruccion[1],instruccion[2]);
+			break;
+		case I_DELETE_SEGMENT:
+			// DELETE_SEGMENT (Id del Segmento)
+			instruccion_delete_segment(instruccion[1]);
+			break;
+		case I_YIELD:
+			instruccion_yield();
+			break;
+		case I_EXIT:
+			instruccion_exit();
+			break;
+	}
+}
+
+/************** INSTRUCCIONES ***************************/
+
+void instruccion_set(char* registro,char* valor) {
 
 	int set_valor = atoi(valor);
 
@@ -261,27 +323,6 @@ void set_registro(char* registro,char* valor) {
 		registrosCpu->RDX = set_valor;
 	}
 
+	usleep(atoi(configCpu->RETARDO_INSTRUCCION)*1000);
 }
 
-char** decode_instruccion(char* linea_a_parsear) {
-	char** instruccion = string_split(linea_a_parsear, " ");
-	if(instruccion[0] == NULL){
-	    log_info(loggerCpu, "Se ignora linea vacía.");
-	}
-	return instruccion;
-}
-
-void guardar_contexto_de_ejecucion(PCB* pcb) {
-	registrosCpu->AX = pcb->registrosCpu->AX;
-	registrosCpu->BX = pcb->registrosCpu->BX;
-	registrosCpu->CX = pcb->registrosCpu->CX;
-	registrosCpu->DX = pcb->registrosCpu->DX;
-	registrosCpu->EAX = pcb->registrosCpu->EAX;
-	registrosCpu->EBX = pcb->registrosCpu->EBX;
-	registrosCpu->ECX = pcb->registrosCpu->ECX;
-	registrosCpu->EDX = pcb->registrosCpu->EDX;
-	registrosCpu->RAX = pcb->registrosCpu->RAX;
-	registrosCpu->RBX = pcb->registrosCpu->RBX;
-	registrosCpu->RCX = pcb->registrosCpu->RCX;
-	registrosCpu->RDX = pcb->registrosCpu->RDX;
-}

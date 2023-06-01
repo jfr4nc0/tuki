@@ -37,7 +37,6 @@ int main(int argc, char** argv) {
     // TODO: Manejar multiples instancias de conexiones de consola al kernel
     inicializar_escucha_conexiones_consolas(servidorKernel);
 
-
     terminar_programa(servidorKernel, kernelLogger, config);
     liberar_recursos_kernel();
 
@@ -87,6 +86,7 @@ void* recibir_de_consola(void *clienteAceptado) {
             list_iterate(listaInstrucciones, (void*) iterator);
 
             PCB* pcb = inicializar_pcb(socketAceptado, listaInstrucciones);
+
             proximo_a_ejecutar();
 
             list_destroy(listaInstrucciones);
@@ -116,7 +116,7 @@ PCB* new_pcb(int clienteAceptado, t_list* lista_instrucciones) {
 	contadorProcesoId++;
     pcb->lista_instrucciones = lista_instrucciones;
     pcb->estado = ENUM_NEW;
-    agregar_a_lista(pcb, lista_estados[ENUM_NEW], m_listas[ENUM_NEW]);
+    agregar_a_lista_con_sem(pcb, lista_estados[ENUM_NEW], m_lista_estados[ENUM_NEW]);
 
 	return pcb;
 }
@@ -179,7 +179,7 @@ void inicializar_semaforos() {
 	sem_init(&sem_proceso_en_ready, 0, 0);
 	sem_init(&sem_cpu_disponible, 0, 1);
 	sem_init(&sem_creacion_pcb, 0, 1);
-	// sem_init(&sem_proceso_a_ready,0,1);
+	sem_init(&sem_proceso_a_ready,0,1);
 }
 
 void proximo_a_ejecutar() {
@@ -191,36 +191,41 @@ void proximo_a_ejecutar() {
 	        //PCB* pcbProximo = cambio_de_estado(0, ENUM_READY, ENUM_EXECUTING);
             //sem_post(&sem_proceso_en_ready);
 
-	    	pthread_mutex_lock(&m_lista_READY);
-	    	PCB* pcb = list_remove(lista_READY, 0);
-	    	pthread_mutex_unlock(&m_lista_READY);
+	    	sem_wait(&m_listas[ENUM_READY]);
+	    	PCB* pcb = list_remove(lista_estados[ENUM_READY], 0);
+	    	sem_post(&m_listas[ENUM_READY]);
 
-	    	cambiar_a(pcb, EXECUTING, lista_EXECUTING, m_lista_EXECUTING);
+	    	cambiar_a(pcb, ENUM_EXECUTING, lista_estados[ENUM_EXECUTING], sem_lista_estados[ENUM_EXECUTING]);
             log_info(logger, "El proceso %d cambio su estado a RUNNING", pcb_to_execute->process_id);
             log_info(mandatory_logger,"PID: %d - Estado Anterior: READY - Estado Actual: RUNNING",pcb_to_execute->process_id);
 
             send_pcb_package(connection_cpu_dispatch, pcb_to_execute, EXECUTE_PCB);
 
+	    } else if (strcmp(kernelConfig->ALGORITMO_PLANIFICACION, "HRRN")==0) {
+	    	// TODO Algoritmo HRRN
 
-	    } else {
+
+        } else {
             log_error(kernelLogger, "No es posible utilizar el algoritmo especificado.");
         }
     }
 }
 
-void cambiar_a(PCB* pcb, pcb_status estado, t_list* lista, pthread_mutex_t mutex){
-	cambio_de_estado(pcb, estado);
-	agregar_a_lista_con_sem(pcb, lista, mutex);
+
+
+void cambiar_a(PCB* pcb, pcb_estado estado_a_cambiar, t_list* lista_estado_anterior, sem_t* sem_list_estado){
+	cambio_de_estado(pcb, estado_a_cambiar);
+	agregar_a_lista_con_sem(pcb, lista_estado_anterior, sem_list_estado);
 	log_info("El pcb entro en la cola de %d", estado);
 }
 
-void cambio_de_estado(PCB* pcb, pcb_status nuevo_estado){
+void cambio_de_estado(PCB* pcb, pcb_estado nuevo_estado){
 	pcb->estado = nuevo_estado;
 }
 
-void agregar_a_lista_con_sem(PCB* pcb, t_list* lista, pthread_mutex_t mutex){
+void agregar_a_lista_con_sem(PCB* pcb_to_add, t_list* lista, pthread_mutex_t mutex){
 	pthread_mutex_lock(&mutex);
-	list_add(list, pcb_to_add);
+	list_add(lista, pcb_to_add);
 	pthread_mutex_unlock(&mutex);
 }
 

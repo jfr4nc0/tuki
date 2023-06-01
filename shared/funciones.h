@@ -26,4 +26,5 @@ char* leer_string(char* buffer, int* desp);
 t_list* leer_string_array(char* buffer, int* desp);
 const char* obtener_nombre_estado(pcb_estado);
 
+
 #endif
