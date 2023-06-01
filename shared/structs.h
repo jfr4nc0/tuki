@@ -90,7 +90,7 @@ typedef struct {
 	pcb_estado estado;
 	t_list* lista_instrucciones; // Lista de instrucciones a ejecutar
 	int program_counter; // Numero de la proxima instruccion a ejecutar
-	registros_cpu* registrosCpu;
+	registros_cpu* cpu_register;
 	t_list* lista_segmentos;
 	t_list* lista_archivos_abiertos; // Contendrá la lista de archivos abiertos del proceso con la posición del puntero de cada uno de ellos.
 	char* processor_burst; // Estimacion utilizada para planificar los procesos en el algoritmo HRRN, la misma tendra un valor inicial definido por archivo de config y sera recalculada bajo la formula de promedio ponderado

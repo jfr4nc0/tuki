@@ -22,9 +22,9 @@ void iterator(char* value);
 char** leer_arreglo_string(char* , int* );
 char* pids_on_ready();
 
-PCB* inicializar_pcb(int);
+PCB* inicializar_pcb(int, t_list*);
 
-PCB* new_pcb(char** , int , int , char** , char** );
+PCB* new_pcb(char** , int , int );
 ///////////////////////////
 
 

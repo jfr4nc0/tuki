@@ -86,7 +86,7 @@ void* recibir_de_consola(void *clienteAceptado) {
     log_info(kernelLogger, "Me llegaron los siguientes valores: ");
     list_iterate(listaInstrucciones, (void*) iterator);
 
-    PCB* pcb = inicializar_pcb(socketAceptado);
+    PCB* pcb = inicializar_pcb(socketAceptado, listaInstrucciones);
     log_info(kernelLogger, "Se crea el proceso %d en NEW", pcb->id_proceso);
     cambiar_a(pcb, ENUM_NEW, lista_NEW, m_lista_NEW);
 
@@ -125,22 +125,20 @@ void cambiar_a_ready(){
 
 }
 
-PCB* inicializar_pcb(int clienteAceptado) {
+PCB* inicializar_pcb(int clienteAceptado, t_list* listaInstrucciones) {
 	int tamanio = 0;
 	void* buffer;
 	int desplazamiento = 0;
 
 	buffer = recibir_buffer(&tamanio, clienteAceptado);
 
-	char** listaDeInstrucciones = leer_arreglo_string(buffer, &desplazamiento);
-
-	char** listaSegmentos = leer_arreglo_string(buffer, &desplazamiento);
-
-	char** listaArchivosAbiertos = leer_arreglo_string(buffer, &desplazamiento);
+	//char** listaDeInstrucciones = leer_arreglo_string(buffer, &desplazamiento);
+	//char** listaSegmentos = leer_arreglo_string(buffer, &desplazamiento);
+	//char** listaArchivosAbiertos = leer_arreglo_string(buffer, &desplazamiento);
 
 	sem_wait(&sem_creacion_pcb);
 
-	PCB* pcb = new_pcb(listaDeInstrucciones, clienteAceptado, contadorProcesoId, listaSegmentos, listaArchivosAbiertos);
+	PCB* pcb = new_pcb(listaInstrucciones, clienteAceptado, contadorProcesoId);
 
 	contadorProcesoId++;
 	log_info(kernelLogger, "valor id: %d", pcb->id_proceso);
@@ -160,7 +158,7 @@ char** leer_arreglo_string(char* buffer, int* desplazamiento){
 	    arreglo[i] = leer_string(buffer, desplazamiento);
 	}
 	arreglo[longitud] = NULL;
-	log_info(kernelLogger, "HOLAAAAAAA");
+
 	return arreglo;
 }
 
@@ -169,7 +167,7 @@ void iterator(char* value) {
 }
 
 // TODO: Cuando se instancia un nuevo PCB, se crea tambien las listas de los elementos necesarios
-PCB* new_pcb(char** listaInstrucciones, int clienteAceptado, int contadorProcesoId, char** listaSegmentos, char** listaArchivosAbiertos) {
+PCB* new_pcb(char** listaInstrucciones, int clienteAceptado, int contadorProcesoId) {
 	PCB* pcb = malloc(sizeof(PCB));
 
 	pcb->id_proceso = contadorProcesoId;
@@ -177,21 +175,24 @@ PCB* new_pcb(char** listaInstrucciones, int clienteAceptado, int contadorProceso
 	pcb->lista_instrucciones = listaInstrucciones;
 	pcb->program_counter = 0;
 
-	pcb->registrosCpu->AX = 0;
-	pcb->registrosCpu->BX = 0;
-	pcb->registrosCpu->CX = 0;
-	pcb->registrosCpu->DX = 0;
-	pcb->registrosCpu->EAX = 0;
-	pcb->registrosCpu->EBX = 0;
-	pcb->registrosCpu->ECX = 0;
-	pcb->registrosCpu->EDX = 0;
-	pcb->registrosCpu->RAX = 0;
-	pcb->registrosCpu->RBX = 0;
-	pcb->registrosCpu->RCX = 0;
-	pcb->registrosCpu->RDX = 0;
+	pcb->cpu_register->AX = 0;
+	log_info(kernelLogger, "HOLAAAAAAAAA");
+	pcb->cpu_register->BX = 0;
+	pcb->cpu_register->CX = 0;
+	pcb->cpu_register->DX = 0;
+	pcb->cpu_register->EAX = 0;
+	pcb->cpu_register->EBX = 0;
+	pcb->cpu_register->ECX = 0;
+	pcb->cpu_register->EDX = 0;
+	pcb->cpu_register->RAX = 0;
+	pcb->cpu_register->RBX = 0;
+	pcb->cpu_register->RCX = 0;
+	pcb->cpu_register->RDX = 0;
 
-	pcb->lista_segmentos = listaSegmentos;
-	pcb->lista_archivos_abiertos = listaArchivosAbiertos;
+	t_list* lista_vacia;
+
+	pcb->lista_segmentos = lista_vacia;
+	pcb->lista_archivos_abiertos = lista_vacia;
 	pcb->processor_burst = kernelConfig->ESTIMACION_INICIAL;
 	pcb->ready_timestamp = 0; // TODO: NO SE DE DONDE SE SACA ESTE DATO PARA INICIALIZAR
 
@@ -306,7 +307,7 @@ void agregar_pcb_a_paquete(t_paquete* paquete, PCB* pcb){
 	agregar_int_a_paquete(paquete, pcb->estado);
 	agregar_arreglo_a_paquete(paquete, pcb->lista_instrucciones);
 	agregar_int_a_paquete(paquete, pcb->program_counter);
-	agregar_registros_a_paquete(paquete, pcb->registrosCpu);
+	agregar_registros_a_paquete(paquete, pcb->cpu_register);
 	agregar_arreglo_a_paquete(paquete, pcb->lista_segmentos);
 	agregar_arreglo_a_paquete(paquete, pcb->lista_archivos_abiertos);
 	agregar_float_a_paquete(paquete, pcb->processor_burst);
