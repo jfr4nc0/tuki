@@ -18,7 +18,7 @@
 #include <commons/collections/dictionary.h>
 #include "../../shared/structs.h"
 #include "../../shared/funciones.h"
-#include "variablesGlobales.h"
+#include "../../shared/variablesGlobales.h"
 
 pthread_t planificador_corto_plazo;
 pthread_t thread_memoria;
@@ -37,7 +37,7 @@ typedef struct{
     int instancias;
     // t_list* lista_procesos;
     sem_t sem_recurso;
-} t_recurso;
+}t_recurso;
 
 t_dictionary* diccionario_recursos;
 
@@ -54,9 +54,9 @@ sem_t sem_proceso_a_ready;
 void inicializar_planificador();
 void inicializar_listas_estados();
 void proximo_a_ejecutar();
-void cambio_de_estado(PCB*, pcb_estado, t_list*, pthread_mutex_t);
+void cambio_de_estado(PCB*, pcb_estado);
 void cambiar_estado_pcb_a(PCB*, pcb_estado);
-void agregar_a_lista(PCB*, t_list*, pthread_mutex_t);
+//void agregar_a_lista(PCB*, t_list*, pthread_mutex_t);
 
 t_list* lista_NEW;
 t_list* lista_READY;
