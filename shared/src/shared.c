@@ -451,4 +451,3 @@ t_list* recibir_paquete(int clienteAceptado) {
     free(buffer);
     return valores;
 }
-
