@@ -92,7 +92,6 @@ sem_t sem_lista_estados[CANTIDAD_ESTADOS];
 ////////////////////////////////////
 
 #define PATH_LOG_KERNEL             "../logs/kernel.log"
-#define PATH_CONFIG_KERNEL          "kernel.config"
-
+#define PATH_CONFIG_KERNEL			"../../tuki-pruebas/planificador_hrrn/kernel.config"
 
 #endif

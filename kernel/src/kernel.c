@@ -31,7 +31,6 @@ int main(int argc, char** argv) {
 
     int servidorKernel = iniciar_servidor(config, kernelLogger);
 
-    // TODO: Manejar multiples instancias de conexiones de consola al kernel
     inicializar_escucha_conexiones_consolas(servidorKernel);
 
     terminar_programa(servidorKernel, kernelLogger, config);
@@ -62,6 +61,8 @@ void cargar_config_kernel(t_config* config, t_log* kernelLogger) {
     return;
 }
 
+/*------------------------- CONEXION CONSOLAS ----------------------*/
+
 void inicializar_escucha_conexiones_consolas(int servidorKernel){
     while(1){
         int clienteAceptado = esperar_cliente(servidorKernel, kernelLogger);
@@ -72,17 +73,14 @@ void inicializar_escucha_conexiones_consolas(int servidorKernel){
 }
 
 void* recibir_de_consola(void *clienteAceptado) {
-	int  socketAceptado = (int) (intptr_t)clienteAceptado;
+	int socketAceptado = (int) (intptr_t)clienteAceptado;
     int codigoDeOperacion = recibir_operacion(socketAceptado);
 
     switch(codigoDeOperacion) {
         case OP_PAQUETE:
             t_list* listaInstrucciones = recibir_paquete(socketAceptado);
 
-            log_info(kernelLogger, "Me llegaron los siguientes valores: ");
-            list_iterate(listaInstrucciones, (void*) iterator);
-
-            PCB* pcb = inicializar_pcb(socketAceptado, listaInstrucciones);
+            PCB* pcb = new_pcb(socketAceptado, listaInstrucciones);
 
             proximo_a_ejecutar();
 
@@ -93,14 +91,7 @@ void* recibir_de_consola(void *clienteAceptado) {
     liberar_conexion(socketAceptado);
 }
 
-PCB* inicializar_pcb(int clienteAceptado, t_list* listaInstrucciones) {
-	sem_wait(&sem_creacion_pcb);
-    PCB* pcb = new_pcb(clienteAceptado, listaInstrucciones);
-    log_info(kernelLogger, "valor id: %d", pcb->id_proceso);
-    sem_post(&sem_creacion_pcb);
-
-    return pcb;
-}
+/*------------------------------------------------------------------------*/
 
 char* ids_from_list_to_string(t_list* lista){
 	char* ids = string_new();
@@ -118,17 +109,19 @@ char* ids_from_list_to_string(t_list* lista){
 // TODO: Cuando se instancia un nuevo PCB, se crea tambien las listas de los elementos necesarios
 PCB* new_pcb(int clienteAceptado, t_list* lista_instrucciones) {
 	PCB* pcb = malloc(sizeof(PCB));
+	sem_wait(&sem_creacion_pcb);
 	pcb->id_proceso = contadorProcesoId;
 	contadorProcesoId++;
+	sem_post(&sem_creacion_pcb);
     pcb->lista_instrucciones = lista_instrucciones;
     pcb->estado = ENUM_NEW;
 
-    agregar_a_lista_con_sem(pcb, lista_estados[ENUM_NEW], sem_lista_estados[ENUM_NEW]);
+    if(agregar_a_lista_con_sem(pcb, lista_estados[ENUM_NEW], sem_lista_estados[ENUM_NEW])){ log_info(kernelLogger, "Se crea el proceso %d en NEW", pcb->id_proceso); }
+    else {log_error(kernelLogger, "Error al crear el proceso %d en NEW", pcb->id_proceso);}
 
-    char* list_ids = ids_from_list_to_string(lista_estados[ENUM_READY]);
-
+//    char* list_ids = ids_from_list_to_string(lista_estados[ENUM_READY]);
+//
 //    log_info(kernelLogger, "Cola Ready %s: [%s]"s,kernelConfig->ALGORITMO_PLANIFICACION,list_ids);
-
 	return pcb;
 }
 
@@ -142,7 +135,7 @@ void iterator(char* value) {
 /* Scheduler */
 
 void inicializar_planificador() {
-    log_info(kernelLogger, "Inicialización del planificador FIFO...");
+    log_info(kernelLogger, "Inicialización del planificador %s...",kernelConfig->ALGORITMO_PLANIFICACION);
     pthread_create(&planificador_corto_plazo, NULL, (void*) proximo_a_ejecutar, NULL);
     pthread_detach(planificador_corto_plazo);
 
@@ -200,10 +193,12 @@ void inicializar_semaforos() {
 }
 
 
-void agregar_a_lista_con_sem(void* elem, t_list* lista, sem_t sem_lista){
+int agregar_a_lista_con_sem(void* elem, t_list* lista, sem_t sem_lista){
+	int res;
 	sem_wait(&sem_lista);
-	list_add(lista,elem);
+	res = list_add(lista,elem);
 	sem_post(&sem_lista);
+	return res;
 }
 
 
@@ -230,21 +225,23 @@ void cambiar_estado_pcb(int posicion, pcb_estado estado_anterior, pcb_estado est
 void proximo_a_ejecutar() {
 	while(1){
 //		sem_wait(&sem_proceso_en_ready);
-	    sem_wait(&sem_cpu_disponible);
-	    if(strcmp(kernelConfig->ALGORITMO_PLANIFICACION, "FIFO") == 0) {
-	    	log_info(kernelLogger, "Planificación FIFO escogida.");
+//	    sem_wait(&sem_cpu_disponible);
+		char* planif = kernelConfig->ALGORITMO_PLANIFICACION;
 
-	    	cambiar_estado_pcb(0,ENUM_READY,ENUM_EXECUTING);
+	    if(strcmp(planif,"FIFO")==0) {
 
-//            send_pcb_package(connection_cpu_dispatch, pcb_to_execute, EXECUTE_PCB);
+	    	// TODO: @Francisca
+			cambiar_estado_pcb(0,ENUM_NEW,ENUM_READY);
 
-	    } else if (strcmp(kernelConfig->ALGORITMO_PLANIFICACION, "HRRN")==0) {
-	    	// TODO Algoritmo HRRN
+//				send_pcb_package(connection_cpu_dispatch, pcb_to_execute, EXECUTE_PCB);
 
+	    } else if(strcmp(planif,"HRRN")==0){
+			//TODO: @Joan
+			cambiar_estado_pcb(0,ENUM_NEW,ENUM_READY);
 
-        } else {
-            log_error(kernelLogger, "No es posible utilizar el algoritmo especificado.");
-        }
+	    } else {
+			log_error(kernelLogger, "No se guardo el tipo de planificador.");
+		}
     }
 }
 
