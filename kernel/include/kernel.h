@@ -24,7 +24,7 @@ char* pids_on_ready();
 
 PCB* inicializar_pcb(int, t_list*);
 
-PCB* new_pcb(char** , int , int );
+PCB* new_pcb(t_list* , int , int );
 ///////////////////////////
 
 
@@ -67,6 +67,11 @@ void cambiar_a_ready();
 void agregar_pcb_a_paquete(t_paquete* , PCB* );
 PCB* remover_de_lista(int, t_list*, sem_t);
 
+void agregar_elemento_a_paquete(t_paquete* , void* );
+void agregar_cadena_a_paquete(t_paquete* , char* );
+void agregar_long_a_paquete(t_paquete* , void* );
+void agregar_longlong_a_paquete(t_paquete* , void* );
+void agregar_lista_a_paquete(t_paquete* , t_list* );
 void agregar_int_a_paquete(t_paquete* , int );
 void agregar_arreglo_a_paquete(t_paquete* , char** );
 void agregar_valor_a_paquete(t_paquete* , void* , int );

@@ -24,6 +24,6 @@ float leer_float(char* buffer, int* desp);
 int leer_int(char* buffer, int* desp);
 char* leer_string(char* buffer, int* desp);
 t_list* leer_string_array(char* buffer, int* desp);
-const char* obtener_nombre_estado(pcb_estado);
+char* obtener_nombre_estado(pcb_estado);
 
 #endif

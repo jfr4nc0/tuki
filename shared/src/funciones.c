@@ -187,7 +187,7 @@ t_list* leer_string_array(char* buffer, int* desp) {
     return lista_instrucciones;
 }
 
-const char* obtener_nombre_estado(pcb_estado estado){
+char* obtener_nombre_estado(pcb_estado estado){
 	if (estado >= ENUM_NEW) {
 		return nombres_estados[estado];
 	}

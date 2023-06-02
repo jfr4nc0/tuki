@@ -58,11 +58,6 @@ void cambio_de_estado(PCB*, pcb_estado);
 void cambiar_estado_pcb_a(PCB*, pcb_estado);
 //void agregar_a_lista(PCB*, t_list*, pthread_mutex_t);
 
-t_list* lista_NEW;
-t_list* lista_READY;
-t_list* lista_EXECUTING;
-t_list* lista_BLOCKED;
-t_list* lista_EXIT;
 
 
 #endif
