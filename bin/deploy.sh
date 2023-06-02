@@ -30,11 +30,8 @@ echo "Compilando todos los modulos del sistema..."
 [ ! -d $MEMORIA$OBJ ] && mkdir $MEMORIA$OBJ 
 [ ! -d $FILESYSTEM$LOG ] && mkdir $FILESYSTEM$LOG 
 [ ! -d $FILESYSTEM$OBJ ] && mkdir $FILESYSTEM$OBJ 
-[ ! -d $SHARED$LOG ] && mkdir $SHARED$LOG 
-[ ! -d $SHARED$OBJ ] && mkdir $SHARED$OBJ 
 
 # Make all
-#make -C $SHARED
 make -C $CONSOLA
 make -C $KERNEL
 make -C $CPU

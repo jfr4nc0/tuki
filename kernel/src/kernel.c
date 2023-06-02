@@ -1,4 +1,4 @@
-#include "../include/kernel.h"
+#include "kernel.h"
 
 t_log* kernelLogger;
 t_kernel_config* kernelConfig;

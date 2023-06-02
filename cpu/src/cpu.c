@@ -1,5 +1,4 @@
-#include "../include/cpu.h"
-#include "../../shared/shared.h"
+#include "cpu.h"
 
 t_log* loggerCpu;
 cpu_config_t* configCpu;

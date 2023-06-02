@@ -12,23 +12,15 @@
 #include <commons/string.h>
 #include <commons/collections/list.h>
 #include <commons/collections/dictionary.h>
-//#include <commons/bitarray.h>
+#include <commons/bitarray.h>
 #include <commons/config.h>
 #include <commons/string.h>
 
 #include <sys/stat.h>
-#include <pthread.h> 	// Para crear hilos! :D
-#include <semaphore.h>	// Para crear semaforos! :D
+#include <pthread.h>
+#include <semaphore.h>
 #include <time.h>
 #include <math.h>
-
-#include "funciones.h"
-#include "funcionesCliente.h"
-#include "funcionesServidor.h"
-#include "constructor.h"
-#include "constantes.h"
-#include "structs.h"
-#include "variablesGlobales.h"
 
 /*------------------------------- VARIABLES GLOBALES -------------------------------*/
 
@@ -41,7 +33,6 @@ int servidorKernel;
 //sem_t sem_lista_estados[5];
 
 //pthread_mutex_t m_listas_mutex[5];
-
 
 extern t_log* kernelLogger;
 extern t_kernel_config* kernelConfig;
@@ -69,8 +60,7 @@ int contadorProcesoId = 0;
 
 int keyfromstring(char *key);
 
-
-/*----------------------------- FUNCIONES ----------------------------*/
+/*--------------------------------- FUNCIONES --------------------------------*/
 
 char* cantidad_strings_a_mostrar(int);
 char* extraer_de_config(t_config*, char*, t_log* logger);
@@ -88,7 +78,6 @@ int leer_int(char* buffer, int* desp);
 char* leer_string(char* buffer, int* desp);
 t_list* leer_string_array(char* buffer, int* desp);
 const char* obtener_nombre_estado(pcb_estado);
-
 
 /*----------------------------- FUNCIONES CLIENTE ----------------------------*/
 
@@ -110,8 +99,7 @@ t_list* recibir_paquete(int);
 int recibir_operacion(int);
 void* recibir_buffer(int*, int);
 
-
-/*------------------ CONFIGURACIONES ----------------------*/
+/*------------------------------ CONFIGURACIONES ------------------------------*/
 
 #define PATH_DEFAULT_CONEXION_KERNEL                "../kernel_conexion.config"
 
@@ -133,7 +121,7 @@ void* recibir_buffer(int*, int);
  */
 #define LOG_LEVEL_DEFAULT         LOG_LEVEL_INFO
 
-/*------------------- CONSTANTES ------------------------------*/
+/*--------------------------------- CONSTANTES --------------------------------*/
 
 #define LOCALHOST           "127.0.0.1"
 #define PUERTO_LOCAL        "PUERTO_ESCUCHA"
@@ -161,7 +149,6 @@ void* recibir_buffer(int*, int);
 #define MEMORIA                    "MEMORIA"
 
 // ENUMS
-
 #define ENUM_CONSOLA              	0
 #define ENUM_CPU                    1
 #define ENUM_FILE_SYSTEM            2
@@ -207,7 +194,7 @@ const char* nombres_estados[] = {
 };
 
 
-/*---------------------------- STRUCTS ---------------------------------*/
+/*----------------------------------- STRUCTS ----------------------------------------*/
 
 typedef enum {
     OP_PAQUETE,
@@ -233,7 +220,7 @@ typedef struct {
 } archivo_abierto_t;
 
 typedef struct {
-	int  id; // direccion_base, de que tipo??
+	int  id;
 	int tamanio;
 }t_segmento;
 

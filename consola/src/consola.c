@@ -1,6 +1,4 @@
-#include "../include/consola.h"
-#include "../../shared/src/funciones.c"
-#include "../../shared/src/funcionesCliente.c"
+#include "consola.h"
 
 int main(int argc, char** argv) {
     // Comentar este if si se quiere tomar los valores por defecto

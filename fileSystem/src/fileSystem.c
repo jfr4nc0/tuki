@@ -1,7 +1,4 @@
-#include "../include/fileSystem.h"
-#include "../../shared/src/funciones.c"
-#include "../../shared/src/funcionesServidor.c"
-#include "../../shared/src/funcionesCliente.c"
+#include "fileSystem.h"
 
 int main(int argc, char** argv) {
     t_log* logger = iniciar_logger(DEFAULT_LOG_PATH, ENUM_FILE_SYSTEM);

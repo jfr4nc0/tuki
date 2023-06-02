@@ -8,14 +8,16 @@
 #include <commons/log.h>
 #include <commons/string.h>
 #include <commons/config.h>
-#include<signal.h>
-#include<unistd.h>
+#include <signal.h>
+#include <unistd.h>
 
-// Internas
-#include "structs.h"
-#include "constantes.h"
-#include "funciones.h"
-#include "../../shared/funciones.h"
-#include "../../shared/funcionesCliente.h"
+#include "shared.h"
+
+
+void validarArgumentos(int, char**);
+void enviarInstrucciones(char*, int, t_log*);
+
+#define DEFAULT_INSTRUCCIONES_PATH   "./instrucciones.txt"
+#define DEFAULT_LOG_PATH             "../logs/consola.log"
 
 #endif
