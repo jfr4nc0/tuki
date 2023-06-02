@@ -11,8 +11,8 @@ int conexionMemoria;
 int conexionFileSystem;
 int servidorKernel;
 
-t_list* lista_estados[5]; // TODO: Usar constante CANTIDAD_ESTADOS
-sem_t m_listas[5];
+t_list* lista_estados[CANTIDAD_ESTADOS];
+sem_t m_listas[CANTIDAD_ESTADOS];
 
 extern t_log* kernelLogger;
 extern t_kernel_config* kernelConfig;

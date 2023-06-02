@@ -19,10 +19,12 @@ void cargar_config_kernel(t_config*, t_log*);
 void inicializar_escucha_conexiones_consolas(int);
 void* recibir_de_consola(void*);
 void iterator(char* value);
+char** leer_arreglo_string(char* , int* );
+char* pids_on_ready();
 
 PCB* inicializar_pcb(int, t_list*);
 
-PCB* new_pcb(int, t_list*);
+PCB* new_pcb(t_list* , int , int );
 ///////////////////////////
 
 
@@ -32,12 +34,14 @@ pthread_t planificador_corto_plazo;
 pthread_t thread_memoria;
 pthread_t thread_cpu;
 
+/*
 typedef struct{
     char* nombre;
     int instancias;
     // t_list* lista_procesos;
     sem_t sem_recurso;
 } t_recurso;
+*/
 
 t_dictionary* diccionario_recursos;
 
@@ -54,11 +58,44 @@ sem_t sem_proceso_a_ready;
 void inicializar_planificador();
 void inicializar_listas_estados();
 void proximo_a_ejecutar();
-PCB* cambio_de_estado(int, pcb_estado estadoAnterior, pcb_estado estadoNuevo);
-void agregar_a_lista(PCB*, t_list*, sem_t);
+//PCB* cambio_de_estado(int, pcb_estado estadoAnterior, pcb_estado estadoNuevo);
+void cambiar_a(PCB* , pcb_estado , t_list* , sem_t );
+void agregar_a_lista_con_sem(PCB *, t_list *, sem_t);
 void liberar_listas_estados();
-
+void loggear_cola_ready(char*);
+void cambiar_a_ready();
+void agregar_pcb_a_paquete(t_paquete* , PCB* );
 PCB* remover_de_lista(int, t_list*, sem_t);
+
+void agregar_elemento_a_paquete(t_paquete* , void* );
+void agregar_cadena_a_paquete(t_paquete* , char* );
+void agregar_long_a_paquete(t_paquete* , void* );
+void agregar_longlong_a_paquete(t_paquete* , void* );
+void agregar_lista_a_paquete(t_paquete* , t_list* );
+void agregar_int_a_paquete(t_paquete* , int );
+void agregar_arreglo_a_paquete(t_paquete* , char** );
+void agregar_valor_a_paquete(t_paquete* , void* , int );
+void agregar_registros_a_paquete(t_paquete* , registros_cpu* );
+void envio_pcb(int , PCB* , codigo_operacion );
+
+// TODO: Cambiar por obtener_nombre_estado
+const char* estadoToString(pcb_estado estado) {
+    switch (estado) {
+        case ENUM_NEW:
+            return "NEW";
+        case ENUM_READY:
+            return "READY";
+        case ENUM_BLOCKED:
+            return "BLOCKED";
+        case ENUM_EXECUTING:
+            return "EXECUTING";
+        case ENUM_EXIT:
+            return "EXIT";
+        default:
+            return "NO SE CONOCE EL ESTADO";
+    }
+}
+
 ////////////////////
 
 #endif
