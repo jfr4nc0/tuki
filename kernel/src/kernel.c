@@ -339,13 +339,7 @@ void agregar_pcb_a_paquete(t_paquete* paquete, PCB* pcb){
 	agregar_cadena_a_paquete(paquete, pcb->processor_burst);
 	agregar_int_a_paquete(paquete, pcb->ready_timestamp);
 }
-/*
-void agregar_int_a_paquete(t_paquete* paquete, int valor){
-	paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(int));
-	memcpy(paquete->buffer->stream + paquete->buffer->size, &valor, sizeof(int));
-	paquete->buffer->size += sizeof(int);
-}
-*/
+
 void agregar_lista_a_paquete(t_paquete* paquete, t_list* lista){
 	int tamanio = list_size(lista);
 	agregar_int_a_paquete(paquete, tamanio);
@@ -380,19 +374,6 @@ void agregar_valor_a_paquete(t_paquete* paquete, void* valor, int tamanio) {
     paquete->buffer->size += tamanio;
 }
 
-/*
-void agregar_valor_a_paquete(t_paquete* paquete, void* valor, int tamanio) {
-
-	paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + tamanio + sizeof(int));
-
-	memcpy(paquete->buffer->stream + paquete->buffer->size, &tamanio, sizeof(int));
-	memcpy(paquete->buffer->stream + paquete->buffer->size + sizeof(int), valor, tamanio);
-
-	paquete->buffer->size += tamanio + sizeof(int);
-
-}
-*/
-
 void agregar_registros_a_paquete(t_paquete* paquete, registros_cpu* registrosCpu){
 	 agregar_int_a_paquete(paquete, registrosCpu->AX);
 	 agregar_int_a_paquete(paquete, registrosCpu->BX);
@@ -419,25 +400,7 @@ void agregar_longlong_a_paquete(t_paquete* paquete, void* valor) {
     memcpy(paquete->buffer->stream + paquete->buffer->size, valor, sizeof(long long));
     paquete->buffer->size += sizeof(long long);
 }
-/*
-void agregar_long_a_paquete(t_paquete* paquete, long* valor){
-    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(long));
-    memcpy(paquete->buffer->stream + paquete->buffer->size, valor, sizeof(long));
-    paquete->buffer->size += sizeof(long);
-}
 
-void agregar_longlong_a_paquete(t_paquete* paquete, long long* valor){
-    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(long long));
-    memcpy(paquete->buffer->stream + paquete->buffer->size, valor, sizeof(long long));
-    paquete->buffer->size += sizeof(long long);
-}
-
-void agregar_float_a_paquete(t_paquete* paquete, int valor){
-	paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(float));
-	memcpy(paquete->buffer->stream + paquete->buffer->size, &valor, sizeof(float));
-	paquete->buffer->size += sizeof(float);
-}
-*/
 void cambiar_a(PCB* pcb, pcb_estado estado, t_list* lista, sem_t mutex){
 	cambio_de_estado(pcb, estado);
 	agregar_a_lista_con_sem(pcb, lista, mutex);
@@ -454,24 +417,6 @@ void agregar_a_lista_con_sem(PCB* pcb, t_list* lista, sem_t mutex){
 	list_add(lista, pcb);
 	sem_post(&mutex);
 }
-
-/*
-PCB* cambio_de_estado(int posicion, pcb_estado estadoAnterior, pcb_estado estadoNuevo) {
-    // TODO: ¿No puede saberse por el pcb el estado anterior? No se si anda la idea de que devuelva un PCB*
-    PCB* pcb = remover_de_lista(posicion, lista_estados[estadoAnterior], m_listas[estadoAnterior]);
-    agregar_a_lista(pcb, lista_estados[estadoNuevo], m_listas[estadoNuevo]);
-    pcb->estado = estadoNuevo;
-
-    // TODO: ¿No son demasiados logs?
-    const char* estadoActual = obtener_nombre_estado(estadoNuevo);
-    const char* estadoViejo = obtener_nombre_estado(estadoAnterior);
-    log_info(kernelLogger, cantidad_strings_a_mostrar(2), "El pcb entró en la cola de ", estadoActual);
-    log_info(kernelLogger, "El proceso %d cambio su estado a %s ", pcb->id_proceso, estadoActual);
-    log_info(kernelLogger,"PID: %d - Estado Anterior: %s - Estado Actual: %s", pcb->id_proceso, estadoViejo, estadoActual);
-
-    return pcb;
-}
-*/
 
 void agregar_a_lista(PCB* pcb, t_list* lista, sem_t m_sem) {
     sem_wait(&m_sem);
