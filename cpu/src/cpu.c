@@ -89,7 +89,7 @@ PCB* recibir_pcb(int clienteAceptado) {
 
 	pcb->id_proceso = leer_int(buffer, &desplazamiento);
 	pcb->lista_instrucciones = leer_string_array(buffer, &desplazamiento);
-	pcb->contador_instrucciones = leer_int(buffer, &desplazamiento);
+	pcb->program_counter = leer_int(buffer, &desplazamiento);
 	pcb->registrosCpu->AX = leer_int(buffer, &desplazamiento);
 	pcb->registrosCpu->BX = leer_int(buffer, &desplazamiento);
 	pcb->registrosCpu->CX = leer_int(buffer, &desplazamiento);
@@ -156,7 +156,7 @@ void ejecutar_proceso(PCB* pcb) {
 	// while(f_eop!=1 && f_interruption!=1 && f_io!=1 && f_pagefault!=1 && f_segfault!=1){
 
     while ((posicion_actual < cantidad_instrucciones) && !exitInstruccion && !desalojoOpcional) {
-	    instruccion = string_duplicate((char *)list_get(pcb->lista_instrucciones, pcb->contador_instrucciones));
+	    instruccion = string_duplicate((char *)list_get(pcb->lista_instrucciones, pcb->program_counter));
 		instruccion_decodificada = decode_instruccion(instruccion);
 
         log_info(loggerCpu, "Ejecutando instruccion: %s", instruccion_decodificada[0]);
@@ -164,10 +164,10 @@ void ejecutar_proceso(PCB* pcb) {
 
         // Evaluar si la instruccion genero una excepcion "f_pagefault"
         // Caso afirmativo => No se actualiza el program counter del pcb
-        pcb->contador_instrucciones++;
+        pcb->program_counter++;
 		posicion_actual++;
 
-        log_info(loggerCpu, "PROGRAM COUNTER: %d", pcb->contador_instrucciones);
+        log_info(loggerCpu, "PROGRAM COUNTER: %d", pcb->program_counter);
 
         usleep(atoi(configCpu->RETARDO_INSTRUCCION)*1000);
         log_info(loggerCpu, "Se suspendio el proceso por retardo de la instruccion...");
@@ -209,12 +209,28 @@ void ejecutar_instruccion(char** instruccion_decodificada, PCB* pcb) {
 		if(strcmp(comandoInstruccion, "SET")) {
 			set_registro(instruccion_decodificada[1],instruccion_decodificada[2]);
 		} else if(strcmp(comandoInstruccion, "YIELD")) {
+			// Esta instrucción desaloja voluntariamente el proceso de la CPU. Se deberá devolver el Contexto de Ejecución actualizado al Kernel.
+
+
+
 			desalojoOpcional = true;
 		} else if(strcmp(comandoInstruccion, "EXIT")) {
 			exitInstruccion = true;
+		} else if(strcmp(comandoInstruccion, "I/O")) {
+
+		} else if(strcmp(comandoInstruccion, "WAIT")) {
+
+		} else if(strcmp(comandoInstruccion, "SIGNAL")) {
+
 		}
+
+
+
+
 		log_debug(loggerCpu, cantidad_strings_a_mostrar(2),"Instruccion ejecutada: ", comandoInstruccion);
 	}
+
+
 }
 
 void set_registro(char* registro,char* valor) {

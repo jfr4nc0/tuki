@@ -14,6 +14,7 @@ typedef enum {
     AUX_SOY_CPU, // Notifica a memoria que el modulo que se conectó es CPU
     AUX_SOY_KERNEL, // Notifica a memoria que el modulo que se conectó es KERNEL
     AUX_SOY_FILE_SYSTEM, // Notifica a memoria que el modulo que se conectó es FILE SYSTEM
+    OP_EXECUTE_PCB
 }codigo_operacion;
 
 typedef struct {
@@ -100,7 +101,7 @@ typedef struct {
 	int id_proceso; // Identificador del proceso, unico en todo el sistema
 	pcb_estado estado;
 	t_list* lista_instrucciones; // Lista de instrucciones a ejecutar
-	int contador_instrucciones; // Numero de la proxima instruccion a ejecutar
+	int program_counter; // Numero de la proxima instruccion a ejecutar
 	registros_cpu* registrosCpu;
 	t_list* lista_segmentos;
 	t_list* lista_archivos_abiertos; // Contendrá la lista de archivos abiertos del proceso con la posición del puntero de cada uno de ellos.
@@ -119,7 +120,7 @@ typedef struct {
     char* PUERTO_CPU;
     char* PUERTO_ESCUCHA;
     char* ALGORITMO_PLANIFICACION;
-    char* ESTIMACION_INICIAL;
+    int ESTIMACION_INICIAL;
     double HRRN_ALFA;
     int GRADO_MAX_MULTIPROGRAMACION;
     char** RECURSOS;
