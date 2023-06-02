@@ -5,10 +5,15 @@
 #include <commons/collections/list.h>
 
 typedef enum {
-    OP_PAQUETE,
     OP_EXIT,
     OP_MENSAJE,
-    OP_YIELD
+    OP_YIELD,
+    OP_CREATE_SEGMENT,
+    OP_DELETE_SEGMENT,
+    AUX_NEW_PROCESO, // Notifica a kernel que hay un nuevo proceso y se le envia la lista de instrucciones
+    AUX_SOY_CPU, // Notifica a memoria que el modulo que se conectó es CPU
+    AUX_SOY_KERNEL, // Notifica a memoria que el modulo que se conectó es KERNEL
+    AUX_SOY_FILE_SYSTEM, // Notifica a memoria que el modulo que se conectó es FILE SYSTEM
 }codigo_operacion;
 
 typedef struct {
@@ -28,9 +33,16 @@ typedef struct {
 } archivo_abierto_t;
 
 typedef struct {
-	int  id; // direccion_base, de que tipo??
+	int  id;
 	int tamanio;
+    void* direccion_base;
 }t_segmento;
+
+typedef struct {
+    t_segmento* segmentos;
+    int cantidad_segmentos_usados;
+    int capacidad_segmentos;
+}t_tabla_segmentos;
 
 
 //TODO: POSIBLE CAMBIO

@@ -2,7 +2,7 @@
 
 int iniciar_servidor(t_config* config, t_log* logger) {
     int socket_servidor;
-    char* puerto = extraer_de_config(config, PUERTO_LOCAL, logger);
+    char* puerto = extraer_string_de_config(config, PUERTO_LOCAL, logger);
 
     struct addrinfo hints, *servinfo;
 
@@ -60,8 +60,9 @@ int esperar_cliente(int socket_servidor, t_log* logger) {
     return clienteAceptado;
 }
 
+// TODO: en vez de int debería devolver el tipo de dato de codigo_operacion
 int recibir_operacion(int clienteAceptado) {
-    int cod_op;
+    codigo_operacion cod_op;
     if(recv(clienteAceptado, &cod_op, sizeof(int), MSG_WAITALL) > 0) {
         return cod_op;
     }else {

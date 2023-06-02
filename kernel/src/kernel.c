@@ -22,6 +22,9 @@ int main(int argc, char** argv) {
 
     log_debug(kernelLogger, "Vamos a usar el algoritmo %s", kernelConfig->ALGORITMO_PLANIFICACION);
 
+    conexionMemoria = armar_conexion(config, MEMORIA, kernelLogger);
+    identificarse(conexionMemoria, AUX_SOY_KERNEL);
+
     inicializar_semaforos();
     inicializar_listas_estados();
     inicializar_diccionario_recursos();
@@ -29,8 +32,10 @@ int main(int argc, char** argv) {
 
     // Conexiones con los demas modulos
     conexionCPU = armar_conexion(config, CPU, kernelLogger);
-    conexionMemoria = armar_conexion(config, MEMORIA, kernelLogger);
+
+
     conexionFileSystem = armar_conexion(config, FILE_SYSTEM, kernelLogger);
+    identificarse(conexionFileSystem, AUX_SOY_KERNEL);
 
     int servidorKernel = iniciar_servidor(config, kernelLogger);
 
@@ -47,17 +52,17 @@ int main(int argc, char** argv) {
 void cargar_config_kernel(t_config* config, t_log* kernelLogger) {
     kernelConfig = malloc(sizeof(t_kernel_config));
 
-    kernelConfig->IP_MEMORIA = extraer_de_config(config, "IP_MEMORIA", kernelLogger);
-    kernelConfig->PUERTO_MEMORIA = extraer_de_config(config, "PUERTO_MEMORIA", kernelLogger);
-    kernelConfig->IP_FILE_SYSTEM = extraer_de_config(config, "IP_FILE_SYSTEM", kernelLogger);
-    kernelConfig->PUERTO_FILE_SYSTEM = extraer_de_config(config, "PUERTO_FILE_SYSTEM", kernelLogger);
-    kernelConfig->IP_CPU = extraer_de_config(config, "IP_CPU", kernelLogger);
-    kernelConfig->PUERTO_CPU = extraer_de_config(config, "PUERTO_CPU", kernelLogger);
-    kernelConfig->PUERTO_ESCUCHA = extraer_de_config(config, "PUERTO_ESCUCHA", kernelLogger);
-    kernelConfig->ALGORITMO_PLANIFICACION = extraer_de_config(config, "ALGORITMO_PLANIFICACION", kernelLogger);
-    kernelConfig->ESTIMACION_INICIAL = extraer_de_config(config, "ESTIMACION_INICIAL", kernelLogger);
+    kernelConfig->IP_MEMORIA = extraer_string_de_config(config, "IP_MEMORIA", kernelLogger);
+    kernelConfig->PUERTO_MEMORIA = extraer_string_de_config(config, "PUERTO_MEMORIA", kernelLogger);
+    kernelConfig->IP_FILE_SYSTEM = extraer_string_de_config(config, "IP_FILE_SYSTEM", kernelLogger);
+    kernelConfig->PUERTO_FILE_SYSTEM = extraer_string_de_config(config, "PUERTO_FILE_SYSTEM", kernelLogger);
+    kernelConfig->IP_CPU = extraer_string_de_config(config, "IP_CPU", kernelLogger);
+    kernelConfig->PUERTO_CPU = extraer_string_de_config(config, "PUERTO_CPU", kernelLogger);
+    kernelConfig->PUERTO_ESCUCHA = extraer_string_de_config(config, "PUERTO_ESCUCHA", kernelLogger);
+    kernelConfig->ALGORITMO_PLANIFICACION = extraer_string_de_config(config, "ALGORITMO_PLANIFICACION", kernelLogger);
+    kernelConfig->ESTIMACION_INICIAL = extraer_string_de_config(config, "ESTIMACION_INICIAL", kernelLogger);
     kernelConfig->HRRN_ALFA = config_get_double_value(config, "HRRN_ALFA");
-    kernelConfig->GRADO_MAX_MULTIPROGRAMACION = config_get_int_value(config, "GRADO_MAX_MULTIPROGRAMACION");
+    kernelConfig->GRADO_MAX_MULTIPROGRAMACION = extraer_int_de_config(config, "GRADO_MAX_MULTIPROGRAMACION", kernelLogger);
     kernelConfig->RECURSOS = config_get_array_value(config, "RECURSOS");
     kernelConfig->INSTANCIAS_RECURSOS = config_get_array_value(config, "INSTANCIAS_RECURSOS");
 
@@ -68,32 +73,32 @@ void cargar_config_kernel(t_config* config, t_log* kernelLogger) {
 
 void inicializar_escucha_conexiones_consolas(int servidorKernel){
     while(1){
-        int clienteAceptado = esperar_cliente(servidorKernel, kernelLogger);
+        int conexionConConsola = esperar_cliente(servidorKernel, kernelLogger);
         pthread_t hilo_consola;
-        pthread_create(&hilo_consola, NULL, recibir_de_consola, (void*) (intptr_t) clienteAceptado);
+        pthread_create(&hilo_consola, NULL, recibir_de_consola, (void*) (intptr_t) conexionConConsola);
         pthread_detach(hilo_consola);  //Los recursos asociados se liberan automáticamente al finalizar.
     }
 }
 
 void* recibir_de_consola(void *clienteAceptado) {
-	int  socketAceptado = (int) (intptr_t)clienteAceptado;
-    int codigoDeOperacion = recibir_operacion(socketAceptado);
+	int conexionConConsola = (int) (intptr_t)clienteAceptado;
+    int codigoDeOperacion = recibir_operacion(conexionConConsola);
 
     switch(codigoDeOperacion) {
-        case OP_PAQUETE:
-            t_list* listaInstrucciones = recibir_paquete(socketAceptado);
+        case AUX_NEW_PROCESO:
+            t_list* listaInstrucciones = recibir_paquete(conexionConConsola);
 
             log_info(kernelLogger, "Me llegaron los siguientes valores: ");
             list_iterate(listaInstrucciones, (void*) iterator);
 
-            PCB* pcb = inicializar_pcb(socketAceptado, listaInstrucciones);
+            PCB* pcb = inicializar_pcb(conexionConConsola, listaInstrucciones);
             proximo_a_ejecutar();
 
             list_destroy(listaInstrucciones);
             break;
     }
 
-    liberar_conexion(socketAceptado);
+    liberar_conexion(conexionConConsola);
 }
 
 PCB* inicializar_pcb(int clienteAceptado, t_list* listaInstrucciones) {

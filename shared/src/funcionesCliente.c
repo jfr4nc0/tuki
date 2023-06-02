@@ -114,9 +114,35 @@ void enviar_paquete(t_paquete* paquete, int clienteAceptado) {
     free(a_enviar);
 }
 
-void notificar_instruccion(PCB* pcb, int conexion, codigo_operacion codOperacion) {
-	t_paquete* paquete = crear_paquete(codOperacion);
-	agregar_a_paquete(paquete, pcb, sizeof(PCB));
-	enviar_paquete(paquete, conexion);
-	free(paquete);
+/*
+ * Crea un paquete, le agrega el valor pasado como parametro, lo envia, y luego libera el paquete
+ */
+void enviarOperacion(int conexion, codigo_operacion codOperacion, int tamanio_valor, void* valor) {
+    t_paquete* paquete = crear_paquete(codOperacion);
+    if (tamanio_valor>0) {
+        agregar_a_paquete(paquete, valor, tamanio_valor);
+    }
+    enviar_paquete(paquete, conexion);
+    free(paquete);
+}
+/*
+ * Devuelve el pcb a kernel porque terminó de ejecutar el proceso
+ */
+void devolver_pcb_kernel(PCB* pcb, int conexion, codigo_operacion codOperacion) {
+    // TODO: Testear usando esta función
+    // enviarOperacion(conexion, codOperacion, sizeof(PCB), pcb);
+
+    t_paquete* paquete = crear_paquete(codOperacion);
+    agregar_a_paquete(paquete, pcb, sizeof(PCB));
+    enviar_paquete(paquete, conexion);
+    free(paquete);
+}
+
+/*
+ * Variable auxiliar, si solo me quiero identificar no hace falta que agregue ningun valor al paquete
+ */
+void identificarse(int conexion, codigo_operacion identificacion) {
+	if (conexion > 0) {
+		enviarOperacion(conexion, identificacion, 0, 0);
+	}
 }

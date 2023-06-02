@@ -16,7 +16,7 @@ char* cantidad_strings_a_mostrar(int cantidad) {
     return mostrarStrings;
 }
 
-char* extraer_de_config(t_config* config, char* property, t_log* logger) {
+char* extraer_string_de_config(t_config* config, char* property, t_log* logger) {
     if(config_has_property(config, property)) {
             char* valor = config_get_string_value(config, property);
             log_trace(logger, "Se obtuvo el valor -> %s. En el config %s (%s)", valor, config->path, property);
@@ -27,9 +27,20 @@ char* extraer_de_config(t_config* config, char* property, t_log* logger) {
     return NULL;
 }
 
+int extraer_int_de_config(t_config* config, char* property, t_log* logger) {
+    if(config_has_property(config, property)) {
+            int valor = config_get_int_value(config, property);
+            log_trace(logger, "Se obtuvo el valor -> %d. En el config %s (%s)", valor, config->path, property);
+            return valor;
+    }
+    log_warning(logger, "No se pudo encontrar en el config (%s), la propiedad -> %s", config->path, property);
+
+    return -1;
+}
+
 char* extraer_de_modulo_config(t_config* config, char* valorIncompleto, char* modulo, t_log* logger) {
     char* property = concatenar_strings(valorIncompleto, modulo);
-    return extraer_de_config(config, property, logger);
+    return extraer_string_de_config(config, property, logger);
 }
 
 // TODO: volverla funcion que acepte infinitos parametros
@@ -110,7 +121,7 @@ t_config* iniciar_config(char* pathConfig, t_log* logger) {
         exit(1);
     }
 
-    log_debug(logger, cantidad_strings_a_mostrar(3), D__CONFIG_CREADO, "-> ", pathConfig);
+    log_debug(logger, cantidad_strings_a_mostrar(3), D__CONFIG_INICIAL_CREADO, "-> ", pathConfig);
     return nuevo_config;
 }
 

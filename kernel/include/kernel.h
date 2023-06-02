@@ -14,6 +14,9 @@
 #include "../../shared/structs.h"
 #include "../../shared/variablesGlobales.h"
 
+extern t_log* kernelLogger;
+extern t_kernel_config* kernelConfig;
+
 t_list* procesar_instrucciones(int, t_list*, t_log*, t_config*);
 void cargar_config_kernel(t_config*, t_log*);
 void inicializar_escucha_conexiones_consolas(int);
