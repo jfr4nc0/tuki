@@ -12,7 +12,7 @@
 #include<unistd.h>
 #include<sys/socket.h>
 
-#include "shared.h"
+#include <shared/shared.h>
 
 #define DEFAULT_LOG_PATH        "../logs/file_system.log"
 #define DEFAULT_CONFIG_PATH     "file_system.config"

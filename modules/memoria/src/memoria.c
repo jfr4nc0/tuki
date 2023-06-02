@@ -1,7 +1,4 @@
-#include "../include/memoria.h"
-
-#include "../../shared/src/funciones.c"
-#include "../../shared/src/funcionesServidor.c"
+#include "memoria.h"
 
 int main(int argc, char** argv) {
     t_log* logger = iniciar_logger(DEFAULT_LOG_PATH, ENUM_MEMORIA);

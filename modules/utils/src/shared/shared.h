@@ -136,21 +136,6 @@ typedef struct {
     char** INSTANCIAS_RECURSOS;
 } t_kernel_config;
 
-/*------------------------------- VARIABLES GLOBALES -------------------------------*/
-
-int conexionCPU;
-int conexionMemoria;
-int conexionFileSystem;
-int servidorKernel;
-
-//t_list* lista_estados[5]; // TODO: Usar constante CANTIDAD_ESTADOS
-//sem_t sem_lista_estados[5];
-
-//pthread_mutex_t m_listas_mutex[5];
-
-extern t_log* kernelLogger;
-//extern t_kernel_config* kernelConfig;
-int contadorProcesoId = 0;
 
 /*---------------------------------- INSTRUCTIONS ----------------------------------*/
 
@@ -299,13 +284,7 @@ void* recibir_buffer(int*, int);
 #define E__CONFIG_CREATE       "No se pudo crear config"
 #define E__PAQUETE_CREATE      "Error al crear paquete"
 
-const char* nombres_estados[] = {
-        NEW,
-        READY,
-        BLOCKED,
-        EXECUTING,
-        EXIT
-};
+
 
 
 #endif
