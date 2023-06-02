@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
     inicializar_escucha_conexiones_consolas(servidorKernel);
 
     /*
-    NUNCA LLEGA ACA PORQUE SE QUEDA ESPERANDO NUEVAS CONSOLAS, USAR ESAS LAS FUNCIONES DE ABAJO
+    TODO: NUNCA LLEGA ACA PORQUE SE QUEDA ESPERANDO NUEVAS CONSOLAS, USAR ESAS LAS FUNCIONES DE ABAJO
     EN UN MODULO APARTE AL CUAL SE VA A LLAMAR CUANDO EL SISTEMA SOLICITE LA FINALIZACION
     */
     terminar_programa(servidorKernel, kernelLogger, config);
@@ -103,7 +103,7 @@ void* recibir_de_consola(void *clienteAceptado) {
 
     PCB* pcb = inicializar_pcb(socketAceptado, listaInstrucciones);
     log_info(kernelLogger, "Se crea el proceso %d en NEW", pcb->id_proceso);
-    cambiar_a(pcb, ENUM_NEW, lista_estados[obtener_indice_estado(NEW)], m_listas[obtener_indice_estado(NEW)]);
+    cambiar_a(pcb, ENUM_NEW, lista_estados[ENUM_NEW], m_listas[ENUM_NEW]);
 
     sem_wait(&sem_proceso_a_ready);
     cambiar_a_ready();
@@ -123,19 +123,20 @@ void cambiar_a_ready(){
 	PCB* pcb_a_ready;
 
 	// NEW a READY
-	if(!list_is_empty(lista_estados[obtener_indice_estado(NEW)])) {
+	if(!list_is_empty(lista_estados[ENUM_NEW])) {
 
-		sem_wait(&m_listas[obtener_indice_estado(NEW)]);
-		pcb_a_ready = list_get(lista_estados[obtener_indice_estado(NEW)], 0);
-		sem_post(&m_listas[obtener_indice_estado(NEW)]);
+		sem_wait(&m_listas[ENUM_NEW]);
+		pcb_a_ready = list_get(lista_estados[ENUM_NEW], 0);
+		sem_post(&m_listas[ENUM_NEW]);
 
 		if (string_equals_ignore_case(kernelConfig->ALGORITMO_PLANIFICACION, "FIFO") ) {
-			cambiar_a(pcb_a_ready, ENUM_READY, lista_estados[obtener_indice_estado(READY)], m_listas[obtener_indice_estado(READY)]);
+			cambiar_a(pcb_a_ready, ENUM_READY, lista_estados[ENUM_READY], m_listas[ENUM_READY]);
+
+			log_info(kernelLogger,"PID: %d - Estado Anterior: NEW - Estado Actual: READY",pcb_a_ready->id_proceso);
 
 			loggear_cola_ready(kernelConfig->ALGORITMO_PLANIFICACION);
 
-			log_info(kernelLogger, "Entro el pcb #%d a READY!", pcb_a_ready->id_proceso);
-			log_info(kernelLogger,"PID: %d - Estado Anterior: NEW - Estado Actual: READY",pcb_a_ready->id_proceso);
+			//log_info(kernelLogger, "Entro el pcb #%d a READY!", pcb_a_ready->id_proceso);
 
 			sem_post(&sem_proceso_en_ready);
 		} else if(string_equals_ignore_case(kernelConfig->ALGORITMO_PLANIFICACION, "HRRN")){
@@ -283,13 +284,13 @@ void proximo_a_ejecutar() {
 	    	log_info(kernelLogger, "Planificación FIFO escogida.");
 	        //PCB* pcbProximo = cambio_de_estado(0, ENUM_READY, ENUM_EXECUTING);
 
-	    	sem_wait(&m_listas[obtener_indice_estado(READY)]);
-	    	PCB* pcb = list_remove(lista_estados[obtener_indice_estado(READY)], 0);
-	    	sem_post(&m_listas[obtener_indice_estado(READY)]);
+	    	sem_wait(&m_listas[ENUM_READY]);
+	    	PCB* pcb = list_remove(lista_estados[ENUM_READY], 0);
+	    	sem_post(&m_listas[ENUM_READY]);
 
-	    	cambiar_a(pcb, ENUM_EXECUTING, lista_estados[obtener_indice_estado(EXECUTING)], m_listas[obtener_indice_estado(EXECUTING)]);
-            log_info(kernelLogger, "El proceso %d cambio su estado a RUNNING", pcb->id_proceso);
-            log_info(kernelLogger,"PID: %d - Estado Anterior: READY - Estado Actual: RUNNING",pcb->id_proceso);
+	    	cambiar_a(pcb, ENUM_EXECUTING, lista_estados[ENUM_EXECUTING], m_listas[ENUM_EXECUTING]);
+            //log_info(kernelLogger, "El proceso %d cambio su estado a EXECUTING", pcb->id_proceso);
+            log_info(kernelLogger,"PID: %d - Estado Anterior: READY - Estado Actual: EXECUTING",pcb->id_proceso);
 
             envio_pcb(conexionCPU, pcb, OP_EXECUTE_PCB);
 
@@ -440,11 +441,11 @@ char* pids_on_ready(){
     char* aux = string_new();
     string_append(&aux,"[");
     int pid_aux;
-    for(int i = 0 ; i < list_size(lista_estados[obtener_indice_estado(READY)]); i++){
-    	PCB* pcb = list_get(lista_estados[obtener_indice_estado(READY)],i);
+    for(int i = 0 ; i < list_size(lista_estados[ENUM_READY]); i++){
+    	PCB* pcb = list_get(lista_estados[ENUM_READY],i);
         pid_aux = pcb->id_proceso;
         string_append(&aux,string_itoa(pid_aux));
-        if(i != list_size(lista_estados[obtener_indice_estado(READY)])-1) string_append(&aux,"|");
+        if(i != list_size(lista_estados[ENUM_READY])-1) string_append(&aux,"|");
     }
     string_append(&aux,"]");
     return aux;
