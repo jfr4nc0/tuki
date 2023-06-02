@@ -188,7 +188,7 @@ t_list* leer_string_array(char* buffer, int* desp) {
 }
 
 char* obtener_nombre_estado(pcb_estado estado){
-	if (estado >= ENUM_NEW) {
+	if (estado >= ENUM_NEW && estado <= ENUM_EXIT) {
 		return nombres_estados[estado];
 	}
 	return "EL ESTADO NO ESTÁ REGISTRADO"; //TODO: Mejorar este mensaje

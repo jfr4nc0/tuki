@@ -211,7 +211,7 @@ void ejecutar_instruccion(char** instruccion_decodificada, PCB* pcb) {
 
 
 
-			// desalojoOpcional = true;
+			desalojoOpcional = true;
 		} else if(strcmp(comandoInstruccion, "EXIT")) {
 			exitInstruccion = true;
 		} else if(strcmp(comandoInstruccion, "I/O")) {

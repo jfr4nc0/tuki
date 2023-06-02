@@ -9,7 +9,7 @@ typedef enum {
     OP_EXIT,
     OP_MENSAJE,
     OP_YIELD,
-	OP_EXECUTE_PCB
+    OP_EXECUTE_PCB
 }codigo_operacion;
 
 typedef struct {

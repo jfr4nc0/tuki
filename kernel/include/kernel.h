@@ -78,6 +78,7 @@ void agregar_valor_a_paquete(t_paquete* , void* , int );
 void agregar_registros_a_paquete(t_paquete* , registros_cpu* );
 void envio_pcb(int , PCB* , codigo_operacion );
 
+// TODO: Cambiar por obtener_nombre_estado
 const char* estadoToString(pcb_estado estado) {
     switch (estado) {
         case ENUM_NEW:
