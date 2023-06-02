@@ -3,6 +3,7 @@
 #include "../../shared/src/funcionesCliente.c"
 #include "../../shared/src/funcionesServidor.c"
 #include "../include/scheduler.h"
+#include "../../shared/structs.h"
 
 t_log* kernelLogger;
 t_kernel_config* kernelConfig;
@@ -97,22 +98,24 @@ void* recibir_de_consola(void *clienteAceptado) {
     list_destroy(listaInstrucciones);
 
     liberar_conexion(socketAceptado);
+
 }
 
 void cambiar_a_ready(){
+
 	sem_wait(&sem_grado_multiprogamacion);
 	PCB* pcb_a_ready;
 
 	// NEW -> READY
 	if(!list_is_empty(lista_NEW)) {
 
-	// Primero obtenemos el pcb
-	pthread_mutex_lock(&m_lista_NEW);
-	pcb_a_ready = list_get(lista_NEW, 0);
-	pthread_mutex_unlock(&m_lista_NEW);
+		// Primero obtenemos el pcb
+		sem_wait(&m_lista_NEW);
+		pcb_a_ready = list_get(lista_NEW, 0);
+		sem_post(&m_lista_NEW);
 
 		if (string_equals_ignore_case(kernelConfig->ALGORITMO_PLANIFICACION, "FIFO") ) {
-			cambiar_a(pcb_a_ready, READY, lista_READY, m_lista_READY);
+			cambiar_a(pcb_a_ready, ENUM_READY, lista_READY, m_lista_READY);
 
 			loggear_cola_ready(kernelConfig->ALGORITMO_PLANIFICACION);
 
@@ -175,8 +178,8 @@ PCB* new_pcb(char** listaInstrucciones, int clienteAceptado, int contadorProceso
 	pcb->lista_instrucciones = listaInstrucciones;
 	pcb->program_counter = 0;
 
+	pcb->cpu_register = malloc(sizeof(registros_cpu));
 	pcb->cpu_register->AX = 0;
-	log_info(kernelLogger, "HOLAAAAAAAAA");
 	pcb->cpu_register->BX = 0;
 	pcb->cpu_register->CX = 0;
 	pcb->cpu_register->DX = 0;
@@ -189,10 +192,8 @@ PCB* new_pcb(char** listaInstrucciones, int clienteAceptado, int contadorProceso
 	pcb->cpu_register->RCX = 0;
 	pcb->cpu_register->RDX = 0;
 
-	t_list* lista_vacia;
-
-	pcb->lista_segmentos = lista_vacia;
-	pcb->lista_archivos_abiertos = lista_vacia;
+	pcb->lista_segmentos = list_create();
+	pcb->lista_archivos_abiertos = list_create();
 	pcb->processor_burst = kernelConfig->ESTIMACION_INICIAL;
 	pcb->ready_timestamp = 0; // TODO: NO SE DE DONDE SE SACA ESTE DATO PARA INICIALIZAR
 
@@ -220,16 +221,39 @@ void inicializar_planificador() {
 }
 
 void inicializar_listas_estados() {
+
+	lista_NEW = list_create();
+	lista_READY = list_create();
+	lista_EXECUTING = list_create();
+	lista_BLOCKED = list_create();
+	lista_EXIT = list_create();
+
+	sem_init(&m_lista_NEW, 0, 1);
+	sem_init(&m_lista_READY, 0, 1);
+	sem_init(&m_lista_EXECUTING, 0, 1);
+	sem_init(&m_lista_BLOCKED, 0, 1);
+	sem_init(&m_lista_EXIT, 0, 1);
+
+	/*
 	for (int estado = 0; estado < CANTIDAD_ESTADOS; estado++) {
 		lista_estados[estado] = list_create();
         sem_init(&m_listas[estado], 0, 1);
 	}
+	*/
 }
 
 void liberar_listas_estados() {
-    for (int estado = 0; estado < CANTIDAD_ESTADOS; estado++) {
+	sem_destroy(&m_lista_NEW);
+	sem_destroy(&m_lista_READY);
+	sem_destroy(&m_lista_EXECUTING);
+	sem_destroy(&m_lista_BLOCKED);
+	sem_destroy(&m_lista_EXIT);
+
+	/*
+	for (int estado = 0; estado < CANTIDAD_ESTADOS; estado++) {
         sem_destroy(&m_listas[estado]);
 	}
+	*/
 }
 
 void inicializar_diccionario_recursos() {
@@ -272,21 +296,21 @@ void proximo_a_ejecutar() {
 	while(1){
 		sem_wait(&sem_proceso_en_ready);
 	    //sem_wait(&sem_cpu_disponible);
+
 	    if(strcmp(kernelConfig->ALGORITMO_PLANIFICACION, "FIFO") == 0) {
 	    	log_info(kernelLogger, "Planificación FIFO escogida.");
 	        //PCB* pcbProximo = cambio_de_estado(0, ENUM_READY, ENUM_EXECUTING);
             sem_post(&sem_proceso_en_ready);
 
-	    	pthread_mutex_lock(&m_lista_READY);
+	    	sem_wait(&m_lista_READY);
 	    	PCB* pcb = list_remove(lista_READY, 0);
-	    	pthread_mutex_unlock(&m_lista_READY);
+	    	sem_post(&m_lista_READY);
 
-	    	cambiar_a(pcb, EXECUTING, lista_EXECUTING, m_lista_EXECUTING);
+	    	cambiar_a(pcb, ENUM_EXECUTING, lista_EXECUTING, m_lista_EXECUTING);
             log_info(kernelLogger, "El proceso %d cambio su estado a RUNNING", pcb->id_proceso);
             log_info(kernelLogger,"PID: %d - Estado Anterior: READY - Estado Actual: RUNNING",pcb->id_proceso);
 
             envio_pcb(conexionCPU, pcb, OP_EXECUTE_PCB);
-
 
 	    } else {
             log_error(kernelLogger, "No es posible utilizar el algoritmo especificado.");
@@ -295,6 +319,7 @@ void proximo_a_ejecutar() {
 }
 
 void envio_pcb(int conexion, PCB* pcb, codigo_operacion codigo){
+
 	t_paquete* paquete = crear_paquete(codigo);
 	agregar_pcb_a_paquete(paquete, pcb);
 	enviar_paquete(paquete, conexionCPU);
@@ -303,66 +328,108 @@ void envio_pcb(int conexion, PCB* pcb, codigo_operacion codigo){
 }
 
 void agregar_pcb_a_paquete(t_paquete* paquete, PCB* pcb){
+
 	agregar_int_a_paquete(paquete, pcb->id_proceso);
 	agregar_int_a_paquete(paquete, pcb->estado);
-	agregar_arreglo_a_paquete(paquete, pcb->lista_instrucciones);
+	agregar_lista_a_paquete(paquete, pcb->lista_instrucciones);
 	agregar_int_a_paquete(paquete, pcb->program_counter);
 	agregar_registros_a_paquete(paquete, pcb->cpu_register);
-	agregar_arreglo_a_paquete(paquete, pcb->lista_segmentos);
-	agregar_arreglo_a_paquete(paquete, pcb->lista_archivos_abiertos);
-	agregar_float_a_paquete(paquete, pcb->processor_burst);
+	agregar_lista_a_paquete(paquete, pcb->lista_segmentos);
+	agregar_lista_a_paquete(paquete, pcb->lista_archivos_abiertos);
+	agregar_cadena_a_paquete(paquete, pcb->processor_burst);
 	agregar_int_a_paquete(paquete, pcb->ready_timestamp);
 }
-
+/*
 void agregar_int_a_paquete(t_paquete* paquete, int valor){
 	paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(int));
 	memcpy(paquete->buffer->stream + paquete->buffer->size, &valor, sizeof(int));
 	paquete->buffer->size += sizeof(int);
 }
-
-void agregar_arreglo_a_paquete(t_paquete* paquete, char** arreglo){
-	int tamanio = string_array_size(arreglo);
+*/
+void agregar_lista_a_paquete(t_paquete* paquete, t_list* lista){
+	int tamanio = list_size(lista);
 	agregar_int_a_paquete(paquete, tamanio);
+
 	for(int i = 0; i < tamanio; i++) {
-	 	agregar_valor_a_paquete(paquete, arreglo[i], string_length(arreglo[i])+1);
+		void* elemento = list_get(lista, i);
+		agregar_elemento_a_paquete(paquete, elemento);
+		//agregar_valor_a_paquete(paquete, arreglo[i], strlen(arreglo[i]));
 	}
+
+}
+
+void agregar_elemento_a_paquete(t_paquete* paquete, void* elemento){
+	agregar_cadena_a_paquete(paquete, (char*)elemento);
+}
+
+void agregar_cadena_a_paquete(t_paquete* paquete, char* cadena) {
+    int longitud = strlen(cadena) + 1;
+    agregar_int_a_paquete(paquete, longitud);
+    agregar_valor_a_paquete(paquete, cadena, longitud);
+}
+
+void agregar_int_a_paquete(t_paquete* paquete, int valor) {
+    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(int));
+    memcpy(paquete->buffer->stream + paquete->buffer->size, &valor, sizeof(int));
+    paquete->buffer->size += sizeof(int);
 }
 
 void agregar_valor_a_paquete(t_paquete* paquete, void* valor, int tamanio) {
-    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + tamanio + sizeof(int));
+    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + tamanio);
+    memcpy(paquete->buffer->stream + paquete->buffer->size, valor, tamanio);
+    paquete->buffer->size += tamanio;
+}
+
+/*
+void agregar_valor_a_paquete(t_paquete* paquete, void* valor, int tamanio) {
+
+	paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + tamanio + sizeof(int));
 
 	memcpy(paquete->buffer->stream + paquete->buffer->size, &tamanio, sizeof(int));
 	memcpy(paquete->buffer->stream + paquete->buffer->size + sizeof(int), valor, tamanio);
 
 	paquete->buffer->size += tamanio + sizeof(int);
+
 }
+*/
 
 void agregar_registros_a_paquete(t_paquete* paquete, registros_cpu* registrosCpu){
-	agregar_int_a_paquete(paquete, registrosCpu->AX);
-	agregar_int_a_paquete(paquete, registrosCpu->BX);
-	agregar_int_a_paquete(paquete, registrosCpu->CX);
-	agregar_int_a_paquete(paquete, registrosCpu->DX);
-	agregar_long_a_paquete(paquete, registrosCpu->EAX);
-	agregar_long_a_paquete(paquete, registrosCpu->EBX);
-	agregar_long_a_paquete(paquete, registrosCpu->ECX);
-	agregar_long_a_paquete(paquete, registrosCpu->EDX);
-	agregar_longlong_a_paquete(paquete, registrosCpu->RAX);
-	agregar_longlong_a_paquete(paquete, registrosCpu->RBX);
-	agregar_longlong_a_paquete(paquete, registrosCpu->RCX);
-	agregar_longlong_a_paquete(paquete, registrosCpu->RDX);
-
-
+	 agregar_int_a_paquete(paquete, registrosCpu->AX);
+	 agregar_int_a_paquete(paquete, registrosCpu->BX);
+	 agregar_int_a_paquete(paquete, registrosCpu->CX);
+	 agregar_int_a_paquete(paquete, registrosCpu->DX);
+	 agregar_long_a_paquete(paquete, &(registrosCpu->EAX));
+	 agregar_long_a_paquete(paquete, &(registrosCpu->EBX));
+	 agregar_long_a_paquete(paquete, &(registrosCpu->ECX));
+	 agregar_long_a_paquete(paquete, &(registrosCpu->EDX));
+	 agregar_longlong_a_paquete(paquete, &(registrosCpu->RAX));
+	 agregar_longlong_a_paquete(paquete, &(registrosCpu->RBX));
+	 agregar_longlong_a_paquete(paquete, &(registrosCpu->RCX));
+	 agregar_longlong_a_paquete(paquete, &(registrosCpu->RDX));
 }
 
-void agregar_long_a_paquete(t_paquete* paquete, void* valor){
-	paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(long));
-	memcpy(paquete->buffer->stream + paquete->buffer->size, &valor, sizeof(long));
-	paquete->buffer->size += sizeof(long);
+void agregar_long_a_paquete(t_paquete* paquete, void* valor) {
+    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(long));
+    memcpy(paquete->buffer->stream + paquete->buffer->size, valor, sizeof(long));
+    paquete->buffer->size += sizeof(long);
 }
-void agregar_longlong_a_paquete(t_paquete* paquete, void* valor){
-	paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(long long));
-	memcpy(paquete->buffer->stream + paquete->buffer->size, &valor, sizeof(long long));
-	paquete->buffer->size += sizeof(long long);
+
+void agregar_longlong_a_paquete(t_paquete* paquete, void* valor) {
+    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(long long));
+    memcpy(paquete->buffer->stream + paquete->buffer->size, valor, sizeof(long long));
+    paquete->buffer->size += sizeof(long long);
+}
+/*
+void agregar_long_a_paquete(t_paquete* paquete, long* valor){
+    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(long));
+    memcpy(paquete->buffer->stream + paquete->buffer->size, valor, sizeof(long));
+    paquete->buffer->size += sizeof(long);
+}
+
+void agregar_longlong_a_paquete(t_paquete* paquete, long long* valor){
+    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(long long));
+    memcpy(paquete->buffer->stream + paquete->buffer->size, valor, sizeof(long long));
+    paquete->buffer->size += sizeof(long long);
 }
 
 void agregar_float_a_paquete(t_paquete* paquete, int valor){
@@ -370,21 +437,22 @@ void agregar_float_a_paquete(t_paquete* paquete, int valor){
 	memcpy(paquete->buffer->stream + paquete->buffer->size, &valor, sizeof(float));
 	paquete->buffer->size += sizeof(float);
 }
-
-void cambiar_a(PCB* pcb, pcb_estado estado, t_list* lista, pthread_mutex_t mutex){
+*/
+void cambiar_a(PCB* pcb, pcb_estado estado, t_list* lista, sem_t mutex){
 	cambio_de_estado(pcb, estado);
 	agregar_a_lista_con_sem(pcb, lista, mutex);
-	log_info(kernelLogger, "El pcb entro en la cola de %d", (int)estado);
+	log_info(kernelLogger, "El pcb entro en la cola de %s", estadoToString(estado));
 }
 
 void cambio_de_estado(PCB* pcb, pcb_estado nuevo_estado){
 	pcb->estado = nuevo_estado;
 }
 
-void agregar_a_lista_con_sem(PCB* pcb, t_list* lista, pthread_mutex_t mutex){
-	pthread_mutex_lock(&mutex);
+void agregar_a_lista_con_sem(PCB* pcb, t_list* lista, sem_t mutex){
+
+	sem_wait(&mutex);
 	list_add(lista, pcb);
-	pthread_mutex_unlock(&mutex);
+	sem_post(&mutex);
 }
 
 /*

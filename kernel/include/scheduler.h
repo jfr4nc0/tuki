@@ -24,13 +24,13 @@ pthread_t planificador_corto_plazo;
 pthread_t thread_memoria;
 pthread_t thread_cpu;
 
-pthread_mutex_t m_lista_NEW;
-pthread_mutex_t m_lista_READY;
-pthread_mutex_t m_lista_READY_FIFO;
-pthread_mutex_t m_lista_BLOCKED;
-pthread_mutex_t m_lista_EXECUTING;
-pthread_mutex_t m_lista_EXIT;
-pthread_mutex_t m_lista_IO;
+sem_t m_lista_NEW;
+sem_t m_lista_READY;
+sem_t m_lista_READY_FIFO;
+sem_t m_lista_BLOCKED;
+sem_t m_lista_EXECUTING;
+sem_t m_lista_EXIT;
+sem_t m_lista_IO;
 
 typedef struct{
     char* nombre;
