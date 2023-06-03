@@ -19,7 +19,9 @@ int main(int argc, char** argv) {
 
     int conexionKernel = armar_conexion(config, KERNEL, logger);
 
-    enviarInstrucciones(pathInstrucciones, conexionKernel, logger);
+    if (conexionKernel > 0) {
+    	enviarInstrucciones(pathInstrucciones, conexionKernel, logger);
+    }
 
     terminar_programa(conexionKernel, logger, config);
 }
