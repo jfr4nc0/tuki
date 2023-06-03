@@ -86,7 +86,7 @@ PCB* recibir_pcb(int clienteAceptado) {
 
 	pcb->id_proceso = leer_int(buffer, &desplazamiento);
 	pcb->lista_instrucciones = leer_string_array(buffer, &desplazamiento);
-	pcb->program_counter = leer_int(buffer, &desplazamiento);
+	pcb->contador_instrucciones = leer_int(buffer, &desplazamiento);
 	pcb->registrosCpu->AX = leer_int(buffer, &desplazamiento);
 	pcb->registrosCpu->BX = leer_int(buffer, &desplazamiento);
 	pcb->registrosCpu->CX = leer_int(buffer, &desplazamiento);
@@ -153,7 +153,7 @@ void ejecutar_proceso(PCB* pcb) {
 	// while(f_eop!=1 && f_interruption!=1 && f_io!=1 && f_pagefault!=1 && f_segfault!=1){
 
     while ((posicion_actual < cantidad_instrucciones) && !exitInstruccion && !desalojoOpcional) {
-	    instruccion = string_duplicate((char *)list_get(pcb->lista_instrucciones, pcb->program_counter));
+	    instruccion = string_duplicate((char *)list_get(pcb->lista_instrucciones, pcb->contador_instrucciones));
 		instruccion_decodificada = decode_instruccion(instruccion);
 
         log_info(loggerCpu, "Ejecutando instruccion: %s", instruccion_decodificada[0]);
@@ -161,10 +161,10 @@ void ejecutar_proceso(PCB* pcb) {
 
         // Evaluar si la instruccion genero una excepcion "f_pagefault"
         // Caso afirmativo => No se actualiza el program counter del pcb
-        pcb->program_counter++;
+        pcb->contador_instrucciones++;
 		posicion_actual++;
 
-        log_info(loggerCpu, "PROGRAM COUNTER: %d", pcb->program_counter);
+        log_info(loggerCpu, "PROGRAM COUNTER: %d", pcb->contador_instrucciones);
 
 
     }

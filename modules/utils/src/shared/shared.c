@@ -33,6 +33,21 @@ int keyFromString(char *key) {
 }
 
 /*-------------------- FUNCIONES GENERALES --------------------*/
+
+char** leer_arreglo_string(char* buffer, int* desplazamiento){
+
+	int longitud = leer_int(buffer, desplazamiento);
+
+	char** arreglo = malloc((longitud + 1) * sizeof(char*));
+
+	for(int i = 0; i < longitud; i++){
+	    arreglo[i] = leer_string(buffer, desplazamiento);
+	}
+	arreglo[longitud] = NULL;
+
+	return arreglo;
+}
+
 /*
 * Para que no salgan warning se especifica cuantos strings
 * se van a mostrar
@@ -49,7 +64,7 @@ char* cantidad_strings_a_mostrar(int cantidad) {
     return mostrarStrings;
 }
 
-char* extraer_de_config(t_config* config, char* property, t_log* logger) {
+char* extraer_string_de_config(t_config* config, char* property, t_log* logger) {
     if(config_has_property(config, property)) {
             char* valor = config_get_string_value(config, property);
             log_trace(logger, "Se obtuvo el valor -> %s. En el config %s (%s)", valor, config->path, property);
@@ -60,9 +75,20 @@ char* extraer_de_config(t_config* config, char* property, t_log* logger) {
     return NULL;
 }
 
+int extraer_int_de_config(t_config* config, char* property, t_log* logger) {
+    if(config_has_property(config, property)) {
+            int valor = config_get_int_value(config, property);
+            log_trace(logger, "Se obtuvo el valor -> %d. En el config %s (%s)", valor, config->path, property);
+            return valor;
+    }
+    log_warning(logger, "No se pudo encontrar en el config (%s), la propiedad -> %s", config->path, property);
+
+    return -1;
+}
+
 char* extraer_de_modulo_config(t_config* config, char* valorIncompleto, char* modulo, t_log* logger) {
     char* property = concatenar_strings(valorIncompleto, modulo);
-    return extraer_de_config(config, property, logger);
+    return extraer_string_de_config(config, property, logger);
 }
 
 // TODO: volverla funcion que acepte infinitos parametros
@@ -143,7 +169,7 @@ t_config* iniciar_config(char* pathConfig, t_log* logger) {
         exit(1);
     }
 
-    log_debug(logger, cantidad_strings_a_mostrar(3), D__CONFIG_CREADO, "-> ", pathConfig);
+    log_debug(logger, cantidad_strings_a_mostrar(3), D__CONFIG_INICIAL_CREADO, "-> ", pathConfig);
     return nuevo_config;
 }
 
@@ -219,8 +245,6 @@ t_list* leer_string_array(char* buffer, int* desp) {
 
     return lista_instrucciones;
 }
-
-
 
 
 /*------------------- FUNCIONES CLIENTE ---------------------*/
@@ -338,17 +362,42 @@ void enviar_paquete(t_paquete* paquete, int clienteAceptado) {
     free(a_enviar);
 }
 
-void notificar_instruccion(PCB* pcb, int conexion, codigo_operacion codOperacion) {
-	t_paquete* paquete = crear_paquete(codOperacion);
-	agregar_a_paquete(paquete, pcb, sizeof(PCB));
-	enviar_paquete(paquete, conexion);
-	free(paquete);
+/*
+ * Crea un paquete, le agrega el valor pasado como parametro, lo envia, y luego libera el paquete
+ */
+void enviarOperacion(int conexion, codigo_operacion codOperacion, int tamanio_valor, void* valor) {
+    t_paquete* paquete = crear_paquete(codOperacion);
+    if (tamanio_valor>0) {
+        agregar_a_paquete(paquete, valor, tamanio_valor);
+    }
+    enviar_paquete(paquete, conexion);
+    free(paquete);
+}
+/*
+ * Devuelve el pcb a kernel porque terminó de ejecutar el proceso
+ */
+void devolver_pcb_kernel(PCB* pcb, int conexion, codigo_operacion codOperacion) {
+    // TODO: Testear usando esta función
+    // enviarOperacion(conexion, codOperacion, sizeof(PCB), pcb);
+
+    t_paquete* paquete = crear_paquete(codOperacion);
+    agregar_a_paquete(paquete, pcb, sizeof(PCB));
+    enviar_paquete(paquete, conexion);
+    free(paquete);
 }
 
+/*
+ * Variable auxiliar, si solo me quiero identificar no hace falta que agregue ningun valor al paquete
+ */
+void identificarse(int conexion, codigo_operacion identificacion) {
+	if (conexion > 0) {
+		enviarOperacion(conexion, identificacion, 0, 0);
+	}
+}
 /*----------------------- FUNCIONES SERVIDOR -------------------*/
 int iniciar_servidor(t_config* config, t_log* logger) {
     int socket_servidor;
-    char* puerto = extraer_de_config(config, PUERTO_LOCAL, logger);
+    char* puerto = extraer_string_de_config(config, PUERTO_LOCAL, logger);
 
     struct addrinfo hints, *servinfo;
 
@@ -406,8 +455,9 @@ int esperar_cliente(int socket_servidor, t_log* logger) {
     return clienteAceptado;
 }
 
+// TODO: en vez de int debería devolver el tipo de dato de codigo_operacion
 int recibir_operacion(int clienteAceptado) {
-    int cod_op;
+    codigo_operacion cod_op;
     if(recv(clienteAceptado, &cod_op, sizeof(int), MSG_WAITALL) > 0) {
         return cod_op;
     }else {

@@ -1,37 +1,8 @@
 #ifndef KERNEL_H_
 #define KERNEL_H_
 
-// Librerias externas
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#include <commons/collections/list.h>
-#include <commons/collections/dictionary.h>
-#include <commons/log.h>
-#include <commons/config.h>
-#include <stdbool.h>
-#include <pthread.h>
-#include <semaphore.h>
-#include <pthread.h>
-
 #include <shared/shared.h>
-
-int conexionCPU;
-int conexionMemoria;
-int conexionFileSystem;
-int servidorKernel;
-
-t_list* lista_estados[5]; // TODO: Usar constante CANTIDAD_ESTADOS
-sem_t sem_lista_estados[5];
-
-pthread_mutex_t m_listas_mutex[5];
-
-extern t_log* kernelLogger;
-extern t_kernel_config* kernelConfig;
-int contadorProcesoId = 0;
+#include "planificador.h"
 
 t_list* procesar_instrucciones(int, t_list*, t_log*, t_config*);
 void cargar_config_kernel(t_config*, t_log*);
@@ -39,32 +10,8 @@ void inicializar_escucha_conexiones_consolas(int);
 void* recibir_de_consola(void*);
 void iterator(char* value);
 
-PCB* inicializar_pcb(int, t_list*);
 
-PCB* new_pcb(int, t_list*);
-///////////////////////////
-
-
-/* Scheduler */
-
-const char* nombres_estados[] = {
-        NEW,
-        READY,
-        BLOCKED,
-        EXECUTING,
-        EXIT
-};
-
-const char* obtener_nombre_estado(pcb_estado estado){
-	if (estado >= ENUM_NEW) {
-		return nombres_estados[estado];
-	}
-	return "EL ESTADO NO ESTÁ REGISTRADO"; //TODO: Mejorar este mensaje
-}
-
-pthread_t planificador_corto_plazo;
-pthread_t thread_memoria;
-pthread_t thread_cpu;
+PCB* new_pcb(t_list* , int);
 
 typedef struct{
     char* nombre;
@@ -83,20 +30,17 @@ sem_t sem_grado_multiprogamacion;
 sem_t sem_proceso_en_ready;
 sem_t sem_cpu_disponible;
 sem_t sem_creacion_pcb;
-sem_t sem_proceso_a_ready;
 
-void inicializar_planificador();
-void inicializar_listas_estados();
-void proximo_a_ejecutar();
-PCB* cambio_de_estado(int, pcb_estado estadoAnterior, pcb_estado estadoNuevo);
-void agregar_a_lista(PCB*, t_list*, sem_t);
-void liberar_listas_estados();
-
-PCB* remover_de_lista(int, t_list*, sem_t);
-
-t_list* lista_estados[CANTIDAD_ESTADOS];
-sem_t sem_lista_estados[CANTIDAD_ESTADOS];
-
+void agregar_elemento_a_paquete(t_paquete* , void* );
+void agregar_cadena_a_paquete(t_paquete* , char* );
+void agregar_long_a_paquete(t_paquete* , void* );
+void agregar_longlong_a_paquete(t_paquete* , void* );
+void agregar_lista_a_paquete(t_paquete* , t_list* );
+void agregar_int_a_paquete(t_paquete* , int );
+void agregar_arreglo_a_paquete(t_paquete* , char** );
+void agregar_valor_a_paquete(t_paquete* , void* , int );
+void agregar_registros_a_paquete(t_paquete* , registros_cpu* );
+void envio_pcb(int , PCB* , codigo_operacion );
 
 /////// LOGS OBLIGATORIOS///////////
 #define ABRIR_ARCHIVO               "PID: <PID> - Abrir Archivo: <NOMBRE ARCHIVO>"
@@ -119,8 +63,8 @@ sem_t sem_lista_estados[CANTIDAD_ESTADOS];
 #define WAIT                        "PID: <PID> - Wait: <NOMBRE RECURSO> - Instancias: <INSTANCIAS RECURSO>" // Nota: El valor de las instancias es después de ejecutar el Wait
 ////////////////////////////////////
 
-#define PATH_LOG_KERNEL             "../logs/kernel.log"
-#define PATH_CONFIG_KERNEL          "kernel.config"
+#define PATH_LOG_KERNEL             "./logs/kernel.log"
+#define PATH_CONFIG_KERNEL          "../../tuki-pruebas/prueba-base/kernel.config"
 
 
 #endif

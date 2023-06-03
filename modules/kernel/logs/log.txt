@@ -1,0 +1,37 @@
+make --no-print-directory -C ../utils/
+gcc -g -Wall -DDEBUG -fPIC -c -o "obj/sockets/servidor.o" src/sockets/servidor.c -I./src
+gcc -g -Wall -DDEBUG -fPIC -c -o "obj/sockets/cliente.o" src/sockets/cliente.c -I./src
+gcc -g -Wall -DDEBUG -fPIC -c -o "obj/shared/shared.o" src/shared/shared.c -I./src
+In file included from src/shared/shared.h:25,
+                 from src/shared/shared.c:1:
+./src/planificador/planificador.h:21:9: error: unknown type name ‘registros_cpu’
+   21 |         registros_cpu* registrosCpu;
+      |         ^~~~~~~~~~~~~
+In file included from src/shared/shared.h:25,
+                 from src/shared/shared.c:1:
+./src/planificador/planificador.h:36:28: error: unknown type name ‘t_paquete’
+   36 | void agregar_pcb_a_paquete(t_paquete* , PCB* );
+      |                            ^~~~~~~~~
+./src/planificador/planificador.h:51:9: error: ‘NEW’ undeclared here (not in a function)
+   51 |         NEW,
+      |         ^~~
+./src/planificador/planificador.h:52:9: error: ‘READY’ undeclared here (not in a function)
+   52 |         READY,
+      |         ^~~~~
+./src/planificador/planificador.h:53:9: error: ‘BLOCKED’ undeclared here (not in a function)
+   53 |         BLOCKED,
+      |         ^~~~~~~
+./src/planificador/planificador.h:54:9: error: ‘EXECUTING’ undeclared here (not in a function); did you mean ‘ENUM_EXECUTING’?
+   54 |         EXECUTING,
+      |         ^~~~~~~~~
+      |         ENUM_EXECUTING
+./src/planificador/planificador.h:55:9: error: ‘EXIT’ undeclared here (not in a function)
+   55 |         EXIT
+      |         ^~~~
+In file included from src/shared/shared.h:25,
+                 from src/shared/shared.c:1:
+./src/planificador/planificador.h:1: error: unterminated #ifndef
+    1 | #ifndef SCHEDULER_H_
+      | 
+make[1]: *** [makefile:82: obj/shared/shared.o] Error 1
+make: *** [makefile:92: ../utils/bin/libutils.a] Error 2

@@ -1,8 +1,5 @@
 #include "kernel.h"
 
-t_log* kernelLogger;
-t_kernel_config* kernelConfig;
-
 void liberar_recursos_kernel() {
     free(kernelConfig);
     liberar_listas_estados();
@@ -81,6 +78,10 @@ void inicializar_escucha_conexiones_consolas(int servidorKernel){
     }
 }
 
+void iterator(char* value) {
+    log_info(kernelLogger, "%s ", value);
+}
+
 void* recibir_de_consola(void *clienteAceptado) {
 
 	log_info(kernelLogger, "Inicializando paquete.");
@@ -102,6 +103,15 @@ void* recibir_de_consola(void *clienteAceptado) {
     liberar_conexion(conexionConConsola);
 
     return NULL;
+
+}
+
+void inicializar_planificador() {
+    log_info(kernelLogger, "Inicialización del planificador &s...",kernelConfig->ALGORITMO_PLANIFICACION);
+    pthread_create(&planificador_corto_plazo, NULL, (void*) proximo_a_ejecutar, NULL);
+    pthread_detach(planificador_corto_plazo);
+
+    // Acá va el manejo de memoria y CPU con hilos.
 
 }
 
@@ -173,115 +183,28 @@ PCB* new_pcb(t_list* listaInstrucciones, int clienteAceptado) {
 	pcb->processor_burst = kernelConfig->ESTIMACION_INICIAL;
 	pcb->ready_timestamp = 0;
 
-    char* list_ids = ids_from_list_to_string(lista_estados[ENUM_READY]);
+    char* list_ids = pids_on_list(ENUM_READY);
 	agregar_a_lista_con_sem(pcb, lista_estados[ENUM_NEW], sem_lista_estados[ENUM_NEW]);
 
-    log_info(kernelLogger, "Cola Ready %s: [%s]"s,kernelConfig->ALGORITMO_PLANIFICACION,list_ids);
+    log_info(kernelLogger, "Cola Ready %s: [%s]",kernelConfig->ALGORITMO_PLANIFICACION,list_ids);
 
 return pcb;
 
 }
 
-/*------------ ALGORITMO FIFO -----------------*/
+/*
+ * Esta funcion toma el ultimo elemento de la lista del estado anterior (pcb_estado) y
+ * lo agrega a la cola de la lista del estado posterior, y cambia el estado del pcb
+ * Ejemplo: cambiar_estado_pcb(0,ENUM_READY,ENUM_EXECUTING)
+ */
+void cambiar_estado_pcb(PCB* pcb, pcb_estado estado_nuevo, int posicion){
+	pcb_estado estado_anterior = pcb->estado;
+	pcb->estado = estado_nuevo;
+	agregar_a_lista_con_sem(pcb, lista_estados[estado_nuevo], sem_lista_estados[estado_nuevo]);
 
-void planificar_FIFO(pcb_estado estado_pcb){
-	sem_wait(&sem_lista_estados[ENUM_READY]);
-	PCB* pcb = list_remove(lista_estados[ENUM_READY],0);
-	sem_post(&sem_lista_estados[ENUM_READY]);
-
-	cambiar_estado_pcb(pcb,ENUM_EXECUTING,0);
-
-	envio_pcb(conexionCPU, pcb, OP_EXECUTE_PCB);
-}
-
-/*------------ ALGORITMO HRRN -----------------*/
-double rafaga_estimada(PCB* pcb){
-	double alfa = kernelConfig->HRRN_ALFA;
-	double ultima_rafaga = pcb->processor_burst;
-	double rafaga = ultima_rafaga != 0 ? ((alfa * ultima_rafaga) + ((1 - alfa) * ultima_rafaga)) : kernelConfig->ESTIMACION_INICIAL;
-
-	return rafaga;
-}
-
-static bool criterio_hrrn(PCB* pcb_A, PCB* pcb_B){
-	return calculo_HRRN(pcb_A) <= calculo_HRRN(pcb_B);
-}
-
-double calculo_HRRN(PCB* pcb){
-	double rafaga = rafaga_estimada(pcb);
-	double res = 1.0 + (pcb->ready_timestamp / rafaga);
-	return res;
-}
-
-void planificar_HRRN(pcb_estado estado_pcb){
-	// Recorrer la lista de pcb y calcular HRRN
-	sem_wait(&sem_lista_estados[ENUM_READY]);
-	list_sort(lista_estados[ENUM_READY], (void*) criterio_hrrn);
-	PCB* pcb = list_remove(lista_estados[ENUM_READY],0);
-	sem_post(&sem_lista_estados[ENUM_READY]);
-
-	cambiar_estado_pcb(pcb,ENUM_EXECUTING,0);
-
-	envio_pcb(conexionCPU, pcb, OP_EXECUTE_PCB);
-}
-
-/*----------------------------------------------*/
-char** leer_arreglo_string(char* buffer, int* desplazamiento){
-
-	int longitud = leer_int(buffer, desplazamiento);
-
-	char** arreglo = malloc((longitud + 1) * sizeof(char*));
-
-	for(int i = 0; i < longitud; i++){
-	    arreglo[i] = leer_string(buffer, desplazamiento);
-	}
-	arreglo[longitud] = NULL;
-
-	return arreglo;
-}
-
-char* ids_from_list_to_string(t_list* lista){
-	char* ids = string_new();
-	int pid_aux;
-	for(int i=0;i<list_size(&lista);i++){
-		PCB* pcb = list_get(lista,i);
-		pid_aux = pcb->id_proceso;
-		string_append(&ids, string_itoa(pid_aux));
-		if(i!=list_size(&lista)-1) string_append(&ids,",");
-	}
-
-	return ids;
-}
-
-void iterator(char* value) {
-    log_info(kernelLogger, "%s ", value);
-}
-
-/////////////////////
-
-/* Scheduler */
-
-void inicializar_planificador() {
-    log_info(kernelLogger, "Inicialización del planificador FIFO...");
-    pthread_create(&planificador_corto_plazo, NULL, (void*) proximo_a_ejecutar, NULL);
-    pthread_detach(planificador_corto_plazo);
-
-    // Acá va el manejo de memoria y CPU con hilos.
-
-}
-
-void inicializar_listas_estados() {
-	for (int estado = 0; estado < CANTIDAD_ESTADOS; estado++) {
-		lista_estados[estado] = list_create();
-        sem_init(&sem_lista_estados[estado], 0, 1);
-	}
-
-}
-
-void liberar_listas_estados() {
-    for (int estado = 0; estado < CANTIDAD_ESTADOS; estado++) {
-        sem_destroy(&sem_lista_estados[estado]);
-	}
+	char* estadoAnterior = get_nombre_estado(estado_anterior);
+	char* estadoPosterior = get_nombre_estado(estado_nuevo);
+    log_info(kernelLogger,"PID: %d - Estado Anterior: %s - Estado Actual: %s", pcb->id_proceso, estadoAnterior, estadoPosterior);
 }
 
 void inicializar_diccionario_recursos() {
@@ -322,29 +245,6 @@ void inicializar_semaforos() {
 	}
 }
 
-
-void agregar_a_lista_con_sem(void* elem, t_list* lista, sem_t sem_lista){
-	sem_wait(&sem_lista);
-	list_add(lista,elem);
-	sem_post(&sem_lista);
-}
-
-
-/*
- * Esta funcion toma el ultimo elemento de la lista del estado anterior (pcb_estado) y
- * lo agrega a la cola de la lista del estado posterior, y cambia el estado del pcb
- * Ejemplo: cambiar_estado_pcb(0,ENUM_READY,ENUM_EXECUTING)
- */
-void cambiar_estado_pcb(PCB* pcb, pcb_estado estado_nuevo, int posicion){
-	char* estado_anterior = pcb->estado;
-	pcb->estado = estado_nuevo;
-	agregar_a_lista_con_sem(pcb, lista_estados[estado_nuevo], sem_lista_estados[estado_nuevo]);
-
-	char* estadoAnterior = obtener_nombre_estado(estado_anterior);
-	char* estadoPosterior = obtener_nombre_estado(estado_nuevo);
-    log_info(kernelLogger,"PID: %d - Estado Anterior: %s - Estado Actual: %s", pcb->id_proceso, estadoAnterior, estadoPosterior);
-}
-
 void proximo_a_ejecutar() {
 	while(1){
 		sem_wait(&sem_proceso_en_ready);
@@ -352,12 +252,13 @@ void proximo_a_ejecutar() {
 	    if(strcmp(kernelConfig->ALGORITMO_PLANIFICACION, "FIFO") == 0) {
 	    	log_info(kernelLogger, "Planificación FIFO escogida.");
 
-	    	planificar_FIFO(ENUM_READY);
+	    	planificar_FIFO();
 
 	    } else if (strcmp(kernelConfig->ALGORITMO_PLANIFICACION, "HRRN")==0) {
-	    	// TODO Algoritmo HRRN
 	    	log_info(kernelLogger, "Planificación HRRN escogida.");
-			planificar_HRRN(ENUM_READY);
+
+	    	planificar_HRRN();
+
 	    } else {
             log_error(kernelLogger, "No es posible utilizar el algoritmo especificado.");
         }
@@ -371,19 +272,6 @@ void envio_pcb(int conexion, PCB* pcb, codigo_operacion codigo){
 	enviar_paquete(paquete, conexionCPU);
 	eliminar_paquete(paquete);
 
-}
-
-void agregar_pcb_a_paquete(t_paquete* paquete, PCB* pcb){
-
-	agregar_int_a_paquete(paquete, pcb->id_proceso);
-	agregar_int_a_paquete(paquete, pcb->estado);
-	agregar_lista_a_paquete(paquete, pcb->lista_instrucciones);
-	agregar_int_a_paquete(paquete, pcb->contador_instrucciones);
-	agregar_registros_a_paquete(paquete, pcb->registrosCpu);
-	agregar_lista_a_paquete(paquete, pcb->lista_segmentos);
-	agregar_lista_a_paquete(paquete, pcb->lista_archivos_abiertos);
-	agregar_int_a_paquete(paquete, pcb->processor_burst);
-	agregar_int_a_paquete(paquete, pcb->ready_timestamp);
 }
 
 void agregar_lista_a_paquete(t_paquete* paquete, t_list* lista){
@@ -447,14 +335,23 @@ void agregar_longlong_a_paquete(t_paquete* paquete, void* valor) {
     paquete->buffer->size += sizeof(long long);
 }
 
-void cambio_de_estado(PCB* pcb, pcb_estado nuevo_estado){
-	pcb->estado = nuevo_estado;
-}
-
 void agregar_a_lista(PCB* pcb, t_list* lista, sem_t m_sem) {
     sem_wait(&m_sem);
     list_add(lista, pcb);
     sem_post(&m_sem);
+}
+
+void agregar_pcb_a_paquete(t_paquete* paquete, PCB* pcb){
+
+	agregar_int_a_paquete(paquete, pcb->id_proceso);
+	agregar_int_a_paquete(paquete, pcb->estado);
+	agregar_lista_a_paquete(paquete, pcb->lista_instrucciones);
+	agregar_int_a_paquete(paquete, pcb->contador_instrucciones);
+	agregar_registros_a_paquete(paquete, pcb->registrosCpu);
+	agregar_lista_a_paquete(paquete, pcb->lista_segmentos);
+	agregar_lista_a_paquete(paquete, pcb->lista_archivos_abiertos);
+	agregar_int_a_paquete(paquete, pcb->processor_burst);
+	agregar_int_a_paquete(paquete, pcb->ready_timestamp);
 }
 
 PCB* remover_de_lista(int posicion, t_list* lista, sem_t m_sem) {
@@ -464,23 +361,25 @@ PCB* remover_de_lista(int posicion, t_list* lista, sem_t m_sem) {
     return pcb;
 }
 
-void loggear_cola_ready(char* algoritmo){
-	char* pids_aux = string_new();
-	pids_aux = pids_on_ready();
-	log_info(kernelLogger, "Cola Ready %s: %s.", algoritmo, pids_aux);
-	free(pids_aux);
-}
-
-char* pids_on_ready(){
+char* pids_on_list(pcb_estado estado){
     char* aux = string_new();
     string_append(&aux,"[");
     int pid_aux;
-    for(int i = 0 ; i < list_size(lista_estados[ENUM_READY]); i++){
-    	PCB* pcb = list_get(lista_estados[ENUM_READY],i);
+    for(int i = 0 ; i < list_size(lista_estados[estado]); i++){
+    	PCB* pcb = list_get(lista_estados[estado],i);
         pid_aux = pcb->id_proceso;
         string_append(&aux,string_itoa(pid_aux));
-        if(i != list_size(lista_estados[ENUM_READY])-1) string_append(&aux,"|");
+        if(i != list_size(lista_estados[estado])-1) string_append(&aux,"|");
     }
     string_append(&aux,"]");
     return aux;
+}
+
+
+void loggear_cola_lista(pcb_estado estado,char* algoritmo){
+	char* pids_aux = string_new();
+	pids_aux = pids_on_list(estado);
+	char* estado2 = get_nombre_estado(estado);
+	log_info(kernelLogger, "Cola %s %s: %s.",estado, algoritmo, pids_aux);
+	free(pids_aux);
 }
