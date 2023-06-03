@@ -2,34 +2,95 @@
 #define KERNEL_H_
 
 #include <shared/shared.h>
-#include "planificador.h"
 
-t_list* procesar_instrucciones(int, t_list*, t_log*, t_config*);
-void cargar_config_kernel(t_config*, t_log*);
-void inicializar_escucha_conexiones_consolas(int);
-void* recibir_de_consola(void*);
-void iterator(char* value);
+/*------------------ VARIABLES GLOBALES --------------*/
+int conexionCPU;
+int conexionMemoria;
+int conexionFileSystem;
+int servidorKernel;
 
+/*----------------- ENUMS / ARRAYS ------------------*/
+char* nombres_estados[] = {
+        "NEW",
+        "READY",
+        "BLOCKED",
+        "EXECUTING",
+        "EXIT"
+};
 
-PCB* new_pcb(t_list* , int);
+typedef enum {
+    ENUM_NEW,
+    ENUM_READY,
+    ENUM_BLOCKED,
+    ENUM_EXECUTING,
+    ENUM_EXIT,
+}pcb_estado;
+
+/*----------------- STRUCTS ------------------*/
+typedef struct {
+    //char* IP_KERNEL;
+	//char* PUERTO_KERNEL;
+	char* IP_MEMORIA;
+	char* PUERTO_MEMORIA;
+    char* IP_FILE_SYSTEM;
+    char* PUERTO_FILE_SYSTEM;
+    char* IP_CPU;
+    char* PUERTO_CPU;
+    char* PUERTO_ESCUCHA;
+    char* ALGORITMO_PLANIFICACION;
+    double ESTIMACION_INICIAL;
+    double HRRN_ALFA;
+    int GRADO_MAX_MULTIPROGRAMACION;
+    char** RECURSOS;
+    char** INSTANCIAS_RECURSOS;
+}t_kernel_config;
+
+typedef struct {
+	int id_proceso; // Identificador del proceso, unico en todo el sistema
+	pcb_estado estado;
+	t_list* lista_instrucciones; // Lista de instrucciones a ejecutar
+	int contador_instrucciones; // Numero de la proxima instruccion a ejecutar
+	registros_cpu* registrosCpu;
+	t_list* lista_segmentos;
+	t_list* lista_archivos_abiertos; // Contendrá la lista de archivos abiertos del proceso con la posición del puntero de cada uno de ellos.
+	double processor_burst; // Estimacion utilizada para planificar los procesos en el algoritmo HRRN, la misma tendra un valor inicial definido por archivo de config y sera recalculada bajo la formula de promedio ponderado
+	double ready_timestamp; // Timestamp en que el proceso llegó a ready por última vez (utilizado para el cálculo de tiempo de espera del algoritmo HRRN).
+	double hrrn_alfa;
+}PCB;
 
 typedef struct{
     char* nombre;
     int instancias;
     // t_list* lista_procesos;
     sem_t sem_recurso;
-} t_recurso;
+}t_recurso;
 
-t_dictionary* diccionario_recursos;
+
+/*----------------- FUNCIONES ------------------*/
+
+t_list* procesar_instrucciones(int, t_list*, t_log*, t_config*);
+void cargar_config_kernel(t_config*, t_log*);
+void inicializar_escucha_conexiones_consolas(int);
+void* recibir_de_consola(void*);
+void iterator(char* value);
+PCB* new_pcb(t_list* , int);
+
+void inicializar_planificador();
+void inicializar_listas_estados();
+void proximo_a_ejecutar();
+void cambiar_estado_pcb(PCB* ,pcb_estado ,int );
+void agregar_a_lista_con_sem(void*, t_list *, sem_t);
+void liberar_listas_estados();
+void loggear_cola_ready(char*);
+void cambiar_a_ready();
+void agregar_pcb_a_paquete(t_paquete* , PCB* );
+PCB* remover_de_lista(int, t_list*, sem_t);
+char* pids_on_list(pcb_estado estado);
+char* get_nombre_estado(pcb_estado estado);
 
 void inicializar_semaforos();
 void crear_cola_recursos(char*, int);
 void inicializar_diccionario_recursos();
-
-sem_t sem_grado_multiprogamacion;
-sem_t sem_proceso_en_ready;
-sem_t sem_cpu_disponible;
-sem_t sem_creacion_pcb;
 
 void agregar_elemento_a_paquete(t_paquete* , void* );
 void agregar_cadena_a_paquete(t_paquete* , char* );
@@ -42,7 +103,25 @@ void agregar_valor_a_paquete(t_paquete* , void* , int );
 void agregar_registros_a_paquete(t_paquete* , registros_cpu* );
 void envio_pcb(int , PCB* , codigo_operacion );
 
-/////// LOGS OBLIGATORIOS///////////
+
+/*----------------- SEMAFOROS / HILOS ------------------*/
+sem_t sem_proceso_a_ready;
+sem_t sem_grado_multiprogamacion;
+sem_t sem_proceso_en_ready;
+sem_t sem_cpu_disponible;
+sem_t sem_creacion_pcb;
+
+pthread_t planificador_corto_plazo;
+pthread_t thread_memoria;
+pthread_t thread_cpu;
+
+t_list* lista_estados[CANTIDAD_ESTADOS];
+sem_t sem_lista_estados[CANTIDAD_ESTADOS];
+
+t_dictionary* diccionario_recursos;
+
+
+/*-------------------- LOGS OBLIGATORIOS ------------------*/
 #define ABRIR_ARCHIVO               "PID: <PID> - Abrir Archivo: <NOMBRE ARCHIVO>"
 #define ACTUALIZAR_PUNTERO_ARCHIVO     "PID: <PID> - Actualizar puntero Archivo: <NOMBRE ARCHIVO> - Puntero <PUNTERO>" // Nota: El valor del puntero debe ser luego de ejecutar F_SEEK.
 #define CAMBIO_DE_ESTADO            "PID: <PID> - Estado Anterior: <ESTADO_ANTERIOR> - Estado Actual: <ESTADO_ACTUAL>"
@@ -65,6 +144,5 @@ void envio_pcb(int , PCB* , codigo_operacion );
 
 #define PATH_LOG_KERNEL             "./logs/kernel.log"
 #define PATH_CONFIG_KERNEL          "../../tuki-pruebas/prueba-base/kernel.config"
-
 
 #endif

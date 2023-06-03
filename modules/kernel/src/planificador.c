@@ -1,11 +1,10 @@
-#include "planificador.h"
+#include "kernel.h"
 
 void inicializar_listas_estados() {
 	for (int estado = 0; estado < CANTIDAD_ESTADOS; estado++) {
 		lista_estados[estado] = list_create();
         sem_init(&sem_lista_estados[estado], 0, 1);
 	}
-
 }
 
 void liberar_listas_estados() {
@@ -29,7 +28,7 @@ char* get_nombre_estado(pcb_estado pcb_estado){
 
 /*------------ ALGORITMO FIFO -----------------*/
 
-void planificar_FIFO(){
+void planificar_FIFO(int cpu_conexion){
 	pcb_estado estado = ENUM_READY;
 	sem_wait(&sem_lista_estados[estado]);
 	PCB* pcb = list_remove(lista_estados[estado],0);
@@ -37,11 +36,12 @@ void planificar_FIFO(){
 
 	cambiar_estado_pcb(pcb,ENUM_EXECUTING,0);
 
-	envio_pcb(conexionCPU, pcb, OP_EXECUTE_PCB);
+	envio_pcb(cpu_conexion, pcb, OP_EXECUTE_PCB);
 }
 
 /*------------ ALGORITMO HRRN -----------------*/
 double rafaga_estimada(PCB* pcb){
+	// TODO Usar timestamp.h para tomar el tiempo de ingreso y calcularlo para hrrn
 	double alfa = kernelConfig->HRRN_ALFA;
 	double ultima_rafaga = pcb->processor_burst;
 	double rafaga = ultima_rafaga != 0 ? ((alfa * ultima_rafaga) + ((1 - alfa) * ultima_rafaga)) : kernelConfig->ESTIMACION_INICIAL;
@@ -62,7 +62,7 @@ static bool criterio_hrrn(PCB* pcb_A, PCB* pcb_B){
 	return a <= b;
 }
 
-void planificar_HRRN(){
+void planificar_HRRN(int cpu_conexion){
 	pcb_estado estado = ENUM_READY;
 	// Recorrer la lista de pcb y calcular HRRN
 	sem_wait(&sem_lista_estados[estado]);
@@ -72,7 +72,7 @@ void planificar_HRRN(){
 
 	cambiar_estado_pcb(pcb,ENUM_EXECUTING,0);
 
-	envio_pcb(conexionCPU, pcb, OP_EXECUTE_PCB);
+	envio_pcb(cpu_conexion, pcb, OP_EXECUTE_PCB);
 }
 
 

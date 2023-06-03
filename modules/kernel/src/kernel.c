@@ -8,6 +8,8 @@ void liberar_recursos_kernel() {
     liberar_conexion(conexionFileSystem);
 }
 
+t_kernel_config kernelConfig;
+
 int main(int argc, char** argv) {
 	kernelLogger = iniciar_logger(PATH_LOG_KERNEL, ENUM_KERNEL);
     t_config* config = iniciar_config(PATH_CONFIG_KERNEL, kernelLogger);
@@ -182,6 +184,7 @@ PCB* new_pcb(t_list* listaInstrucciones, int clienteAceptado) {
 	pcb->lista_archivos_abiertos = list_create();
 	pcb->processor_burst = kernelConfig->ESTIMACION_INICIAL;
 	pcb->ready_timestamp = 0;
+	pcb->hrrn_alfa = kernelConfig->HRRN_ALFA;
 
     char* list_ids = pids_on_list(ENUM_READY);
 	agregar_a_lista_con_sem(pcb, lista_estados[ENUM_NEW], sem_lista_estados[ENUM_NEW]);
@@ -252,12 +255,12 @@ void proximo_a_ejecutar() {
 	    if(strcmp(kernelConfig->ALGORITMO_PLANIFICACION, "FIFO") == 0) {
 	    	log_info(kernelLogger, "Planificación FIFO escogida.");
 
-	    	planificar_FIFO();
+	    	planificar_FIFO(conexionCPU);
 
 	    } else if (strcmp(kernelConfig->ALGORITMO_PLANIFICACION, "HRRN")==0) {
 	    	log_info(kernelLogger, "Planificación HRRN escogida.");
 
-	    	planificar_HRRN();
+	    	planificar_HRRN(conexionCPU);
 
 	    } else {
             log_error(kernelLogger, "No es posible utilizar el algoritmo especificado.");
