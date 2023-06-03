@@ -45,7 +45,7 @@
 
 // DEBUG MENSAJES
 #define D__ESTABLECIENDO_CONEXION   "Estableciendo conexion"
-#define D__CONFIG_CREADO            "Config creado"
+#define D__CONFIG_INICIAL_CREADO    "Config creado"
 #define D__LOG_CREADO               "Log creado"
 
 // INFO MENSAJES
@@ -54,6 +54,7 @@
 #define I__DESCONEXION_CLIENTE      "El cliente se desconecto. Terminando servidor"
 #define I__SERVER_READY             "Servidor listo para recibir al cliente: "
 #define I_ESPERANDO_CONEXION        "Esperando conexiones..."
+#define I__CONFIG_GENERIDO_CARGADO  "Config generico creado: %s"
 
 
 // ERROR MENSAJES
@@ -65,6 +66,7 @@
 #define E__LOGGER_CREATE       "No se pudo crear logger"
 #define E__CONFIG_CREATE       "No se pudo crear config"
 #define E__PAQUETE_CREATE      "Error al crear paquete"
+#define E__MALLOC_ERROR        "Error al crear el malloc de tamaño %d "
 
 const char* nombres_estados[] = {
         NEW,

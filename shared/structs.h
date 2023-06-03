@@ -5,10 +5,15 @@
 #include <commons/collections/list.h>
 
 typedef enum {
-    OP_PAQUETE,
     OP_EXIT,
     OP_MENSAJE,
     OP_YIELD,
+    OP_CREATE_SEGMENT,
+    OP_DELETE_SEGMENT,
+    AUX_NEW_PROCESO, // Notifica a kernel que hay un nuevo proceso y se le envia la lista de instrucciones
+    AUX_SOY_CPU, // Notifica a memoria que el modulo que se conectó es CPU
+    AUX_SOY_KERNEL, // Notifica a memoria que el modulo que se conectó es KERNEL
+    AUX_SOY_FILE_SYSTEM, // Notifica a memoria que el modulo que se conectó es FILE SYSTEM
     OP_EXECUTE_PCB
 }codigo_operacion;
 
@@ -29,9 +34,16 @@ typedef struct {
 } archivo_abierto_t;
 
 typedef struct {
-	int  id; // direccion_base, de que tipo??
+	int  id;
 	int tamanio;
+    void* direccion_base;
 }t_segmento;
+
+typedef struct {
+    t_segmento* segmentos;
+    int cantidad_segmentos_usados;
+    int capacidad_segmentos;
+}t_tabla_segmentos;
 
 
 //TODO: POSIBLE CAMBIO
@@ -90,10 +102,10 @@ typedef struct {
 	pcb_estado estado;
 	t_list* lista_instrucciones; // Lista de instrucciones a ejecutar
 	int program_counter; // Numero de la proxima instruccion a ejecutar
-	registros_cpu* cpu_register;
+	registros_cpu* registrosCpu;
 	t_list* lista_segmentos;
 	t_list* lista_archivos_abiertos; // Contendrá la lista de archivos abiertos del proceso con la posición del puntero de cada uno de ellos.
-	char* processor_burst; // Estimacion utilizada para planificar los procesos en el algoritmo HRRN, la misma tendra un valor inicial definido por archivo de config y sera recalculada bajo la formula de promedio ponderado
+	float processor_burst; // Estimacion utilizada para planificar los procesos en el algoritmo HRRN, la misma tendra un valor inicial definido por archivo de config y sera recalculada bajo la formula de promedio ponderado
 	int ready_timestamp; // Timestamp en que el proceso llegó a ready por última vez (utilizado para el cálculo de tiempo de espera del algoritmo HRRN).
 }PCB;
 
@@ -108,7 +120,7 @@ typedef struct {
     char* PUERTO_CPU;
     char* PUERTO_ESCUCHA;
     char* ALGORITMO_PLANIFICACION;
-    char* ESTIMACION_INICIAL;
+    int ESTIMACION_INICIAL;
     double HRRN_ALFA;
     int GRADO_MAX_MULTIPROGRAMACION;
     char** RECURSOS;

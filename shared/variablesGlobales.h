@@ -14,8 +14,8 @@ int servidorKernel;
 t_list* lista_estados[CANTIDAD_ESTADOS];
 sem_t m_listas[CANTIDAD_ESTADOS];
 
-extern t_log* kernelLogger;
-extern t_kernel_config* kernelConfig;
 int contadorProcesoId = 0;
+
+void* segmentoGeneral;
 
 #endif

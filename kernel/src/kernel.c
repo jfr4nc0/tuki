@@ -2,7 +2,6 @@
 #include "../../shared/src/funciones.c"
 #include "../../shared/src/funcionesCliente.c"
 #include "../../shared/src/funcionesServidor.c"
-#include "../include/scheduler.h"
 #include "../../shared/structs.h"
 #include "../../shared/variablesGlobales.h"
 #include "../../shared/constantes.h"
@@ -25,6 +24,9 @@ int main(int argc, char** argv) {
 
     log_debug(kernelLogger, "Vamos a usar el algoritmo %s", kernelConfig->ALGORITMO_PLANIFICACION);
 
+    conexionMemoria = armar_conexion(config, MEMORIA, kernelLogger);
+    identificarse(conexionMemoria, AUX_SOY_KERNEL);
+
     inicializar_semaforos();
     inicializar_listas_estados();
     inicializar_diccionario_recursos();
@@ -32,8 +34,10 @@ int main(int argc, char** argv) {
 
     // Conexiones con los demas modulos
     conexionCPU = armar_conexion(config, CPU, kernelLogger);
-    conexionMemoria = armar_conexion(config, MEMORIA, kernelLogger);
+
+
     conexionFileSystem = armar_conexion(config, FILE_SYSTEM, kernelLogger);
+    identificarse(conexionFileSystem, AUX_SOY_KERNEL);
 
     int servidorKernel = iniciar_servidor(config, kernelLogger);
 
@@ -53,17 +57,17 @@ int main(int argc, char** argv) {
 void cargar_config_kernel(t_config* config, t_log* kernelLogger) {
     kernelConfig = malloc(sizeof(t_kernel_config));
 
-    kernelConfig->IP_MEMORIA = extraer_de_config(config, "IP_MEMORIA", kernelLogger);
-    kernelConfig->PUERTO_MEMORIA = extraer_de_config(config, "PUERTO_MEMORIA", kernelLogger);
-    kernelConfig->IP_FILE_SYSTEM = extraer_de_config(config, "IP_FILE_SYSTEM", kernelLogger);
-    kernelConfig->PUERTO_FILE_SYSTEM = extraer_de_config(config, "PUERTO_FILE_SYSTEM", kernelLogger);
-    kernelConfig->IP_CPU = extraer_de_config(config, "IP_CPU", kernelLogger);
-    kernelConfig->PUERTO_CPU = extraer_de_config(config, "PUERTO_CPU", kernelLogger);
-    kernelConfig->PUERTO_ESCUCHA = extraer_de_config(config, "PUERTO_ESCUCHA", kernelLogger);
-    kernelConfig->ALGORITMO_PLANIFICACION = extraer_de_config(config, "ALGORITMO_PLANIFICACION", kernelLogger);
-    kernelConfig->ESTIMACION_INICIAL = extraer_de_config(config, "ESTIMACION_INICIAL", kernelLogger);
+    kernelConfig->IP_MEMORIA = extraer_string_de_config(config, "IP_MEMORIA", kernelLogger);
+    kernelConfig->PUERTO_MEMORIA = extraer_string_de_config(config, "PUERTO_MEMORIA", kernelLogger);
+    kernelConfig->IP_FILE_SYSTEM = extraer_string_de_config(config, "IP_FILE_SYSTEM", kernelLogger);
+    kernelConfig->PUERTO_FILE_SYSTEM = extraer_string_de_config(config, "PUERTO_FILE_SYSTEM", kernelLogger);
+    kernelConfig->IP_CPU = extraer_string_de_config(config, "IP_CPU", kernelLogger);
+    kernelConfig->PUERTO_CPU = extraer_string_de_config(config, "PUERTO_CPU", kernelLogger);
+    kernelConfig->PUERTO_ESCUCHA = extraer_string_de_config(config, "PUERTO_ESCUCHA", kernelLogger);
+    kernelConfig->ALGORITMO_PLANIFICACION = extraer_string_de_config(config, "ALGORITMO_PLANIFICACION", kernelLogger);
+    kernelConfig->ESTIMACION_INICIAL = extraer_int_de_config(config, "ESTIMACION_INICIAL", kernelLogger);
     kernelConfig->HRRN_ALFA = config_get_double_value(config, "HRRN_ALFA");
-    kernelConfig->GRADO_MAX_MULTIPROGRAMACION = config_get_int_value(config, "GRADO_MAX_MULTIPROGRAMACION");
+    kernelConfig->GRADO_MAX_MULTIPROGRAMACION = extraer_int_de_config(config, "GRADO_MAX_MULTIPROGRAMACION", kernelLogger);
     kernelConfig->RECURSOS = config_get_array_value(config, "RECURSOS");
     kernelConfig->INSTANCIAS_RECURSOS = config_get_array_value(config, "INSTANCIAS_RECURSOS");
 
@@ -75,33 +79,24 @@ void cargar_config_kernel(t_config* config, t_log* kernelLogger) {
 
 void inicializar_escucha_conexiones_consolas(int servidorKernel){
     while(1){
-        int clienteAceptado = esperar_cliente(servidorKernel, kernelLogger);
+        int conexionConConsola = esperar_cliente(servidorKernel, kernelLogger);
         pthread_t hilo_consola;
-        pthread_create(&hilo_consola, NULL, recibir_de_consola, (void*) (intptr_t) clienteAceptado);
+        pthread_create(&hilo_consola, NULL, recibir_de_consola, (void*) (intptr_t) conexionConConsola);
         pthread_detach(hilo_consola);  //Los recursos asociados se liberan automáticamente al finalizar.
     }
-}
-
-int obtener_indice_estado(const char* nombre_estado) {
-    for (int i = 0; i < CANTIDAD_ESTADOS; i++) {
-        if (strcmp(nombre_estado, nombres_estados[i]) == 0) {
-            return i;
-        }
-    }
-    return -1;
 }
 
 void* recibir_de_consola(void *clienteAceptado) {
 
 	log_info(kernelLogger, "Inicializando paquete.");
-	int  socketAceptado = (int) (intptr_t)clienteAceptado;
-	recibir_operacion(socketAceptado);
-    t_list* listaInstrucciones = recibir_paquete(socketAceptado);
+	int  conexionConConsola = (int) (intptr_t)clienteAceptado;
+	recibir_operacion(conexionConConsola);
+    t_list* listaInstrucciones = recibir_paquete(conexionConConsola);
 
     log_info(kernelLogger, "Me llegaron los siguientes valores: ");
     list_iterate(listaInstrucciones, (void*) iterator);
 
-    PCB* pcb = inicializar_pcb(socketAceptado, listaInstrucciones);
+    PCB* pcb = inicializar_pcb(conexionConConsola, listaInstrucciones);
     log_info(kernelLogger, "Se crea el proceso %d en NEW", pcb->id_proceso);
     cambiar_a(pcb, ENUM_NEW, lista_estados[ENUM_NEW], m_listas[ENUM_NEW]);
 
@@ -111,7 +106,7 @@ void* recibir_de_consola(void *clienteAceptado) {
 
     list_destroy(listaInstrucciones);
 
-    liberar_conexion(socketAceptado);
+    liberar_conexion(conexionConConsola);
 
     return NULL;
 
@@ -186,19 +181,19 @@ PCB* new_pcb(t_list* listaInstrucciones, int clienteAceptado, int contadorProces
 	pcb->lista_instrucciones = listaInstrucciones;
 	pcb->program_counter = 0;
 
-	pcb->cpu_register = malloc(sizeof(registros_cpu));
-	pcb->cpu_register->AX = 0;
-	pcb->cpu_register->BX = 0;
-	pcb->cpu_register->CX = 0;
-	pcb->cpu_register->DX = 0;
-	pcb->cpu_register->EAX = 0;
-	pcb->cpu_register->EBX = 0;
-	pcb->cpu_register->ECX = 0;
-	pcb->cpu_register->EDX = 0;
-	pcb->cpu_register->RAX = 0;
-	pcb->cpu_register->RBX = 0;
-	pcb->cpu_register->RCX = 0;
-	pcb->cpu_register->RDX = 0;
+	pcb->registrosCpu = malloc(sizeof(registros_cpu));
+	pcb->registrosCpu->AX = 0;
+	pcb->registrosCpu->BX = 0;
+	pcb->registrosCpu->CX = 0;
+	pcb->registrosCpu->DX = 0;
+	pcb->registrosCpu->EAX = 0;
+	pcb->registrosCpu->EBX = 0;
+	pcb->registrosCpu->ECX = 0;
+	pcb->registrosCpu->EDX = 0;
+	pcb->registrosCpu->RAX = 0;
+	pcb->registrosCpu->RBX = 0;
+	pcb->registrosCpu->RCX = 0;
+	pcb->registrosCpu->RDX = 0;
 
 	pcb->lista_segmentos = list_create();
 	pcb->lista_archivos_abiertos = list_create();
@@ -315,10 +310,10 @@ void agregar_pcb_a_paquete(t_paquete* paquete, PCB* pcb){
 	agregar_int_a_paquete(paquete, pcb->estado);
 	agregar_lista_a_paquete(paquete, pcb->lista_instrucciones);
 	agregar_int_a_paquete(paquete, pcb->program_counter);
-	agregar_registros_a_paquete(paquete, pcb->cpu_register);
+	agregar_registros_a_paquete(paquete, pcb->registrosCpu);
 	agregar_lista_a_paquete(paquete, pcb->lista_segmentos);
 	agregar_lista_a_paquete(paquete, pcb->lista_archivos_abiertos);
-	agregar_cadena_a_paquete(paquete, pcb->processor_burst);
+	agregar_int_a_paquete(paquete, pcb->processor_burst);
 	agregar_int_a_paquete(paquete, pcb->ready_timestamp);
 }
 

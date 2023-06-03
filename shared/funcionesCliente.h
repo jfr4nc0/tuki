@@ -26,6 +26,8 @@ void agregar_a_paquete(t_paquete*, void*, int);
 void enviar_paquete(t_paquete*, int);
 void eliminar_paquete(t_paquete*);
 int armar_conexion(t_config*, char*, t_log*);
-void notificar_instruccion(PCB*, int, codigo_operacion);
+void enviarOperacion(int conexion, codigo_operacion, int tamanio, void* valor);
+void devolver_pcb_kernel(PCB*, int, codigo_operacion);
+void identificarse(int, codigo_operacion);
 
 #endif

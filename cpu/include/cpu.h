@@ -21,10 +21,10 @@
 #include "constantes.h"
 
 typedef struct {
-	char* RETARDO_INSTRUCCION;
+	int RETARDO_INSTRUCCION;
 	char* IP_MEMORIA;
-	char* PUERTO_MEMORIA;
-	char* PUERTO_ESCUCHA;
+	int PUERTO_MEMORIA;
+	int PUERTO_ESCUCHA;
 	int TAM_MAX_SEGMENTO;
 }cpu_config_t;
 

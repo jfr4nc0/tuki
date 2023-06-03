@@ -12,7 +12,7 @@ registros_cpu* registrosCpu;
 bool exitInstruccion, desalojoOpcional = false;
 
 int main(int argc, char** argv) {
-    t_log* loggerCpu = iniciar_logger(DEFAULT_LOG_PATH, ENUM_CPU);
+    loggerCpu = iniciar_logger(DEFAULT_LOG_PATH, ENUM_CPU);
     t_config* config = iniciar_config(DEFAULT_CONFIG_PATH, loggerCpu);
     cargar_config(config);
 
@@ -20,6 +20,8 @@ int main(int argc, char** argv) {
 
 
     int conexionCpuMemoria = armar_conexion(config, MEMORIA, loggerCpu);
+    identificarse(conexionCpuMemoria, AUX_SOY_CPU);
+
 	conexionCpuKernel = armar_conexion(config, KERNEL, loggerCpu);
 
     inicializar_registros();
@@ -44,11 +46,11 @@ int main(int argc, char** argv) {
 
 void cargar_config(t_config* config) {
 	configCpu = malloc(sizeof(cpu_config_t));
-	configCpu->RETARDO_INSTRUCCION = config_get_string_value(config, "RETARDO_INSTRUCCION");
-	configCpu->IP_MEMORIA = config_get_string_value(config, "IP_MEMORIA");
-	configCpu->PUERTO_MEMORIA = config_get_string_value(config, "PUERTO_MEMORIA");
-	configCpu->PUERTO_ESCUCHA = config_get_string_value(config, "PUERTO_ESCUCHA");
-	configCpu->TAM_MAX_SEGMENTO = config_get_int_value(config, "TAM_MAX_SEGMENTO");
+	configCpu->RETARDO_INSTRUCCION = extraer_int_de_config(config, "RETARDO_INSTRUCCION", loggerCpu);
+	configCpu->IP_MEMORIA = extraer_string_de_config(config, "IP_MEMORIA", loggerCpu);
+	configCpu->PUERTO_MEMORIA = extraer_int_de_config(config, "PUERTO_MEMORIA", loggerCpu);
+	configCpu->PUERTO_ESCUCHA = extraer_int_de_config(config, "PUERTO_ESCUCHA", loggerCpu);
+	configCpu->TAM_MAX_SEGMENTO = extraer_int_de_config(config, "TAM_MAX_SEGMENTO", loggerCpu);
 }
 
 void inicializar_registros() {
@@ -87,7 +89,7 @@ PCB* recibir_pcb(int clienteAceptado) {
 
 	pcb->id_proceso = leer_int(buffer, &desplazamiento);
 	pcb->lista_instrucciones = leer_string_array(buffer, &desplazamiento);
-	pcb->contador_instrucciones = leer_int(buffer, &desplazamiento);
+	pcb->program_counter = leer_int(buffer, &desplazamiento);
 	pcb->registrosCpu->AX = leer_int(buffer, &desplazamiento);
 	pcb->registrosCpu->BX = leer_int(buffer, &desplazamiento);
 	pcb->registrosCpu->CX = leer_int(buffer, &desplazamiento);
@@ -154,7 +156,7 @@ void ejecutar_proceso(PCB* pcb) {
 	// while(f_eop!=1 && f_interruption!=1 && f_io!=1 && f_pagefault!=1 && f_segfault!=1){
 
     while ((posicion_actual < cantidad_instrucciones) && !exitInstruccion && !desalojoOpcional) {
-	    instruccion = string_duplicate((char *)list_get(pcb->lista_instrucciones, pcb->contador_instrucciones));
+	    instruccion = string_duplicate((char *)list_get(pcb->lista_instrucciones, pcb->program_counter));
 		instruccion_decodificada = decode_instruccion(instruccion);
 
         log_info(loggerCpu, "Ejecutando instruccion: %s", instruccion_decodificada[0]);
@@ -162,10 +164,10 @@ void ejecutar_proceso(PCB* pcb) {
 
         // Evaluar si la instruccion genero una excepcion "f_pagefault"
         // Caso afirmativo => No se actualiza el program counter del pcb
-        pcb->contador_instrucciones++;
+        pcb->program_counter++;
 		posicion_actual++;
 
-        log_info(loggerCpu, "PROGRAM COUNTER: %d", pcb->contador_instrucciones);
+        log_info(loggerCpu, "PROGRAM COUNTER: %d", pcb->program_counter);
 
         usleep(atoi(configCpu->RETARDO_INSTRUCCION)*1000);
         log_info(loggerCpu, "Se suspendio el proceso por retardo de la instruccion...");
@@ -178,10 +180,10 @@ void ejecutar_proceso(PCB* pcb) {
 
 	if (exitInstruccion) {
 		exitInstruccion = false;
-		notificar_instruccion(pcb, conexionCpuKernel, OP_EXIT);
+		devolver_pcb_kernel(pcb, conexionCpuKernel, OP_EXIT);
 	} else if(desalojoOpcional) {
 		desalojoOpcional = false;
-		notificar_instruccion(pcb, conexionCpuKernel, OP_YIELD);
+		devolver_pcb_kernel(pcb, conexionCpuKernel, OP_YIELD);
 	}
 }
 
