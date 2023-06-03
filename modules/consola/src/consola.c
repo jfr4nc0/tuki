@@ -17,7 +17,9 @@ int main(int argc, char** argv) {
 
     int conexionKernel = armar_conexion(config, KERNEL, logger);
 
-    enviarInstrucciones(pathInstrucciones, conexionKernel, logger);
+    if (conexionKernel > 0) {
+    	enviarInstrucciones(pathInstrucciones, conexionKernel, logger);
+    }
 
     terminar_programa(conexionKernel, logger, config);
 }
@@ -40,7 +42,7 @@ void validarArgumentos(int argc, char** argv) {
  *
  */
 void enviarInstrucciones(char* pathInstrucciones, int conexion_kernel, t_log* logger){
-	t_paquete* paquete = crear_paquete(OP_PAQUETE);
+	t_paquete* paquete = crear_paquete(AUX_NEW_PROCESO);
 
 	FILE *instrucciones;
 	if( (instrucciones = fopen(pathInstrucciones, MODO_LECTURA_ARCHIVO)) == NULL ){

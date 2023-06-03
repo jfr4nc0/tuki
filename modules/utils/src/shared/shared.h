@@ -114,8 +114,8 @@ typedef struct {
 	registros_cpu* registrosCpu;
 	t_list* lista_segmentos;
 	t_list* lista_archivos_abiertos; // Contendrá la lista de archivos abiertos del proceso con la posición del puntero de cada uno de ellos.
-	float processor_burst; // Estimacion utilizada para planificar los procesos en el algoritmo HRRN, la misma tendra un valor inicial definido por archivo de config y sera recalculada bajo la formula de promedio ponderado
-	int ready_timestamp; // Timestamp en que el proceso llegó a ready por última vez (utilizado para el cálculo de tiempo de espera del algoritmo HRRN).
+	double processor_burst; // Estimacion utilizada para planificar los procesos en el algoritmo HRRN, la misma tendra un valor inicial definido por archivo de config y sera recalculada bajo la formula de promedio ponderado
+	double ready_timestamp; // Timestamp en que el proceso llegó a ready por última vez (utilizado para el cálculo de tiempo de espera del algoritmo HRRN).
 }PCB;
 
 typedef struct {
@@ -129,7 +129,7 @@ typedef struct {
     char* PUERTO_CPU;
     char* PUERTO_ESCUCHA;
     char* ALGORITMO_PLANIFICACION;
-    char* ESTIMACION_INICIAL;
+    double ESTIMACION_INICIAL;
     double HRRN_ALFA;
     int GRADO_MAX_MULTIPROGRAMACION;
     char** RECURSOS;

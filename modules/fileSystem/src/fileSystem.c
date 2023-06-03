@@ -8,6 +8,9 @@ int main(int argc, char** argv) {
 
     int conexionMemoria = armar_conexion(config, MEMORIA, logger);
 
+    // Notifico a memoria que soy el módulo file system
+    identificarse(conexionMemoria, AUX_SOY_FILE_SYSTEM);
+
     int clienteAceptado = esperar_cliente(servidorFileSystem, logger);
 
     terminar_programa(servidorFileSystem, logger, config);
