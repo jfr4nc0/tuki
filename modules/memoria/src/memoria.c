@@ -1,6 +1,5 @@
 #include "memoria.h"
 
-
 t_log* loggerMemoria;
 t_memoria_config* memoriaConfig;
 t_tabla_segmentos* tablaSegmentos;
@@ -73,13 +72,13 @@ void inicializar_segmento_generico() {
         log_error(loggerMemoria, E__MALLOC_ERROR, memoriaConfig->TAM_SEGMENTO_0);
         abort();
     }
-    log_info(loggerMemoria, "Segmento0 generico creado");
+    log_info(loggerMemoria, "Segmento generico creado");
 
     return;
 }
 
 void cargar_config_memoria(t_config* configInicial) {
-    memoriaConfig = malloc(sizeof(t_kernel_config));
+    memoriaConfig = malloc(sizeof(t_memoria_config));
     memoriaConfig->PUERTO_ESCUCHA = extraer_int_de_config(configInicial, "PUERTO_ESCUCHA", loggerMemoria);
     memoriaConfig->TAM_MEMORIA = extraer_int_de_config(configInicial, "TAM_MEMORIA", loggerMemoria);
     memoriaConfig->TAM_SEGMENTO_0 = extraer_int_de_config(configInicial, "TAM_SEGMENTO_0", loggerMemoria);

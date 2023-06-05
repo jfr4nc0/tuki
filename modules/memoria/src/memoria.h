@@ -3,9 +3,8 @@
 
 #include <shared/shared.h>
 
-
-#define DEFAULT_LOG_PATH            "../logs/memoria.log"
-#define DEFAULT_CONFIG_PATH         "memoria.config"
+#define DEFAULT_LOG_PATH            "./logs/memoria.log"
+#define DEFAULT_CONFIG_PATH         "../../tuki-pruebas/prueba-base/memoria.config"
 
 // LOGS ////////////////////////////////////
 #define CREACION_DE_PROCESO         "Creación de Proceso PID: <PID>"
@@ -18,5 +17,25 @@
 ///////////////////////////////////////////
 
 #define I__RECIBO_INSTRUCCION        "Me llegaron los siguientes valores para la operacion numero: %d desde %s"
+
+typedef struct {
+	int PUERTO_ESCUCHA;
+    int TAM_MEMORIA;
+    int TAM_SEGMENTO_0;
+    int CANT_SEGMENTOS;
+    int RETARDO_MEMORIA;
+    int RETARDO_COMPACTACION;
+    char* ALGORITMO_ASIGNACION;
+} t_memoria_config;
+
+void cargar_config_memoria(t_config*);
+void ejecutar_file_system_pedido(void *);
+void ejecutar_cpu_pedido(void *);
+void ejecutar_kernel_pedido(void *);
+void inicializar_segmento_generico();
+void iterator(char*);
+void ejecutar_instrucciones_memoria(int, char*);
+
+void* segmentoGeneral;
 
 #endif

@@ -10,7 +10,7 @@ CDEBUG=-g -Wall -DDEBUG
 CRELEASE=-O3 -Wall -DNDEBUG
 
 # Arguments when executing with start, memcheck or helgrind
-ARGS=../../tuki-pruebas/planificador-hrrn/consola.config ../../tuki-pruebas/planificador-hrrn/instrucciones.txt
+ARGS=
 
 # Valgrind flags
 MEMCHECK_FLAGS=--track-origins=yes

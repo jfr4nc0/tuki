@@ -176,10 +176,10 @@ void ejecutar_proceso(PCB* pcb) {
 
 	if (exitInstruccion) {
 		exitInstruccion = false;
-		devolver_pcb_kernel(pcb, conexionCpuKernel, OP_EXIT);
+		//devolver_pcb_kernel(pcb, conexionCpuKernel, OP_EXIT);
 	} else if(desalojoOpcional) {
 		desalojoOpcional = false;
-		devolver_pcb_kernel(pcb, conexionCpuKernel, OP_YIELD);
+		//devolver_pcb_kernel(pcb, conexionCpuKernel, OP_YIELD);
 	}
 }
 

@@ -1,24 +1,18 @@
 #include "consola.h"
 
 int main(int argc, char** argv) {
-    // Comentar este if si se quiere tomar los valores por defecto
-    validarArgumentos(argc, argv);
-
-    // Se setean los parametros que se pasan, con valores por defecto si no encuentra parametros
-    char* pathConfig = (argc >= 2) ? argv[1] : PATH_DEFAULT_CONEXION_KERNEL;
-    char* pathInstrucciones = (argc >= 3) ? argv[2] : DEFAULT_INSTRUCCIONES_PATH;
 
     t_log* logger;
     t_config* config;
 
     logger = iniciar_logger(DEFAULT_LOG_PATH, ENUM_CONSOLA);
 
-    config = iniciar_config(pathConfig, logger);
+    config = iniciar_config(DEFAULT_PATH_CONFIG, logger);
 
     int conexionKernel = armar_conexion(config, KERNEL, logger);
 
     if (conexionKernel > 0) {
-    	enviarInstrucciones(pathInstrucciones, conexionKernel, logger);
+    	enviarInstrucciones(DEFAULT_INSTRUCCIONES_PATH, conexionKernel, logger);
     }
 
     terminar_programa(conexionKernel, logger, config);

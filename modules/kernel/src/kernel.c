@@ -8,7 +8,6 @@ void liberar_recursos_kernel() {
     liberar_conexion(conexionFileSystem);
 }
 
-t_kernel_config kernelConfig;
 
 int main(int argc, char** argv) {
 	kernelLogger = iniciar_logger(PATH_LOG_KERNEL, ENUM_KERNEL);
@@ -132,7 +131,7 @@ void cambiar_a_ready(){
 		if (string_equals_ignore_case(kernelConfig->ALGORITMO_PLANIFICACION, "FIFO") ) {
 			cambiar_estado_pcb(pcb_a_ready, ENUM_READY, 0);
 
-			loggear_cola_ready(kernelConfig->ALGORITMO_PLANIFICACION);
+			loggear_cola_lista(ENUM_READY);
 
 			sem_post(&sem_proceso_en_ready);
 		} else if(string_equals_ignore_case(kernelConfig->ALGORITMO_PLANIFICACION, "HRRN")){
@@ -145,7 +144,7 @@ void cambiar_a_ready(){
 
 			cambiar_estado_pcb(pcb_a_ready, ENUM_READY, 0);
 
-			loggear_cola_ready(kernelConfig->ALGORITMO_PLANIFICACION);
+			loggear_cola_lista(ENUM_READY);
 
 			sem_post(&sem_proceso_en_ready);
 		}
@@ -210,6 +209,80 @@ void cambiar_estado_pcb(PCB* pcb, pcb_estado estado_nuevo, int posicion){
     log_info(kernelLogger,"PID: %d - Estado Anterior: %s - Estado Actual: %s", pcb->id_proceso, estadoAnterior, estadoPosterior);
 }
 
+void inicializar_listas_estados() {
+	for (int estado = 0; estado < CANTIDAD_ESTADOS; estado++) {
+		lista_estados[estado] = list_create();
+        sem_init(&sem_lista_estados[estado], 0, 1);
+	}
+}
+
+void liberar_listas_estados() {
+    for (int estado = 0; estado < CANTIDAD_ESTADOS; estado++) {
+        sem_destroy(&sem_lista_estados[estado]);
+	}
+}
+
+void agregar_a_lista_con_sem(void* elem, t_list* lista, sem_t sem_lista){
+	sem_wait(&sem_lista);
+	list_add(lista,elem);
+	sem_post(&sem_lista);
+}
+
+char* get_nombre_estado(pcb_estado pcb_estado){
+	if (pcb_estado >= ENUM_NEW) {
+		return nombres_estados[pcb_estado];
+	}
+	return "EL ESTADO NO ESTÁ REGISTRADO"; //TODO: Mejorar este mensaje
+}
+
+/*------------ ALGORITMO FIFO -----------------*/
+
+void planificar_FIFO(int cpu_conexion){
+	pcb_estado estado = ENUM_READY;
+	sem_wait(&sem_lista_estados[estado]);
+	PCB* pcb = list_remove(lista_estados[estado],0);
+	sem_post(&sem_lista_estados[estado]);
+
+	cambiar_estado_pcb(pcb,ENUM_EXECUTING,0);
+
+	envio_pcb(cpu_conexion, pcb, OP_EXECUTE_PCB);
+}
+
+/*------------ ALGORITMO HRRN -----------------*/
+double rafaga_estimada(PCB* pcb){
+	// TODO Usar timestamp.h para tomar el tiempo de ingreso y calcularlo para hrrn
+	double alfa = kernelConfig->HRRN_ALFA;
+	double ultima_rafaga = pcb->processor_burst;
+	double rafaga = ultima_rafaga != 0 ? ((alfa * ultima_rafaga) + ((1 - alfa) * ultima_rafaga)) : kernelConfig->ESTIMACION_INICIAL;
+
+	return rafaga;
+}
+
+double calculo_HRRN(PCB* pcb){
+	double rafaga = rafaga_estimada(pcb);
+	double res = 1.0 + (pcb->ready_timestamp / rafaga);
+	return res;
+}
+
+static bool criterio_hrrn(PCB* pcb_A, PCB* pcb_B){
+	double a = calculo_HRRN(pcb_A);
+	double b = calculo_HRRN(pcb_B);
+
+	return a <= b;
+}
+
+void planificar_HRRN(int cpu_conexion){
+	pcb_estado estado = ENUM_READY;
+	// Recorrer la lista de pcb y calcular HRRN
+	sem_wait(&sem_lista_estados[estado]);
+	list_sort(lista_estados[estado], (void*) criterio_hrrn);
+	PCB* pcb = list_remove(lista_estados[estado],0);
+	sem_post(&sem_lista_estados[estado]);
+
+	cambiar_estado_pcb(pcb,ENUM_EXECUTING,0);
+
+	envio_pcb(cpu_conexion, pcb, OP_EXECUTE_PCB);
+}
 void inicializar_diccionario_recursos() {
     diccionario_recursos = dictionary_create();
 
@@ -379,10 +452,11 @@ char* pids_on_list(pcb_estado estado){
 }
 
 
-void loggear_cola_lista(pcb_estado estado,char* algoritmo){
+void loggear_cola_lista(pcb_estado estado){
 	char* pids_aux = string_new();
+    char* algoritmo = kernelConfig->ALGORITMO_PLANIFICACION;
 	pids_aux = pids_on_list(estado);
 	char* estado2 = get_nombre_estado(estado);
-	log_info(kernelLogger, "Cola %s %s: %s.",estado, algoritmo, pids_aux);
+	log_info(kernelLogger, "Cola %s %s: %s.",estado2, algoritmo, pids_aux);
 	free(pids_aux);
 }

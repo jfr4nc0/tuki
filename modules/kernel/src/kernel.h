@@ -9,6 +9,9 @@ int conexionMemoria;
 int conexionFileSystem;
 int servidorKernel;
 
+int contadorProcesoId = 0;
+
+t_log* kernelLogger;
 /*----------------- ENUMS / ARRAYS ------------------*/
 char* nombres_estados[] = {
         "NEW",
@@ -44,6 +47,8 @@ typedef struct {
     char** RECURSOS;
     char** INSTANCIAS_RECURSOS;
 }t_kernel_config;
+
+t_kernel_config* kernelConfig;
 
 typedef struct {
 	int id_proceso; // Identificador del proceso, unico en todo el sistema

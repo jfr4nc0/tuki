@@ -3,14 +3,14 @@ LIBS=utils commons pthread readline
 
 # Custom libraries' paths
 SHARED_LIBPATHS=
-STATIC_LIBPATHS=../utils
+STATIC_LIBPATHS=../utils ../kernel
 
 # Compiler flags
 CDEBUG=-g -Wall -DDEBUG
 CRELEASE=-O3 -Wall -DNDEBUG
 
 # Arguments when executing with start, memcheck or helgrind
-ARGS=../../tuki-pruebas/planificador-hrrn/cpu.config
+ARGS=
 
 # Valgrind flags
 MEMCHECK_FLAGS=--track-origins=yes

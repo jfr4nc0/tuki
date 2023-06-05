@@ -373,18 +373,19 @@ void enviarOperacion(int conexion, codigo_operacion codOperacion, int tamanio_va
     enviar_paquete(paquete, conexion);
     free(paquete);
 }
+
 /*
  * Devuelve el pcb a kernel porque terminó de ejecutar el proceso
  */
-void devolver_pcb_kernel(PCB* pcb, int conexion, codigo_operacion codOperacion) {
+//void devolver_pcb_kernel(PCB* pcb, int conexion, codigo_operacion codOperacion) {
     // TODO: Testear usando esta función
-    // enviarOperacion(conexion, codOperacion, sizeof(PCB), pcb);
+//     enviarOperacion(conexion, codOperacion, sizeof(PCB), pcb);
 
-    t_paquete* paquete = crear_paquete(codOperacion);
-    agregar_a_paquete(paquete, pcb, sizeof(PCB));
-    enviar_paquete(paquete, conexion);
-    free(paquete);
-}
+//    t_paquete* paquete = crear_paquete(codOperacion);
+//    agregar_a_paquete(paquete, pcb, sizeof(*PCB));
+//    enviar_paquete(paquete, conexion);
+//    free(paquete);
+//}
 
 /*
  * Variable auxiliar, si solo me quiero identificar no hace falta que agregue ningun valor al paquete

@@ -14,8 +14,8 @@
 
 #include <shared/shared.h>
 
-#define DEFAULT_LOG_PATH        "../logs/file_system.log"
-#define DEFAULT_CONFIG_PATH     "file_system.config"
+#define DEFAULT_LOG_PATH        "./logs/file_system.log"
+#define DEFAULT_CONFIG_PATH     "../../tuki-pruebas/prueba-base/fileSystem.config"
 
 //// LOGS
 #define ACCESO_BITMAP            "Acceso a Bitmap - Bloque: <NUMERO BLOQUE> - Estado: <ESTADO>" Nota: El estado es 0 o 1 donde 0 es libre y 1 es ocupado.

@@ -22,18 +22,65 @@
 #include <time.h>
 #include <math.h>
 
-#include <structs/structs.h>
 
+typedef struct {
+    // Registros de 4 bytes
+    int AX;
+    int BX;
+    int CX;
+    int DX;
 
-/*----------- VARIABLES GLOBALES ---------------*/
-int conexionCPU;
-int conexionMemoria;
-int conexionFileSystem;
-int servidorKernel;
+    // Registros de 8 bytes
+    long EAX;
+    long EBX;
+    long ECX;
+    long EDX;
 
-extern t_log* kernelLogger;
-extern t_kernel_config* kernelConfig;
-int contadorProcesoId = 0;
+    // Registro de 16 bytes
+    long long RAX;
+    long long RBX;
+    long long RCX;
+    long long RDX;
+} registros_cpu;
+
+typedef enum {
+	OP_EXIT,
+	OP_MENSAJE,
+	OP_YIELD,
+	OP_CREATE_SEGMENT,
+	OP_DELETE_SEGMENT,
+	AUX_NEW_PROCESO, // Notifica a kernel que hay un nuevo proceso y se le envia la lista de instrucciones
+	AUX_SOY_CPU, // Notifica a memoria que el modulo que se conectó es CPU
+	AUX_SOY_KERNEL, // Notifica a memoria que el modulo que se conectó es KERNEL
+	AUX_SOY_FILE_SYSTEM, // Notifica a memoria que el modulo que se conectó es FILE SYSTEM
+	OP_EXECUTE_PCB
+}codigo_operacion;
+
+typedef struct {
+    int size;
+    void* stream;
+}t_buffer;
+
+typedef struct {
+    codigo_operacion codigoOperacion;
+    t_buffer* buffer;
+}t_paquete;
+
+typedef struct {
+    int  id; // File descriptor
+    int posicion_puntero;
+} archivo_abierto_t;
+
+typedef struct {
+	int  id;
+	int tamanio;
+}t_segmento;
+
+typedef struct {
+    t_segmento* segmentos;
+    int cantidad_segmentos_usados;
+    int capacidad_segmentos;
+}t_tabla_segmentos;
 
 
 /*---------------------------------- INSTRUCTIONS ----------------------------------*/
@@ -90,7 +137,7 @@ void enviar_paquete(t_paquete*, int);
 void eliminar_paquete(t_paquete*);
 int armar_conexion(t_config*, char*, t_log*);
 void enviarOperacion(int conexion, codigo_operacion, int tamanio, void* valor);
-void devolver_pcb_kernel(PCB*, int, codigo_operacion);
+//void devolver_pcb_kernel(PCB*, int, codigo_operacion);
 void identificarse(int, codigo_operacion);
 
 /*----------------------------- FUNCIONES SERVIDOR ----------------------------*/
@@ -100,8 +147,6 @@ int esperar_cliente(int, t_log*);
 t_list* recibir_paquete(int);
 int recibir_operacion(int);
 void* recibir_buffer(int*, int);
-
-
 
 /*------------------------------ CONFIGURACIONES ------------------------------*/
 
@@ -177,7 +222,7 @@ void* recibir_buffer(int*, int);
 #define I__DESCONEXION_CLIENTE      "El cliente se desconecto. Terminando servidor"
 #define I__SERVER_READY             "Servidor listo para recibir al cliente: "
 #define I_ESPERANDO_CONEXION        "Esperando conexiones..."
-
+#define I__CONFIG_GENERIDO_CARGADO  "Config generico creado: %s"
 
 // ERROR MENSAJES
 #define E__ARCHIVO_CREATE      "Error al crear/leer archivo"
@@ -188,8 +233,7 @@ void* recibir_buffer(int*, int);
 #define E__LOGGER_CREATE       "No se pudo crear logger"
 #define E__CONFIG_CREATE       "No se pudo crear config"
 #define E__PAQUETE_CREATE      "Error al crear paquete"
-
-
+#define E__MALLOC_ERROR        "Error al crear el malloc de tamaño %d "
 
 
 #endif
