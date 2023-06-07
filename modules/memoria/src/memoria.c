@@ -10,7 +10,7 @@ int main() {
 
     int servidorMemoria = iniciar_servidor(configInicial, loggerMemoria);
 
-    while (1){
+    while (1) {
 		int clienteAceptado = esperar_cliente(servidorMemoria, loggerMemoria);
         // Recibo una primera operación para saber que módulo se conectó
         int codigoDeOperacion = recibir_operacion(clienteAceptado);

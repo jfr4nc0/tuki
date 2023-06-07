@@ -34,13 +34,13 @@ int keyFromString(char *key) {
 
 /*-------------------- FUNCIONES GENERALES --------------------*/
 
-char** leer_arreglo_string(char* buffer, int* desplazamiento){
+char** leer_arreglo_string(char* buffer, int* desplazamiento) {
 
 	int longitud = leer_int(buffer, desplazamiento);
 
 	char** arreglo = malloc((longitud + 1) * sizeof(char*));
 
-	for(int i = 0; i < longitud; i++){
+	for(int i = 0; i < longitud; i++) {
 	    arreglo[i] = leer_string(buffer, desplazamiento);
 	}
 	arreglo[longitud] = NULL;
@@ -148,6 +148,9 @@ t_log* iniciar_logger(char* pathLog, int moduloPos) {
         bool valoresPorDefecto = obtener_valores_para_logger(moduloPos, &mostrarConsola, &log_level, &modulo);
 
     t_log *logger;
+    char *directorioActual = get_current_dir_name();
+    printf("Por crear logger desde %s \n", directorioActual);
+    free(directorioActual);
     if (( logger = log_create(pathLog, modulo, mostrarConsola, log_level)) == NULL ) {
         printf(cantidad_strings_a_mostrar(2), E__LOGGER_CREATE, ENTER);
         exit(1);
@@ -164,6 +167,9 @@ t_log* iniciar_logger(char* pathLog, int moduloPos) {
 
 t_config* iniciar_config(char* pathConfig, t_log* logger) {
     t_config* nuevo_config;
+    char *directorioActual = get_current_dir_name();
+    printf("Por crear logger desde %s \n", directorioActual);
+    free(directorioActual);
     if ((nuevo_config = config_create(pathConfig)) == NULL) {
         log_error(logger, E__CONFIG_CREATE);
         exit(1);
@@ -224,7 +230,7 @@ int leer_int(char* buffer, int* desp) {
 	return respuesta;
 }
 
-char* leer_string(char* buffer, int* desp){
+char* leer_string(char* buffer, int* desp) {
 	int size = leer_int(buffer, desp); // TODO: ¿No modifica acá también desplazamiento? Probar
 
 	char* respuesta = malloc(size);
@@ -303,6 +309,7 @@ int crear_conexion(char *ip, char* puerto, t_log* logger) {
         recv(clienteAceptado, &result, sizeof(uint32_t), MSG_WAITALL);
     } else {
         log_error(logger, E__CONEXION_CONNECT);
+        clienteAceptado = -1;
     }
 
     freeaddrinfo(server_info);
@@ -373,19 +380,6 @@ void enviarOperacion(int conexion, codigo_operacion codOperacion, int tamanio_va
     enviar_paquete(paquete, conexion);
     free(paquete);
 }
-
-/*
- * Devuelve el pcb a kernel porque terminó de ejecutar el proceso
- */
-//void devolver_pcb_kernel(PCB* pcb, int conexion, codigo_operacion codOperacion) {
-    // TODO: Testear usando esta función
-//     enviarOperacion(conexion, codOperacion, sizeof(PCB), pcb);
-
-//    t_paquete* paquete = crear_paquete(codOperacion);
-//    agregar_a_paquete(paquete, pcb, sizeof(*PCB));
-//    enviar_paquete(paquete, conexion);
-//    free(paquete);
-//}
 
 /*
  * Variable auxiliar, si solo me quiero identificar no hace falta que agregue ningun valor al paquete
@@ -497,4 +491,3 @@ t_list* recibir_paquete(int clienteAceptado) {
     free(buffer);
     return valores;
 }
-

@@ -147,7 +147,7 @@ t_dictionary* diccionario_recursos;
 #define WAIT                        "PID: <PID> - Wait: <NOMBRE RECURSO> - Instancias: <INSTANCIAS RECURSO>" // Nota: El valor de las instancias es después de ejecutar el Wait
 ////////////////////////////////////
 
-#define PATH_LOG_KERNEL             "./logs/kernel.log"
-#define PATH_CONFIG_KERNEL          "../../tuki-pruebas/prueba-base/kernel.config"
+#define PATH_LOG_KERNEL             "logs/kernel.log"
+#define PATH_CONFIG_KERNEL          "tuki-pruebas/prueba-base/kernel.config"
 
 #endif

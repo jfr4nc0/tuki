@@ -63,5 +63,6 @@ void instruccion_create_segment(char* id_segmento, char* tamanio);
 void instruccion_delete_segment(char* id_segmento);
 void instruccion_yield();
 void instruccion_exit();
+void devolver_pcb_kernel(PCB*, int, codigo_operacion);
 
 #endif

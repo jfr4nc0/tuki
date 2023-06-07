@@ -150,7 +150,7 @@ void ejecutar_proceso(PCB* pcb) {
     // 5. Segmentation Fault (f_segfault)
     // Denotamos con f_<var> (f: Flag)
 
-	// while(f_eop!=1 && f_interruption!=1 && f_io!=1 && f_pagefault!=1 && f_segfault!=1){
+	// while(f_eop!=1 && f_interruption!=1 && f_io!=1 && f_pagefault!=1 && f_segfault!=1) {
 
     while ((posicion_actual < cantidad_instrucciones) && !exitInstruccion && !desalojoOpcional) {
 	    instruccion = string_duplicate((char *)list_get(pcb->lista_instrucciones, pcb->contador_instrucciones));
@@ -176,10 +176,10 @@ void ejecutar_proceso(PCB* pcb) {
 
 	if (exitInstruccion) {
 		exitInstruccion = false;
-		//devolver_pcb_kernel(pcb, conexionCpuKernel, OP_EXIT);
+		devolver_pcb_kernel(pcb, conexionCpuKernel, OP_EXIT);
 	} else if(desalojoOpcional) {
 		desalojoOpcional = false;
-		//devolver_pcb_kernel(pcb, conexionCpuKernel, OP_YIELD);
+		devolver_pcb_kernel(pcb, conexionCpuKernel, OP_YIELD);
 	}
 }
 
@@ -200,7 +200,7 @@ void cargar_registros(PCB* pcb) {
 
 char** decode_instruccion(char* linea_a_parsear) {
 	char** instruccion = string_split(linea_a_parsear, " ");
-	if(instruccion[0] == NULL){
+	if(instruccion[0] == NULL) {
 	    log_info(loggerCpu, "Se ignora linea vacía.");
 	}
 	return instruccion;
@@ -223,7 +223,7 @@ void guardar_contexto_de_ejecucion(PCB* pcb) {
 
 void ejecutar_instruccion(char** instruccion, PCB* pcb) {
 
-	switch(keyFromString(instruccion[0])){
+	switch(keyFromString(instruccion[0])) {
 		case I_SET:
 			// SET (Registro, Valor)
 			instruccion_set(instruccion[1],instruccion[2]);
@@ -327,48 +327,55 @@ void instruccion_set(char* registro,char* valor) {
 	usleep(atoi(configCpu->RETARDO_INSTRUCCION)*1000);
 }
 
-void instruccion_mov_in(char* registro,char* dir_logica){
+void instruccion_mov_in(char* registro,char* dir_logica) {
 
 }
-void instruccion_mov_out(char* dir_logica,char* registro){
+void instruccion_mov_out(char* dir_logica,char* registro) {
 
 }
-void instruccion_io(char* tiempo){
+void instruccion_io(char* tiempo) {
 
 }
-void instruccion_f_open(char* nombre_archivo){
+void instruccion_f_open(char* nombre_archivo) {
 
 }
-void instruccion_f_close(char* nombre_archivo){
+void instruccion_f_close(char* nombre_archivo) {
 
 }
-void instruccion_f_seek(char* nombre_archivo, char* posicion){
+void instruccion_f_seek(char* nombre_archivo, char* posicion) {
 
 }
-void instruccion_f_read(char* nombre_archivo, char* dir_logica, char* cant_bytes){
+void instruccion_f_read(char* nombre_archivo, char* dir_logica, char* cant_bytes) {
 
 }
-void instruccion_f_write(char* nombre_archivo, char* dir_logica, char* cant_bytes){
+void instruccion_f_write(char* nombre_archivo, char* dir_logica, char* cant_bytes) {
 
 }
-void instruccion_f_truncate(char* nombre_archivo,char* tamanio){
+void instruccion_f_truncate(char* nombre_archivo,char* tamanio) {
 
 }
-void instruccion_wait(char* recurso){
+void instruccion_wait(char* recurso) {
 
 }
-void instruccion_signal(char* recurso){
+void instruccion_signal(char* recurso) {
 
 }
-void instruccion_create_segment(char* id_segmento, char* tamanio){
+void instruccion_create_segment(char* id_segmento, char* tamanio) {
 
 }
-void instruccion_delete_segment(char* id_segmento){
+void instruccion_delete_segment(char* id_segmento) {
 
 }
-void instruccion_yield(){
+void instruccion_yield() {
 
 }
-void instruccion_exit(){
+void instruccion_exit() {
 
+}
+
+/*
+ * Devuelve el pcb a kernel porque terminó de ejecutar el proceso
+ */
+void devolver_pcb_kernel(PCB* pcb, int conexion, codigo_operacion codOperacion) {
+	enviarOperacion(conexion, codOperacion, sizeof(PCB), pcb);
 }

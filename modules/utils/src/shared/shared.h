@@ -1,6 +1,7 @@
 #ifndef SHARED_H
 #define SHARED_H
 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -137,7 +138,6 @@ void enviar_paquete(t_paquete*, int);
 void eliminar_paquete(t_paquete*);
 int armar_conexion(t_config*, char*, t_log*);
 void enviarOperacion(int conexion, codigo_operacion, int tamanio, void* valor);
-//void devolver_pcb_kernel(PCB*, int, codigo_operacion);
 void identificarse(int, codigo_operacion);
 
 /*----------------------------- FUNCIONES SERVIDOR ----------------------------*/

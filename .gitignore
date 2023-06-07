@@ -1,3 +1,94 @@
+# Settings
+/.settings/
+/modules/cpu/.settings/
+/modules/kernel/.settings/
+/modules/memoria/.settings/
+/modules/fileSystem/.settings/
+/modules/.setting/
+
+# Metadata
+/.metadata/
+/modules/cpu/.metadata/
+/modules/kernel/.metadata/
+/modules/memoria/.metadata/
+/modules/fileSystem/.metadata/
+
+# Autotools
+/.autotools/
+/modules/cpu/.autotools/
+/modules/kernel/.autotools/
+/modules/memoria/.autotools/
+/modules/fileSystem/.autotools/
+
+# Prerequisites
+*.d
+
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
+
+# Log
+*.log
+
+# Configuraciones
+*.xml
+
+# Linker output
+*.ilk
+*.map
+*.exp
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Eclipse Debug folders
+/modules/kernel/Debug/
+/modules/consola/Debug/
+/modules/cpu/Debug/
+/modules/fileSystem/Debug/
+/modules/memoria/Debug/
+/Debug/
+/modules/Debug
+/modules/utils/Debug
+
+# Kernel Module Compile Results
+*.mod*
+*.cmd
+.tmp_versions/
+modules.order
+Module.symvers
+Mkfile.old
+dkms.conf
+
 # Generated files
 bin/
 obj/
@@ -7,8 +98,8 @@ obj/
 RemoteSystemsTempFiles/
 .metadata/
 .settings/
-.cproject
-.project
+#.cproject
+#.project
 
 # CLion files
 .idea/
