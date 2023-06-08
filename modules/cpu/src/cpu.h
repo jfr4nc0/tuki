@@ -13,10 +13,10 @@
 #include <shared/shared.h>
 
 typedef struct {
-	char* RETARDO_INSTRUCCION;
+	int RETARDO_INSTRUCCION;
 	char* IP_MEMORIA;
-	char* PUERTO_MEMORIA;
-	char* PUERTO_ESCUCHA;
+	int PUERTO_MEMORIA;
+	int PUERTO_ESCUCHA;
 	int TAM_MAX_SEGMENTO;
 }cpu_config_t;
 
@@ -28,7 +28,8 @@ extern registros_cpu* registrosCpu;
 void cargar_config(t_config*);
 char** decode_instruccion(char*);
 void ejecutar_instruccion();
-void ejecutar_proceso(PCB* pcb);
+void ejecutar_proceso(PCB* pcb, int);
+void cargar_registros(PCB* pcb);
 char* fetch_instruccion(PCB* pcb);
 void guardar_contexto_de_ejecucion(PCB*);
 void handshake_memoria(int);
@@ -36,6 +37,7 @@ void inicializar_registros();
 void* procesar_instruccion(int);
 void set_registro(char*, char*);
 void set_registros(PCB* pcb);
+void instruccion_set(char* registro,char* valor);
 PCB* recibir_pcb(int);
 
 // LOGS ////////////////////////

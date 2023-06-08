@@ -1,5 +1,13 @@
 #include "shared.h"
 
+char* nombres_estados[] = {
+    "CONSOLA",
+    "CPU",
+    "MEMORIA",
+    "FILE_SYSTEM",
+    "KERNEL"
+};
+
 /*************** INSTRUCCIONES ***************/
 typedef struct { char *key; int val;} t_symstruct;
 
@@ -29,7 +37,7 @@ int keyFromString(char *key) {
         if (strcmp(sym.key, key) == 0)
             return sym.val;
     }
-    return BADKEY;
+    return -1;
 }
 
 /*-------------------- FUNCIONES GENERALES --------------------*/
@@ -320,7 +328,7 @@ int crear_conexion(char *ip, char* puerto, char* modulo, t_log* logger) {
 void enviar_mensaje(char* mensaje, int clienteAceptado, t_log* logger) {
     t_paquete* paquete = malloc(sizeof(t_paquete));
 
-    paquete->codigoOperacion = OP_MENSAJE;
+    paquete->codigoOperacion = AUX_MENSAJE;
     paquete->buffer = malloc(sizeof(t_buffer));
     paquete->buffer->size = strlen(mensaje) + 1;
     paquete->buffer->stream = malloc(paquete->buffer->size);

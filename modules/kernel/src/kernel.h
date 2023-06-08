@@ -12,15 +12,9 @@ int servidorKernel;
 int contadorProcesoId = 0;
 
 t_log* kernelLogger;
-/*----------------- ENUMS / ARRAYS ------------------*/
-char* nombres_estados[] = {
-        "NEW",
-        "READY",
-        "BLOCKED",
-        "EXECUTING",
-        "EXIT"
-};
 
+
+/*----------------- STRUCTS ------------------*/
 typedef enum {
     ENUM_NEW,
     ENUM_READY,
@@ -29,7 +23,6 @@ typedef enum {
     ENUM_EXIT,
 }pcb_estado;
 
-/*----------------- STRUCTS ------------------*/
 typedef struct {
     //char* IP_KERNEL;
 	//char* PUERTO_KERNEL;

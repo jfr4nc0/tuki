@@ -6,7 +6,8 @@ cpu_config_t* configCpu;
 int conexionCpuKernel;
 registros_cpu* registrosCpu;
 
-bool exitInstruccion, desalojoOpcional = false;
+bool hubo_interrupcion = false;
+codigo_operacion ultimaOperacion;
 
 int main(int argc, char** argv) {
     loggerCpu = iniciar_logger(DEFAULT_LOG_PATH, ENUM_CPU);
@@ -18,8 +19,6 @@ int main(int argc, char** argv) {
 
     int conexionCpuMemoria = armar_conexion(config, MEMORIA, loggerCpu);
     identificarse(conexionCpuMemoria, AUX_SOY_CPU);
-
-	conexionCpuKernel = armar_conexion(config, KERNEL, loggerCpu);
 
     inicializar_registros();
 
@@ -67,10 +66,10 @@ void inicializar_registros() {
 }
 
 void* procesar_instruccion(int servidorCPU) {
-	int clienteAceptado = esperar_cliente(servidorCPU, loggerCpu);
+	int clienteKernel = esperar_cliente(servidorCPU, loggerCpu);
 	PCB* pcb;
-	pcb = recibir_pcb(clienteAceptado);
-	ejecutar_proceso(pcb);
+	pcb = recibir_pcb(clienteKernel);
+	ejecutar_proceso(pcb, clienteKernel);
 	free(pcb);
 
 	return NULL;
@@ -132,7 +131,7 @@ PCB* recibir_pcb(int clienteAceptado) {
 	return pcb;
 }
 
-void ejecutar_proceso(PCB* pcb) {
+void ejecutar_proceso(PCB* pcb, int clienteKernel) {
 
 	cargar_registros(pcb);
 
@@ -152,7 +151,7 @@ void ejecutar_proceso(PCB* pcb) {
 
 	// while(f_eop!=1 && f_interruption!=1 && f_io!=1 && f_pagefault!=1 && f_segfault!=1) {
 
-    while ((posicion_actual < cantidad_instrucciones) && !exitInstruccion && !desalojoOpcional) {
+    while ((posicion_actual < cantidad_instrucciones) && !hubo_interrupcion) {
 	    instruccion = string_duplicate((char *)list_get(pcb->lista_instrucciones, pcb->contador_instrucciones));
 		instruccion_decodificada = decode_instruccion(instruccion);
 
@@ -174,13 +173,12 @@ void ejecutar_proceso(PCB* pcb) {
     log_info(loggerCpu, "Se salió de la ejecucion en la instrucción %s. Guardando el contexto de ejecucion...", instruccion);
 	guardar_contexto_de_ejecucion(pcb);
 
-	if (exitInstruccion) {
-		exitInstruccion = false;
-		devolver_pcb_kernel(pcb, conexionCpuKernel, OP_EXIT);
-	} else if(desalojoOpcional) {
-		desalojoOpcional = false;
-		devolver_pcb_kernel(pcb, conexionCpuKernel, OP_YIELD);
+	// Si hubo interrupcion de algun tipo se lo comunico a kernel pero sacamos
+	if (hubo_interrupcion) {
+		hubo_interrupcion = false;
 	}
+
+	devolver_pcb_kernel(pcb, clienteKernel, ultimaOperacion);
 }
 
 void cargar_registros(PCB* pcb) {
@@ -223,7 +221,17 @@ void guardar_contexto_de_ejecucion(PCB* pcb) {
 
 void ejecutar_instruccion(char** instruccion, PCB* pcb) {
 
-	switch(keyFromString(instruccion[0])) {
+	int operacion = keyFromString(instruccion[0]);
+
+	if (operacion == -1) {
+		log_warning(loggerCpu, "Desconocemos la instruccion %s", instruccion[0]);
+
+		return;
+	}
+
+	ultimaOperacion = operacion;
+
+	switch(operacion) {
 		case I_SET:
 			// SET (Registro, Valor)
 			instruccion_set(instruccion[1],instruccion[2]);
@@ -282,11 +290,11 @@ void ejecutar_instruccion(char** instruccion, PCB* pcb) {
 			break;
 		case I_YIELD:
 			instruccion_yield();
-			desalojoOpcional = true;
+			hubo_interrupcion = true;
 			break;
 		case I_EXIT:
 			instruccion_exit();
-			exitInstruccion = true;
+			hubo_interrupcion = true;
 
 			break;
 	}
