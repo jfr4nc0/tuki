@@ -129,7 +129,7 @@ char** leer_arreglo_string(char* , int* );
 
 /*----------------------------- FUNCIONES CLIENTE ----------------------------*/
 
-int crear_conexion(char*, char*, t_log*);
+int crear_conexion(char*, char*, char*, t_log*);
 void enviar_mensaje(char*, int, t_log*);
 t_paquete* crear_paquete(codigo_operacion);
 t_paquete* crear_super_paquete(void);
@@ -212,12 +212,12 @@ void* recibir_buffer(int*, int);
 #define IO                              "I0"
 
 // DEBUG MENSAJES
-#define D__ESTABLECIENDO_CONEXION   "Estableciendo conexion"
+#define D__ESTABLECIENDO_CONEXION   "Estableciendo conexion con %s"
 #define D__CONFIG_INICIAL_CREADO    "Config creado"
 #define D__LOG_CREADO               "Log creado"
 
 // INFO MENSAJES
-#define I__CONEXION_CREATE          "Conexion creada"
+#define I__CONEXION_CREATE          "Conexion creada con %s"
 #define I__CONEXION_ACCEPT          "Se conecto un cliente"
 #define I__DESCONEXION_CLIENTE      "El cliente se desconecto. Terminando servidor"
 #define I__SERVER_READY             "Servidor listo para recibir al cliente: "
@@ -227,8 +227,8 @@ void* recibir_buffer(int*, int);
 // ERROR MENSAJES
 #define E__ARCHIVO_CREATE      "Error al crear/leer archivo"
 #define E__BAD_REQUEST         "BAD REQUEST"
-#define E__CONEXION_CREATE     "Error al crear conexion"
-#define E__CONEXION_CONNECT    "Error al conectar conexion"
+#define E__CONEXION_CREATE     "Error al crear conexion con %s" // No se esta usando
+#define E__CONEXION_CONNECT    "Error al conectar conexion con %s"
 #define E__CONEXION_ACEPTAR    "Error al aceptar conexion"
 #define E__LOGGER_CREATE       "No se pudo crear logger"
 #define E__CONFIG_CREATE       "No se pudo crear config"

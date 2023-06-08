@@ -11,9 +11,12 @@
 #include<signal.h>
 #include<unistd.h>
 #include<sys/socket.h>
+#include <pthread.h>
 
+// Internas
 #include <shared/shared.h>
 
+// Paths
 #define DEFAULT_LOG_PATH        "logs/file_system.log"
 #define DEFAULT_CONFIG_PATH     "tuki-pruebas/prueba-base/fileSystem.config"
 
@@ -25,5 +28,10 @@
 #define LECTURA_ARCHIVO          "Leer Archivo: <NOMBRE_ARCHIVO> - Puntero: <PUNTERO ARCHIVO> - Memoria: <DIRECCION MEMORIA> - Tamaño: <TAMAÑO>"
 #define TRUNCATE_ARCHIVO         "Truncar Archivo: <NOMBRE_ARCHIVO> - Tamaño: <TAMAÑO>"
 /////////
+
+// Functions
+void atender_kernel(int);
+void ejecutar_instrucciones_kernel(void*);
+void iterator(char* value);
 
 #endif

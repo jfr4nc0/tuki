@@ -34,7 +34,9 @@ void ejecutar_cpu_pedido(void *);
 void ejecutar_kernel_pedido(void *);
 void inicializar_segmento_generico();
 void iterator(char*);
-void ejecutar_instrucciones_memoria(int, char*);
+void ejecutar_instrucciones(int, char*);
+void atender_conexiones(int);
+void administrar_instrucciones(int, int);
 
 void* segmentoGeneral;
 

@@ -102,7 +102,7 @@ void* recibir_de_consola(void *clienteAceptado) {
 }
 
 void inicializar_planificador() {
-    log_info(kernelLogger, "Inicialización del planificador &s...",kernelConfig->ALGORITMO_PLANIFICACION);
+    log_info(kernelLogger, "Inicialización del planificador %s...", kernelConfig->ALGORITMO_PLANIFICACION);
     pthread_create(&planificador_corto_plazo, NULL, (void*) proximo_a_ejecutar, NULL);
     pthread_detach(planificador_corto_plazo);
 

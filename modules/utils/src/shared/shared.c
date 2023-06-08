@@ -264,9 +264,9 @@ int armar_conexion(t_config* config, char* modulo, t_log* logger) {
     char* ip = extraer_de_modulo_config(config, IP_CONFIG, modulo, logger);
     char* puerto = extraer_de_modulo_config(config, PUERTO_CONFIG, modulo, logger);
 
-    log_debug(logger, D__ESTABLECIENDO_CONEXION);
+    log_debug(logger, D__ESTABLECIENDO_CONEXION, modulo);
 
-    return crear_conexion(ip, puerto, logger);
+    return crear_conexion(ip, puerto, modulo, logger);
 }
 
 void* serializar_paquete(t_paquete* paquete, int bytes) {
@@ -283,7 +283,7 @@ void* serializar_paquete(t_paquete* paquete, int bytes) {
     return magic;
 }
 
-int crear_conexion(char *ip, char* puerto, t_log* logger) {
+int crear_conexion(char *ip, char* puerto, char* modulo, t_log* logger) {
     struct addrinfo hints, *server_info;
 
     memset(&hints, 0, sizeof(hints));
@@ -303,12 +303,12 @@ int crear_conexion(char *ip, char* puerto, t_log* logger) {
         uint32_t handshake = 1;
         uint32_t result;
 
-        log_info(logger, I__CONEXION_CREATE);
+        log_info(logger, I__CONEXION_CREATE, modulo);
 
         send(clienteAceptado, &handshake, sizeof(uint32_t), 0);
         recv(clienteAceptado, &result, sizeof(uint32_t), MSG_WAITALL);
     } else {
-        log_error(logger, E__CONEXION_CONNECT);
+        log_error(logger, E__CONEXION_CONNECT, modulo);
         clienteAceptado = -1;
     }
 

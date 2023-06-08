@@ -10,15 +10,38 @@ int main() {
 
     int servidorMemoria = iniciar_servidor(configInicial, loggerMemoria);
 
-    while (1) {
+    atender_conexiones(servidorMemoria);
+
+    inicializar_segmento_generico();
+
+    terminar_programa(servidorMemoria, loggerMemoria, configInicial);
+    free(memoriaConfig);
+    free(segmentoGeneral);
+    free(tablaSegmentos);
+
+	return 0;
+}
+
+void atender_conexiones(int servidorMemoria) {
+    while (1){
 		int clienteAceptado = esperar_cliente(servidorMemoria, loggerMemoria);
         // Recibo una primera operación para saber que módulo se conectó
-        int codigoDeOperacion = recibir_operacion(clienteAceptado);
+        int modulo = recibir_operacion(clienteAceptado);
+        // No se almacena ya que se ignora, pero necesito llamarlo para liberar el mensaje
+        recibir_paquete(clienteAceptado);
+
+        administrar_instrucciones(clienteAceptado, modulo);
+    }
+    return;
+}
+
+void administrar_instrucciones(int clienteAceptado, int modulo) {
         pthread_t thread_cpu;
         pthread_t thread_kernel;
         pthread_t thread_file_system;
 
-        switch(codigoDeOperacion) {
+        // TODO: ver la posibilidad de hacerlo generico pasandole un parametro mas a ejecutar_instrucciones que diga que módulo es
+        switch(modulo) {
             case AUX_SOY_CPU:
                 pthread_create(&thread_cpu, NULL, (void*) ejecutar_cpu_pedido, (void*) (intptr_t) clienteAceptado);
                 pthread_join(thread_cpu, NULL);
@@ -32,36 +55,25 @@ int main() {
     		    pthread_join(thread_file_system, NULL);
             break;
         }
-    }
-
-    inicializar_segmento_generico();
-
-    terminar_programa(servidorMemoria, loggerMemoria, configInicial);
-    free(memoriaConfig);
-    free(segmentoGeneral);
-    free(tablaSegmentos);
-
-	return 0;
 }
-
 
 void ejecutar_file_system_pedido(void *clienteAceptado) {
 	int  conexionConFileSystem = (int) (intptr_t)clienteAceptado;
 
-    ejecutar_instrucciones_memoria(conexionConFileSystem, FILE_SYSTEM);
+    ejecutar_instrucciones(conexionConFileSystem, FILE_SYSTEM);
 }
 
 void ejecutar_cpu_pedido(void *clienteAceptado) {
 	int  conexionConCPU = (int) (intptr_t)clienteAceptado;
 
-    ejecutar_instrucciones_memoria(conexionConCPU, CPU);
+    ejecutar_instrucciones(conexionConCPU, CPU);
 }
 
 
 void ejecutar_kernel_pedido(void *clienteAceptado) {
 	int  conexionConKernel = (int) (intptr_t)clienteAceptado;
 
-    ejecutar_instrucciones_memoria(conexionConKernel, KERNEL);
+    ejecutar_instrucciones(conexionConKernel, KERNEL);
 }
 
 // Creo segmento de memoria generico que puede ser usado por los demas módulos
@@ -72,7 +84,7 @@ void inicializar_segmento_generico() {
         log_error(loggerMemoria, E__MALLOC_ERROR, memoriaConfig->TAM_SEGMENTO_0);
         abort();
     }
-    log_info(loggerMemoria, "Segmento generico creado");
+    log_info(loggerMemoria, "Segmento0 generico creado");
 
     return;
 }
@@ -114,8 +126,8 @@ void iterator(char* value) {
     log_info(loggerMemoria, "%s ", value);
 }
 
-
-void ejecutar_instrucciones_memoria(int cliente, char* modulo) {
+void ejecutar_instrucciones(int cliente, char* modulo) {
+	log_info(loggerMemoria, "Esperando instrucciones de: %s ", modulo);
     int codigoDeOperacion = recibir_operacion(cliente);
     log_info(loggerMemoria, I__RECIBO_INSTRUCCION, codigoDeOperacion, modulo);
     t_list* listaRecibida = recibir_paquete(cliente);
