@@ -44,8 +44,8 @@ PCB* recibir_pcb(int);
 #define ERROR_SEGMENTATION_FAULT     "PID: <PID> - Error SEG_FAULT- Segmento: <NUMERO SEGMENTO> - Offset: <OFFSET> - Tamaño: <TAMAÑO>"
 ////////////////////////////////
 
-#define DEFAULT_LOG_PATH      "./logs/cpu.log"
-#define DEFAULT_CONFIG_PATH   "../../tuki-pruebas/prueba-base/cpu.config"
+#define DEFAULT_LOG_PATH      "logs/cpu.log"
+#define DEFAULT_CONFIG_PATH   "tuki-pruebas/prueba-base/cpu.config"
 
 /**************** INSTRUCCIONES ****************/
 void instruccion_mov_in(char* registro,char* dir_logica);
