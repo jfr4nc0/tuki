@@ -1,3 +1,7 @@
+# Ver si lo subimos o no
+.cproject
+.project
+
 # Settings
 /.settings/
 /modules/cpu/.settings/
@@ -98,14 +102,12 @@ obj/
 RemoteSystemsTempFiles/
 .metadata/
 .settings/
-#.cproject
-#.project
 
 # CLion files
 .idea/
 
 # Visual Studio Code files
-.vscode/*
+.vscode/
 !.vscode/c_cpp_properties.json
 !.vscode/launch.json
 !.vscode/tasks.json
