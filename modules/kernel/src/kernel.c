@@ -11,20 +11,20 @@ void liberar_recursos_kernel() {
 
 int main(int argc, char** argv) {
 	kernelLogger = iniciar_logger(PATH_LOG_KERNEL, ENUM_KERNEL);
-    t_config* config = iniciar_config(PATH_CONFIG_KERNEL, kernelLogger);
+	t_config* config = iniciar_config(PATH_CONFIG_KERNEL, kernelLogger);
     cargar_config_kernel(config, kernelLogger);
 
     log_debug(kernelLogger, "Vamos a usar el algoritmo %s", kernelConfig->ALGORITMO_PLANIFICACION);
-
-    conexionCPU = armar_conexion(config, CPU, kernelLogger);
-    conexionFileSystem = armar_conexion(config, FILE_SYSTEM, kernelLogger);
-    conexionMemoria = armar_conexion(config, MEMORIA, kernelLogger);
-    identificarse(conexionMemoria, AUX_SOY_KERNEL); // Le dice a memoria que módulo se conectó
 
     inicializar_semaforos();
     inicializar_listas_estados();
     inicializar_diccionario_recursos();
     inicializar_planificador();
+
+    conexionCPU = armar_conexion(config, CPU, kernelLogger);
+    conexionFileSystem = armar_conexion(config, FILE_SYSTEM, kernelLogger);
+    conexionMemoria = armar_conexion(config, MEMORIA, kernelLogger);
+    identificarse(conexionMemoria, AUX_SOY_KERNEL); // Le dice a memoria que módulo se conectó
 
     int servidorKernel = iniciar_servidor(config, kernelLogger);
 
@@ -89,7 +89,9 @@ void* recibir_de_consola(void *clienteAceptado) {
 
 	PCB* pcb = new_pcb(listaInstrucciones, conexionConConsola);
 
+	sem_wait(&sem_proceso_a_ready);
     cambiar_a_ready();
+    sem_post(&sem_proceso_a_ready);
 
 	proximo_a_ejecutar();
 
@@ -123,7 +125,7 @@ void cambiar_a_ready() {
 		sem_post(&sem_lista_estados[ENUM_NEW]);
 
 		if (string_equals_ignore_case(kernelConfig->ALGORITMO_PLANIFICACION, "FIFO") ) {
-			cambiar_estado_pcb(pcb_a_ready, ENUM_READY, 0);
+			cambiar_estado_pcb(pcb_a_ready, ENUM_READY);
 
 			loggear_cola_lista(ENUM_READY);
 
@@ -136,7 +138,7 @@ void cambiar_a_ready() {
 //			Cuanto mayor R, mayor prioridad
 //			Tiene en cuenta la edad del proceso (por W, tiempo de espera). Por lo tanto elimina el problema de inanición
 
-			cambiar_estado_pcb(pcb_a_ready, ENUM_READY, 0);
+			cambiar_estado_pcb(pcb_a_ready, ENUM_READY);
 
 			loggear_cola_lista(ENUM_READY);
 
@@ -176,13 +178,15 @@ PCB* new_pcb(t_list* listaInstrucciones, int clienteAceptado) {
 	pcb->lista_segmentos = list_create();
 	pcb->lista_archivos_abiertos = list_create();
 	pcb->processor_burst = kernelConfig->ESTIMACION_INICIAL;
-	pcb->ready_timestamp = 0;
+	pcb->ready_timestamp = 0; //TODO
 	pcb->hrrn_alfa = kernelConfig->HRRN_ALFA;
 
-    char* list_ids = pids_on_list(ENUM_READY);
+    //char* list_ids = pids_on_list(ENUM_READY);
 	agregar_a_lista_con_sem(pcb, lista_estados[ENUM_NEW], sem_lista_estados[ENUM_NEW]);
+	log_info(kernelLogger, "Se crea el proceso %d en NEW", pcb->id_proceso);
+	//log_info(kernelLogger, "El pcb entro en la cola de %s", NEW);
 
-    log_info(kernelLogger, "Cola Ready %s: [%s]",kernelConfig->ALGORITMO_PLANIFICACION,list_ids);
+    //log_info(kernelLogger, "Cola Ready %s: [%s]",kernelConfig->ALGORITMO_PLANIFICACION,list_ids);
 
 return pcb;
 
@@ -193,7 +197,7 @@ return pcb;
  * lo agrega a la cola de la lista del estado posterior, y cambia el estado del pcb
  * Ejemplo: cambiar_estado_pcb(0,ENUM_READY,ENUM_EXECUTING)
  */
-void cambiar_estado_pcb(PCB* pcb, pcb_estado estado_nuevo, int posicion) {
+void cambiar_estado_pcb(PCB* pcb, pcb_estado estado_nuevo) {
 	pcb_estado estado_anterior = pcb->estado;
 	pcb->estado = estado_nuevo;
 	agregar_a_lista_con_sem(pcb, lista_estados[estado_nuevo], sem_lista_estados[estado_nuevo]);
@@ -237,7 +241,7 @@ void planificar_FIFO(int cpu_conexion) {
 	PCB* pcb = list_remove(lista_estados[estado],0);
 	sem_post(&sem_lista_estados[estado]);
 
-	cambiar_estado_pcb(pcb,ENUM_EXECUTING,0);
+	cambiar_estado_pcb(pcb,ENUM_EXECUTING);
 
 	envio_pcb(cpu_conexion, pcb, OP_EXECUTE_PCB);
 }
@@ -273,7 +277,7 @@ void planificar_HRRN(int cpu_conexion) {
 	PCB* pcb = list_remove(lista_estados[estado],0);
 	sem_post(&sem_lista_estados[estado]);
 
-	cambiar_estado_pcb(pcb,ENUM_EXECUTING,0);
+	cambiar_estado_pcb(pcb,ENUM_EXECUTING);
 
 	envio_pcb(cpu_conexion, pcb, OP_EXECUTE_PCB);
 }

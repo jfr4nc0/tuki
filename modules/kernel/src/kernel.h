@@ -83,7 +83,7 @@ PCB* new_pcb(t_list* , int);
 void inicializar_planificador();
 void inicializar_listas_estados();
 void proximo_a_ejecutar();
-void cambiar_estado_pcb(PCB* ,pcb_estado ,int );
+void cambiar_estado_pcb(PCB* ,pcb_estado);
 void agregar_a_lista_con_sem(void*, t_list *, sem_t);
 void liberar_listas_estados();
 void loggear_cola_ready(char*);
