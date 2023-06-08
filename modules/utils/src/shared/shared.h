@@ -1,6 +1,7 @@
 #ifndef SHARED_H
 #define SHARED_H
 
+// Externas
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdbool.h>
@@ -16,14 +17,45 @@
 #include <commons/bitarray.h>
 #include <commons/config.h>
 #include <commons/string.h>
-
 #include <sys/stat.h>
 #include <pthread.h>
 #include <semaphore.h>
 #include <time.h>
 #include <math.h>
 
+// Internas
+#include "constantes.h"
 
+extern char* nombres_estados[5];
+
+/*--------------------------------- Estructuras --------------------------------*/
+
+typedef enum {
+    OP_EXECUTE_PCB,
+    // Instrucciones
+    I_SET,
+    I_MOV_IN,
+    I_MOV_OUT,
+    I_IO,
+    I_F_OPEN,
+    I_F_CLOSE,
+    I_F_SEEK,
+    I_F_READ,
+    I_F_WRITE,
+    I_TRUNCATE,
+    I_WAIT,
+    I_SIGNAL,
+    I_CREATE_SEGMENT,
+    I_DELETE_SEGMENT,
+    I_YIELD,
+    I_EXIT,
+    // Auxiliares
+	AUX_MENSAJE,
+	AUX_NEW_PROCESO, // Notifica a kernel que hay un nuevo proceso y se le envia la lista de instrucciones
+	AUX_SOY_CPU, // Notifica a memoria que el modulo que se conectó es CPU
+	AUX_SOY_KERNEL, // Notifica a memoria que el modulo que se conectó es KERNEL
+	AUX_SOY_FILE_SYSTEM // Notifica a memoria que el modulo que se conectó es FILE SYSTEM
+}codigo_operacion;
 typedef struct {
     // Registros de 4 bytes
     int AX;
@@ -43,19 +75,6 @@ typedef struct {
     long long RCX;
     long long RDX;
 } registros_cpu;
-
-typedef enum {
-	OP_EXIT,
-	OP_MENSAJE,
-	OP_YIELD,
-	OP_CREATE_SEGMENT,
-	OP_DELETE_SEGMENT,
-	AUX_NEW_PROCESO, // Notifica a kernel que hay un nuevo proceso y se le envia la lista de instrucciones
-	AUX_SOY_CPU, // Notifica a memoria que el modulo que se conectó es CPU
-	AUX_SOY_KERNEL, // Notifica a memoria que el modulo que se conectó es KERNEL
-	AUX_SOY_FILE_SYSTEM, // Notifica a memoria que el modulo que se conectó es FILE SYSTEM
-	OP_EXECUTE_PCB
-}codigo_operacion;
 
 typedef struct {
     int size;
@@ -83,28 +102,6 @@ typedef struct {
     int capacidad_segmentos;
 }t_tabla_segmentos;
 
-
-/*---------------------------------- INSTRUCTIONS ----------------------------------*/
-
-#define BADKEY -1
-#define I_SET 1
-#define I_MOV_IN 2
-#define I_MOV_OUT 3
-#define I_IO 4
-#define I_F_OPEN 5
-#define I_F_CLOSE 6
-#define I_F_SEEK 7
-#define I_F_READ 8
-#define I_F_WRITE 9
-#define I_TRUNCATE 10
-#define I_WAIT 11
-#define I_SIGNAL 12
-#define I_CREATE_SEGMENT 13
-#define I_DELETE_SEGMENT 14
-#define I_YIELD 15
-#define I_EXIT 16
-
-int keyfromstring(char *key);
 
 /*--------------------------------- FUNCIONES GENERALES --------------------------------*/
 
@@ -147,93 +144,5 @@ int esperar_cliente(int, t_log*);
 t_list* recibir_paquete(int);
 int recibir_operacion(int);
 void* recibir_buffer(int*, int);
-
-/*------------------------------ CONFIGURACIONES ------------------------------*/
-
-#define PATH_DEFAULT_CONEXION_KERNEL                "../../tuki-pruebas/prueba-base/kernel_conexion.config"
-
-#define MOSTRAR_OCULTAR_MENSAJES_LOG_CONSOLA        1
-#define MOSTRAR_OCULTAR_MENSAJES_LOG_CPU            1
-#define MOSTRAR_OCULTAR_MENSAJES_LOG_FILE_SYSTEM    1
-#define MOSTRAR_OCULTAR_MENSAJES_LOG_MEMORIA        1
-#define MOSTRAR_OCULTAR_MENSAJES_LOG_KERNEL         1
-
-#define LOG_LEVEL_CONSOLA                           LOG_LEVEL_TRACE
-#define LOG_LEVEL_CPU                               LOG_LEVEL_TRACE
-#define LOG_LEVEL_FILE_SYSTEM                       LOG_LEVEL_TRACE
-#define LOG_LEVEL_KERNEL                            LOG_LEVEL_TRACE
-#define LOG_LEVEL_MEMORIA                           LOG_LEVEL_TRACE
-
-/*
- * Si se quiere cambiar todos los modulos a la vez se deberia poder
- * setear este valor y mover los ENU_<MODULO> de constantes.h a un numero mayor a 4
- */
-#define LOG_LEVEL_DEFAULT         LOG_LEVEL_INFO
-
-/*--------------------------------- CONSTANTES --------------------------------*/
-
-#define LOCALHOST           "127.0.0.1"
-#define PUERTO_LOCAL        "PUERTO_ESCUCHA"
-#define ERROR               "ERROR"
-#define OK                  "OK"
-#define HANDSHAKE           "HANDSHAKE"
-
-// Signos
-#define ENTER             "\n"
-#define SIGN_CONSOLA      "> "
-#define EMPTY_STRING      ""
-
-// CONSTANTES
-#define MODO_LECTURA_ARCHIVO      "r"
-#define IP_CONFIG                 "IP_"
-#define PUERTO_CONFIG             "PUERTO_"
-#define LONGITUD_MAXIMA_CADENA    1000
-#define CANTIDAD_ESTADOS          5
-
-// Modulos
-#define CONSOLA                    "CONSOLA"
-#define CPU                        "CPU"
-#define FILE_SYSTEM                "FILE_SYSTEM"
-#define KERNEL                     "KERNEL"
-#define MEMORIA                    "MEMORIA"
-
-// ENUMS
-#define ENUM_CONSOLA              	0
-#define ENUM_CPU                    1
-#define ENUM_FILE_SYSTEM            2
-#define ENUM_KERNEL               	3
-#define ENUM_MEMORIA              	4
-
-#define NEW                             "NEW"
-#define READY                           "READY"
-#define BLOCKED                         "BLOCKED"
-#define EXECUTING                       "EXECUTING"
-#define EXIT                            "EXIT"
-#define IO                              "I0"
-
-// DEBUG MENSAJES
-#define D__ESTABLECIENDO_CONEXION   "Estableciendo conexion con %s"
-#define D__CONFIG_INICIAL_CREADO    "Config creado"
-#define D__LOG_CREADO               "Log creado"
-
-// INFO MENSAJES
-#define I__CONEXION_CREATE          "Conexion creada con %s"
-#define I__CONEXION_ACCEPT          "Se conecto un cliente"
-#define I__DESCONEXION_CLIENTE      "El cliente se desconecto. Terminando servidor"
-#define I__SERVER_READY             "Servidor listo para recibir al cliente: "
-#define I_ESPERANDO_CONEXION        "Esperando conexiones..."
-#define I__CONFIG_GENERIDO_CARGADO  "Config generico creado: %s"
-
-// ERROR MENSAJES
-#define E__ARCHIVO_CREATE      "Error al crear/leer archivo"
-#define E__BAD_REQUEST         "BAD REQUEST"
-#define E__CONEXION_CREATE     "Error al crear conexion con %s" // No se esta usando
-#define E__CONEXION_CONNECT    "Error al conectar conexion con %s"
-#define E__CONEXION_ACEPTAR    "Error al aceptar conexion"
-#define E__LOGGER_CREATE       "No se pudo crear logger"
-#define E__CONFIG_CREATE       "No se pudo crear config"
-#define E__PAQUETE_CREATE      "Error al crear paquete"
-#define E__MALLOC_ERROR        "Error al crear el malloc de tamaño %d "
-
 
 #endif
