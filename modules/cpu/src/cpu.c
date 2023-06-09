@@ -23,13 +23,16 @@ int main(int argc, char** argv) {
     inicializar_registros();
 
 
-    //pthread_t hilo_ejecucion;
-    pthread_t hilo_dispatcher;
 
-	//pthread_create(&hilo_ejecucion, NULL, (void *) procesar_instruccion, int servidorCPU); //  TODO: Avisar posibles errores o si el kernel se desconecto.
-    pthread_create(&hilo_dispatcher, NULL, (void *) procesar_instruccion, &servidorCPU);
+    while (1) {
+		int clienteKernel = esperar_cliente(servidorCPU, loggerCpu);
+	    //pthread_t hilo_ejecucion;
+	    pthread_t hilo_dispatcher;
+		//pthread_create(&hilo_ejecucion, NULL, (void *) procesar_instruccion, int servidorCPU); //  TODO: Avisar posibles errores o si el kernel se desconecto.
+		pthread_create(&hilo_dispatcher, NULL, (void *) procesar_instruccion, (void*) (intptr_t) clienteKernel);
 
-    pthread_join(hilo_dispatcher, NULL);
+		pthread_join(hilo_dispatcher, NULL);
+    }
 
     terminar_programa(conexionCpuKernel, loggerCpu, config);
 
@@ -65,14 +68,14 @@ void inicializar_registros() {
 	registrosCpu->RDX = 0;
 }
 
-void* procesar_instruccion(int servidorCPU) {
-	int clienteKernel = esperar_cliente(servidorCPU, loggerCpu);
+void procesar_instruccion(void * clienteAceptado) {
+	int clienteKernel = (int) (intptr_t)clienteAceptado;
 	PCB* pcb;
 	pcb = recibir_pcb(clienteKernel);
 	ejecutar_proceso(pcb, clienteKernel);
 	free(pcb);
 
-	return NULL;
+	return;
 }
 
 PCB* recibir_pcb(int clienteAceptado) {
@@ -332,7 +335,7 @@ void instruccion_set(char* registro,char* valor) {
 		registrosCpu->RDX = set_valor;
 	}
 
-	usleep(atoi(configCpu->RETARDO_INSTRUCCION)*1000);
+	usleep(configCpu->RETARDO_INSTRUCCION*1000);
 }
 
 void instruccion_mov_in(char* registro,char* dir_logica) {
@@ -385,5 +388,5 @@ void instruccion_exit() {
  * Devuelve el pcb a kernel porque terminó de ejecutar el proceso
  */
 void devolver_pcb_kernel(PCB* pcb, int conexion, codigo_operacion codOperacion) {
-	enviarOperacion(conexion, codOperacion, sizeof(PCB), pcb);
+	enviar_operacion(conexion, codOperacion, sizeof(PCB), pcb);
 }

@@ -39,6 +39,8 @@ int keyFromString(char *key);
 #define LOG_LEVEL_KERNEL                            LOG_LEVEL_TRACE
 #define LOG_LEVEL_MEMORIA                           LOG_LEVEL_TRACE
 
+#define CANTIDAD_RECURSOS_NEW                       30
+
 /*
  * Si se quiere cambiar todos los modulos a la vez se deberia poder
  * setear este valor y mover los ENU_<MODULO> de constantes.h a un numero mayor a 4
@@ -71,13 +73,6 @@ int keyFromString(char *key);
 #define FILE_SYSTEM                "FILE_SYSTEM"
 #define KERNEL                     "KERNEL"
 #define MEMORIA                    "MEMORIA"
-
-// ENUMS TENER CUIDADO DE MODIFICAR VALORES
-#define ENUM_CONSOLA              	0
-#define ENUM_CPU                    1
-#define ENUM_FILE_SYSTEM            2
-#define ENUM_KERNEL               	3
-#define ENUM_MEMORIA              	4
 
 #define NEW                             "NEW"
 #define READY                           "READY"
