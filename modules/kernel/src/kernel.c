@@ -257,6 +257,7 @@ void mover_de_lista_con_sem(void* elem, int estadoNuevo, int estadoAnterior) {
 	sem_wait(&sem_lista_estados[estadoAnterior]);
 
 	list_remove_element(lista_estados[estadoAnterior], elem);
+	list_add(lista_estados[estadoNuevo], elem);
 
 	sem_post(&sem_lista_estados[estadoAnterior]);
 	sem_post(&sem_lista_estados[estadoNuevo]);

@@ -39,8 +39,6 @@ int keyFromString(char *key);
 #define LOG_LEVEL_KERNEL                            LOG_LEVEL_TRACE
 #define LOG_LEVEL_MEMORIA                           LOG_LEVEL_TRACE
 
-#define CANTIDAD_RECURSOS_NEW                       30
-
 /*
  * Si se quiere cambiar todos los modulos a la vez se deberia poder
  * setear este valor y mover los ENU_<MODULO> de constantes.h a un numero mayor a 4
