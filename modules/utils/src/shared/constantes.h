@@ -72,13 +72,6 @@ int keyFromString(char *key);
 #define KERNEL                     "KERNEL"
 #define MEMORIA                    "MEMORIA"
 
-// ENUMS TENER CUIDADO DE MODIFICAR VALORES
-#define ENUM_CONSOLA              	0
-#define ENUM_CPU                    1
-#define ENUM_FILE_SYSTEM            2
-#define ENUM_KERNEL               	3
-#define ENUM_MEMORIA              	4
-
 #define NEW                             "NEW"
 #define READY                           "READY"
 #define BLOCKED                         "BLOCKED"

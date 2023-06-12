@@ -27,6 +27,13 @@
 #include "constantes.h"
 
 extern char* nombres_estados[5];
+typedef enum {
+    ENUM_CONSOLA,
+    ENUM_CPU,
+    ENUM_FILE_SYSTEM,
+    ENUM_KERNEL,
+    ENUM_MEMORIA
+}enum_modulos;
 
 /*--------------------------------- Estructuras --------------------------------*/
 
@@ -134,7 +141,7 @@ void agregar_a_paquete(t_paquete*, void*, int);
 void enviar_paquete(t_paquete*, int);
 void eliminar_paquete(t_paquete*);
 int armar_conexion(t_config*, char*, t_log*);
-void enviarOperacion(int conexion, codigo_operacion, int tamanio, void* valor);
+void enviar_operacion(int conexion, codigo_operacion, int tamanio, void* valor);
 void identificarse(int, codigo_operacion);
 
 /*----------------------------- FUNCIONES SERVIDOR ----------------------------*/

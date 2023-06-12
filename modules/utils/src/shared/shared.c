@@ -1,11 +1,11 @@
 #include "shared.h"
 
 char* nombres_estados[] = {
-    "CONSOLA",
-    "CPU",
-    "MEMORIA",
-    "FILE_SYSTEM",
-    "KERNEL"
+    "NEW",
+    "READY",
+    "EXECUTING",
+    "BLOCKED",
+    "EXIT"
 };
 
 /*************** INSTRUCCIONES ***************/
@@ -380,7 +380,7 @@ void enviar_paquete(t_paquete* paquete, int clienteAceptado) {
 /*
  * Crea un paquete, le agrega el valor pasado como parametro, lo envia, y luego libera el paquete
  */
-void enviarOperacion(int conexion, codigo_operacion codOperacion, int tamanio_valor, void* valor) {
+void enviar_operacion(int conexion, codigo_operacion codOperacion, int tamanio_valor, void* valor) {
     t_paquete* paquete = crear_paquete(codOperacion);
     if (tamanio_valor>0) {
         agregar_a_paquete(paquete, valor, tamanio_valor);
@@ -394,7 +394,7 @@ void enviarOperacion(int conexion, codigo_operacion codOperacion, int tamanio_va
  */
 void identificarse(int conexion, codigo_operacion identificacion) {
 	if (conexion > 0) {
-		enviarOperacion(conexion, identificacion, 0, 0);
+		enviar_operacion(conexion, identificacion, 0, 0);
 	}
 }
 /*----------------------- FUNCIONES SERVIDOR -------------------*/
@@ -449,9 +449,9 @@ int esperar_cliente(int socket_servidor, t_log* logger) {
 
     if(handshake == 1) {
         send(clienteAceptado, &resultOk, sizeof(uint32_t), 0);
-        log_info(logger, cantidad_strings_a_mostrar(2), HANDSHAKE, OK);
+        log_info(logger, HANDSHAKE, OK);
     } else {
-        log_error(logger, cantidad_strings_a_mostrar(2), HANDSHAKE, ERROR);
+        log_error(logger, HANDSHAKE, ERROR);
         send(clienteAceptado, &resultError, sizeof(uint32_t), 0);
     }
 

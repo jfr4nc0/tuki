@@ -34,7 +34,7 @@ char* fetch_instruccion(PCB* pcb);
 void guardar_contexto_de_ejecucion(PCB*);
 void handshake_memoria(int);
 void inicializar_registros();
-void* procesar_instruccion(int);
+void procesar_instruccion(void*);
 void set_registro(char*, char*);
 void set_registros(PCB* pcb);
 void instruccion_set(char* registro,char* valor);

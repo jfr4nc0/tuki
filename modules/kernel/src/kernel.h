@@ -18,8 +18,8 @@ t_log* kernelLogger;
 typedef enum {
     ENUM_NEW,
     ENUM_READY,
-    ENUM_BLOCKED,
     ENUM_EXECUTING,
+    ENUM_BLOCKED,
     ENUM_EXIT,
 }pcb_estado;
 
@@ -69,27 +69,35 @@ typedef struct{
 t_list* procesar_instrucciones(int, t_list*, t_log*, t_config*);
 void cargar_config_kernel(t_config*, t_log*);
 void inicializar_escucha_conexiones_consolas(int);
-void* recibir_de_consola(void*);
+void recibir_de_consola(void*);
 void iterator(char* value);
-PCB* new_pcb(t_list* , int);
+PCB* nuevo_proceso(t_list* , int);
+void proceso_a_ready();
 
-void inicializar_planificador();
-void inicializar_listas_estados();
+
+static bool criterio_hrrn(PCB*, PCB*);
+double calculo_HRRN(PCB*);
+double rafaga_estimada(PCB*);
+
+void crear_hilo_planificador();
 void proximo_a_ejecutar();
-void cambiar_estado_pcb(PCB* ,pcb_estado);
-void agregar_a_lista_con_sem(void*, t_list *, sem_t);
-void liberar_listas_estados();
-void loggear_cola_ready(char*);
-void cambiar_a_ready();
-void agregar_pcb_a_paquete(t_paquete* , PCB* );
-PCB* remover_de_lista(int, t_list*, sem_t);
 char* pids_on_list(pcb_estado estado);
-char* get_nombre_estado(pcb_estado estado);
 
 void inicializar_semaforos();
 void crear_cola_recursos(char*, int);
 void inicializar_diccionario_recursos();
 
+
+/// Funciones de listas ///
+void cambiar_estado_proceso(PCB*, pcb_estado);
+void agregar_a_lista_con_sem(void*, int);
+void liberar_listas_estados();
+void inicializar_listas_estados();
+void mover_de_lista_con_sem(void*, int, int);
+//////////////////
+
+// Funciones para enviar un pcb a cpu //////////////
+void agregar_pcb_a_paquete(t_paquete* , PCB* );
 void agregar_elemento_a_paquete(t_paquete* , void* );
 void agregar_cadena_a_paquete(t_paquete* , char* );
 void agregar_long_a_paquete(t_paquete* , void* );
@@ -100,14 +108,15 @@ void agregar_arreglo_a_paquete(t_paquete* , char** );
 void agregar_valor_a_paquete(t_paquete* , void* , int );
 void agregar_registros_a_paquete(t_paquete* , registros_cpu* );
 void envio_pcb(int , PCB* , codigo_operacion );
+////////////////////////////////////////////////////
+
+int obtener_recursos(int);
 
 
 /*----------------- SEMAFOROS / HILOS ------------------*/
 sem_t sem_proceso_a_ready;
 sem_t sem_grado_multiprogamacion;
-sem_t sem_proceso_en_ready;
 sem_t sem_cpu_disponible;
-sem_t sem_creacion_pcb;
 
 pthread_t planificador_corto_plazo;
 pthread_t thread_memoria;
