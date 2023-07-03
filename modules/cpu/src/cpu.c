@@ -70,16 +70,24 @@ void inicializar_registros() {
 
 void procesar_instruccion(void * clienteAceptado) {
 	int clienteKernel = (int) (intptr_t)clienteAceptado;
-	PCB* pcb;
-	pcb = recibir_pcb(clienteKernel);
+
+	codigo_operacion codigoOperacion = recibir_operacion(clienteKernel);
+	if (codigoOperacion != OP_EXECUTE_PCB) {
+		log_error(kernelLogger, "No se recibió un codigo de operacion de tipo pcb. Codigo recibido %d", codigoOperacion);
+		abort();
+	}
+
+	PCB* pcb = recibir_pcb(clienteKernel);
 	ejecutar_proceso(pcb, clienteKernel);
 	free(pcb);
 
 	return;
 }
 
+
 PCB* recibir_pcb(int clienteAceptado) {
 	PCB* pcb = malloc(sizeof(PCB));
+
 	char* buffer;
 	int tamanio = 0;
 	int desplazamiento = 0;
@@ -87,8 +95,27 @@ PCB* recibir_pcb(int clienteAceptado) {
 	buffer = recibir_buffer(&tamanio, clienteAceptado);
 
 	pcb->id_proceso = leer_int(buffer, &desplazamiento);
-	pcb->lista_instrucciones = leer_string_array(buffer, &desplazamiento);
+	pcb->estado = leer_int(buffer, &desplazamiento);
+
+	pcb->lista_instrucciones = leer_string_array(buffer, &desplazamiento); // NO esta funcionando bien
+
 	pcb->contador_instrucciones = leer_int(buffer, &desplazamiento);
+
+	pcb->lista_segmentos = leer_string_array(buffer, &desplazamiento); //TODO: Modificar cuando se mergee memoria
+
+	pcb->lista_archivos_abiertos = list_create();
+	int cantidad_de_archivos = leer_int(buffer, &desplazamiento);
+	for (int i = 0; i < cantidad_de_archivos; i++) {
+			archivo_abierto_t* archivo_abierto = malloc(sizeof(archivo_abierto_t));
+
+		    archivo_abierto->id = leer_int(buffer, &desplazamiento);
+		    archivo_abierto->posicion_puntero = leer_int(buffer, &desplazamiento);
+
+		    list_add(pcb->lista_archivos_abiertos, archivo_abierto);
+		    free(archivo_abierto);
+	}
+
+	pcb->registrosCpu = malloc(sizeof(registros_cpu));
 	pcb->registrosCpu->AX = leer_int(buffer, &desplazamiento);
 	pcb->registrosCpu->BX = leer_int(buffer, &desplazamiento);
 	pcb->registrosCpu->CX = leer_int(buffer, &desplazamiento);
@@ -102,34 +129,8 @@ PCB* recibir_pcb(int clienteAceptado) {
 	pcb->registrosCpu->RCX = leer_long_long(buffer, &desplazamiento);
 	pcb->registrosCpu->RDX = leer_long_long(buffer, &desplazamiento);
 
-	pcb->lista_segmentos = list_create();
-	int cantidad_de_segmentos = leer_int(buffer, &desplazamiento);
-	for (int i = 0; i < cantidad_de_segmentos; i++) {
-	    t_segmento* segmento = malloc(sizeof(t_segmento));
-
-	    segmento->id = leer_int(buffer, &desplazamiento);
-	    //segmento->direccion_base = leer_int(buffer, &desplazamiento);
-	    segmento->tamanio = leer_int(buffer, &desplazamiento);
-
-	    list_add(pcb->lista_segmentos, segmento);
-
-	    free(segmento);
-	}
-
-	pcb->processor_burst = leer_float(buffer, &desplazamiento);
-	pcb->ready_timestamp = leer_int(buffer, &desplazamiento);
-
-	pcb->lista_archivos_abiertos = list_create();
-	int cantidad_de_archivos = leer_int(buffer, &desplazamiento);
-	for (int i = 0; i < cantidad_de_archivos; i++) {
-			archivo_abierto_t* archivo_abierto = malloc(sizeof(archivo_abierto_t));
-
-		    archivo_abierto->id = leer_int(buffer, &desplazamiento);
-		    archivo_abierto->posicion_puntero = leer_int(buffer, &desplazamiento);
-
-		    list_add(pcb->lista_archivos_abiertos, archivo_abierto);
-		    free(archivo_abierto);
-		}
+	pcb->processor_burst = leer_double(buffer, &desplazamiento);
+	pcb->ready_timestamp = leer_double(buffer, &desplazamiento);
 
 	return pcb;
 }
@@ -167,14 +168,13 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
 		posicion_actual++;
 
         log_info(loggerCpu, "PROGRAM COUNTER: %d", pcb->contador_instrucciones);
-
-
     }
-    free(instruccion);
-    free(instruccion_decodificada);
 
     log_info(loggerCpu, "Se salió de la ejecucion en la instrucción %s. Guardando el contexto de ejecucion...", instruccion);
-	guardar_contexto_de_ejecucion(pcb);
+    guardar_contexto_de_ejecucion(pcb);
+
+    free(instruccion);
+    free(instruccion_decodificada);
 
 	// Si hubo interrupcion de algun tipo se lo comunico a kernel pero sacamos
 	if (hubo_interrupcion) {

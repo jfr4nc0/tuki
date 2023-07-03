@@ -98,10 +98,8 @@ void mover_de_lista_con_sem(void*, int, int);
 
 // Funciones para enviar un pcb a cpu //////////////
 void agregar_pcb_a_paquete(t_paquete* , PCB* );
-void agregar_elemento_a_paquete(t_paquete* , void* );
-void agregar_cadena_a_paquete(t_paquete* , char* );
-void agregar_long_a_paquete(t_paquete* , void* );
-void agregar_longlong_a_paquete(t_paquete* , void* );
+void agregar_long_a_paquete(t_paquete* , long );
+void agregar_longlong_a_paquete(t_paquete* , long long );
 void agregar_lista_a_paquete(t_paquete* , t_list* );
 void agregar_int_a_paquete(t_paquete* , int );
 void agregar_arreglo_a_paquete(t_paquete* , char** );
@@ -111,7 +109,6 @@ void envio_pcb(int , PCB* , codigo_operacion );
 ////////////////////////////////////////////////////
 
 int obtener_recursos(int);
-
 
 /*----------------- SEMAFOROS / HILOS ------------------*/
 sem_t sem_proceso_a_ready;

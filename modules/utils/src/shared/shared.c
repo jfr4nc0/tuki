@@ -206,6 +206,25 @@ void liberar_conexion(int conexion) {
     }
 }
 
+/*
+ * Produce perdida de memoria si no se libera la respuesta
+ */
+void* leer_de_buffer(char* buffer, int* desp, size_t tamanio) {
+	void* respuesta = malloc(tamanio);
+	memcpy(&respuesta, buffer + (*desp), tamanio);
+	(*desp) += tamanio;
+
+	return respuesta;
+}
+
+double leer_double(char* buffer, int* desp) {
+	double respuesta;
+	memcpy(&respuesta, buffer + (*desp), sizeof(double));
+	(*desp) += sizeof(double);
+
+	return respuesta;
+}
+
 long leer_long(char* buffer, int* desp) {
 	long respuesta;
 	memcpy(&respuesta, buffer + (*desp), sizeof(long));
@@ -239,7 +258,7 @@ int leer_int(char* buffer, int* desp) {
 }
 
 char* leer_string(char* buffer, int* desp) {
-	int size = leer_int(buffer, desp); // TODO: ¿No modifica acá también desplazamiento? Probar
+	int size = leer_int(buffer, desp);
 
 	char* respuesta = malloc(size);
 	memcpy(respuesta, buffer+(*desp), size);
@@ -249,12 +268,17 @@ char* leer_string(char* buffer, int* desp) {
 }
 
 t_list* leer_string_array(char* buffer, int* desp) {
-    int length = leer_int(buffer, desp);
+    int cantidadElementos = leer_int(buffer, desp);
     t_list* lista_instrucciones = list_create();
 
-    for(int i = 0; i < length; i++)
+    for(int i = 0; i < cantidadElementos; i++)
     {
-        list_add(lista_instrucciones, leer_string(buffer, desp));
+    	char* palabra = leer_string(buffer, desp);
+    	int length = strlen(palabra);
+    	if (length > 0 && palabra[length - 1] == '\n') {
+			palabra[length - 1] = '\0'; // Se elimina el \n al final de la cadena y se reemplaza por \0 para el t_list
+		}
+    	list_add(lista_instrucciones, (void*) palabra);
     }
 
     return lista_instrucciones;
@@ -359,7 +383,7 @@ t_paquete* crear_paquete(codigo_operacion codigoOperacion) {
     return paquete;
 }
 
-void agregar_a_paquete(t_paquete* paquete, void* valor, int tamanio) {
+void agregar_a_paquete(t_paquete* paquete, void* valor, size_t tamanio) {
     paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + tamanio + sizeof(int));
 
     memcpy(paquete->buffer->stream + paquete->buffer->size, &tamanio, sizeof(int));

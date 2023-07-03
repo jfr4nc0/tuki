@@ -147,7 +147,8 @@ void proximo_a_ejecutar() {
 			sem_post(&sem_lista_estados[ENUM_EXECUTING]);
 
 			cambiar_estado_proceso(pcbParaEjecutar, ENUM_EXECUTING);
-			enviar_operacion(conexionCPU, OP_EXECUTE_PCB, sizeof(PCB), pcbParaEjecutar);
+
+			envio_pcb(conexionCPU, pcbParaEjecutar, OP_EXECUTE_PCB);
 		}
 	}
 }
@@ -167,7 +168,8 @@ PCB* nuevo_proceso(t_list* listaInstrucciones, int clienteAceptado) {
 	contadorProcesoId++;
 
 	pcb->estado = ENUM_NEW;
-	pcb->lista_instrucciones = listaInstrucciones;
+	pcb->lista_instrucciones = list_create();
+	list_add_all(pcb->lista_instrucciones, listaInstrucciones);
 	pcb->contador_instrucciones = 0;
 
 	pcb->registrosCpu = malloc(sizeof(registros_cpu));
@@ -331,7 +333,7 @@ void inicializar_semaforos() {
 void envio_pcb(int conexion, PCB* pcb, codigo_operacion codigo) {
 	t_paquete* paquete = crear_paquete(codigo);
 	agregar_pcb_a_paquete(paquete, pcb);
-	enviar_paquete(paquete, conexionCPU);
+	enviar_paquete(paquete, conexion);
 	eliminar_paquete(paquete);
 }
 
@@ -341,20 +343,12 @@ void agregar_lista_a_paquete(t_paquete* paquete, t_list* lista) {
 
 	for(int i = 0; i < tamanio; i++) {
 		void* elemento = list_get(lista, i);
-		agregar_elemento_a_paquete(paquete, elemento);
-		//agregar_valor_a_paquete(paquete, arreglo[i], strlen(arreglo[i]));
+		char* palabra = (char*)elemento;
+		strtok(palabra, "$"); // Removemos el salto de linea
+		log_debug(kernelLogger, "Agregando instruccion: %s, tamanio %zu", palabra, strlen(palabra));
+		agregar_a_paquete(paquete, palabra, strlen(palabra));
 	}
 
-}
-
-void agregar_elemento_a_paquete(t_paquete* paquete, void* elemento) {
-	agregar_cadena_a_paquete(paquete, (char*)elemento);
-}
-
-void agregar_cadena_a_paquete(t_paquete* paquete, char* cadena) {
-    int longitud = strlen(cadena) + 1;
-    agregar_int_a_paquete(paquete, longitud);
-    agregar_valor_a_paquete(paquete, cadena, longitud);
 }
 
 void agregar_int_a_paquete(t_paquete* paquete, int valor) {
@@ -362,6 +356,7 @@ void agregar_int_a_paquete(t_paquete* paquete, int valor) {
     memcpy(paquete->buffer->stream + paquete->buffer->size, &valor, sizeof(int));
     paquete->buffer->size += sizeof(int);
 }
+
 
 void agregar_valor_a_paquete(t_paquete* paquete, void* valor, int tamanio) {
     paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + tamanio);
@@ -374,25 +369,25 @@ void agregar_registros_a_paquete(t_paquete* paquete, registros_cpu* registrosCpu
 	 agregar_int_a_paquete(paquete, registrosCpu->BX);
 	 agregar_int_a_paquete(paquete, registrosCpu->CX);
 	 agregar_int_a_paquete(paquete, registrosCpu->DX);
-	 agregar_long_a_paquete(paquete, &(registrosCpu->EAX));
-	 agregar_long_a_paquete(paquete, &(registrosCpu->EBX));
-	 agregar_long_a_paquete(paquete, &(registrosCpu->ECX));
-	 agregar_long_a_paquete(paquete, &(registrosCpu->EDX));
-	 agregar_longlong_a_paquete(paquete, &(registrosCpu->RAX));
-	 agregar_longlong_a_paquete(paquete, &(registrosCpu->RBX));
-	 agregar_longlong_a_paquete(paquete, &(registrosCpu->RCX));
-	 agregar_longlong_a_paquete(paquete, &(registrosCpu->RDX));
+	 agregar_long_a_paquete(paquete, registrosCpu->EAX);
+	 agregar_long_a_paquete(paquete, registrosCpu->EBX);
+	 agregar_long_a_paquete(paquete, registrosCpu->ECX);
+	 agregar_long_a_paquete(paquete, registrosCpu->EDX);
+	 agregar_longlong_a_paquete(paquete, registrosCpu->RAX);
+	 agregar_longlong_a_paquete(paquete, registrosCpu->RBX);
+	 agregar_longlong_a_paquete(paquete, registrosCpu->RCX);
+	 agregar_longlong_a_paquete(paquete, registrosCpu->RDX);
 }
 
-void agregar_long_a_paquete(t_paquete* paquete, void* valor) {
+void agregar_long_a_paquete(t_paquete* paquete, long valor) {
     paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(long));
-    memcpy(paquete->buffer->stream + paquete->buffer->size, valor, sizeof(long));
+    memcpy(paquete->buffer->stream + paquete->buffer->size, &valor, sizeof(long));
     paquete->buffer->size += sizeof(long);
 }
 
-void agregar_longlong_a_paquete(t_paquete* paquete, void* valor) {
+void agregar_longlong_a_paquete(t_paquete* paquete, long long valor) {
     paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(long long));
-    memcpy(paquete->buffer->stream + paquete->buffer->size, valor, sizeof(long long));
+    memcpy(paquete->buffer->stream + paquete->buffer->size, &valor, sizeof(long long));
     paquete->buffer->size += sizeof(long long);
 }
 
@@ -407,11 +402,11 @@ void agregar_pcb_a_paquete(t_paquete* paquete, PCB* pcb) {
 	agregar_int_a_paquete(paquete, pcb->estado);
 	agregar_lista_a_paquete(paquete, pcb->lista_instrucciones);
 	agregar_int_a_paquete(paquete, pcb->contador_instrucciones);
-	agregar_registros_a_paquete(paquete, pcb->registrosCpu);
 	agregar_lista_a_paquete(paquete, pcb->lista_segmentos);
 	agregar_lista_a_paquete(paquete, pcb->lista_archivos_abiertos);
-	agregar_int_a_paquete(paquete, pcb->processor_burst);
-	agregar_int_a_paquete(paquete, pcb->ready_timestamp);
+	agregar_registros_a_paquete(paquete, pcb->registrosCpu);
+	agregar_valor_a_paquete(paquete, &pcb->processor_burst, sizeof(double));
+	agregar_valor_a_paquete(paquete, &pcb->ready_timestamp, sizeof(double));
 }
 ////////////////////////////////////////
 

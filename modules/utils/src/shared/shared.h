@@ -126,6 +126,7 @@ long leer_long(char* buffer, int* desp);
 long long leer_long_long(char* buffer, int* desp);
 float leer_float(char* buffer, int* desp);
 int leer_int(char* buffer, int* desp);
+double leer_double(char*, int*);
 char* leer_string(char* buffer, int* desp);
 t_list* leer_string_array(char* buffer, int* desp);
 char** leer_arreglo_string(char* , int* );
@@ -137,7 +138,7 @@ int crear_conexion(char*, char*, char*, t_log*);
 void enviar_mensaje(char*, int, t_log*);
 t_paquete* crear_paquete(codigo_operacion);
 t_paquete* crear_super_paquete(void);
-void agregar_a_paquete(t_paquete*, void*, int);
+void agregar_a_paquete(t_paquete*, void*, size_t);
 void enviar_paquete(t_paquete*, int);
 void eliminar_paquete(t_paquete*);
 int armar_conexion(t_config*, char*, t_log*);
@@ -151,5 +152,6 @@ int esperar_cliente(int, t_log*);
 t_list* recibir_paquete(int);
 int recibir_operacion(int);
 void* recibir_buffer(int*, int);
+void* leer_de_buffer(char*, int*, size_t);
 
 #endif
