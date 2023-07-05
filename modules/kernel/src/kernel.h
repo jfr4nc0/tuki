@@ -9,7 +9,7 @@ int conexionMemoria;
 int conexionFileSystem;
 int servidorKernel;
 
-int contadorProcesoId = 0;
+int contadorProcesoId = 1; // El 0 se lo dejamos al segmento0
 
 t_log* kernelLogger;
 

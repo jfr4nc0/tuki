@@ -98,18 +98,6 @@ typedef struct {
     int posicion_puntero;
 } archivo_abierto_t;
 
-typedef struct {
-	int  id;
-	int tamanio;
-}t_segmento;
-
-typedef struct {
-    t_segmento* segmentos;
-    int cantidad_segmentos_usados;
-    int capacidad_segmentos;
-}t_tabla_segmentos;
-
-
 /*--------------------------------- FUNCIONES GENERALES --------------------------------*/
 
 char* cantidad_strings_a_mostrar(int);

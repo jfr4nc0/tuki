@@ -101,7 +101,7 @@ int keyFromString(char *key);
 #define E__LOGGER_CREATE       "No se pudo crear logger"
 #define E__CONFIG_CREATE       "No se pudo crear config"
 #define E__PAQUETE_CREATE      "Error al crear paquete"
-#define E__MALLOC_ERROR        "Error al crear el malloc de tamaño %d "
+#define E__MALLOC_ERROR        "Error al crear el malloc de tamaño %zu "
 
 
 #endif

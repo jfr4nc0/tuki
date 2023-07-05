@@ -1,23 +1,21 @@
 #include "memoria.h"
+#include "administrarMemoria.h"
 
-t_log* loggerMemoria;
 t_memoria_config* memoriaConfig;
-t_tabla_segmentos* tablaSegmentos;
 
 int main() {
     loggerMemoria = iniciar_logger(DEFAULT_LOG_PATH, ENUM_MEMORIA);
     t_config* configInicial = iniciar_config(DEFAULT_CONFIG_PATH, loggerMemoria);
+    cargar_config_memoria(configInicial);
 
     int servidorMemoria = iniciar_servidor(configInicial, loggerMemoria);
 
     atender_conexiones(servidorMemoria);
 
-    inicializar_segmento_generico();
-
+    inicializar_memoria(memoriaConfig->TAM_MEMORIA, memoriaConfig->TAM_SEGMENTO_0);
     terminar_programa(servidorMemoria, loggerMemoria, configInicial);
     free(memoriaConfig);
-    free(segmentoGeneral);
-    free(tablaSegmentos);
+    liberar_memoria();
 
 	return 0;
 }
@@ -76,19 +74,6 @@ void ejecutar_kernel_pedido(void *clienteAceptado) {
     ejecutar_instrucciones(conexionConKernel, KERNEL);
 }
 
-// Creo segmento de memoria generico que puede ser usado por los demas módulos
-void inicializar_segmento_generico() {
-    segmentoGeneral = malloc(memoriaConfig->TAM_SEGMENTO_0);
-
-    if (segmentoGeneral == NULL) {
-        log_error(loggerMemoria, E__MALLOC_ERROR, memoriaConfig->TAM_SEGMENTO_0);
-        abort();
-    }
-    log_info(loggerMemoria, "Segmento0 generico creado");
-
-    return;
-}
-
 void cargar_config_memoria(t_config* configInicial) {
     memoriaConfig = malloc(sizeof(t_memoria_config));
     memoriaConfig->PUERTO_ESCUCHA = extraer_int_de_config(configInicial, "PUERTO_ESCUCHA", loggerMemoria);
@@ -100,26 +85,6 @@ void cargar_config_memoria(t_config* configInicial) {
     memoriaConfig->ALGORITMO_ASIGNACION = extraer_string_de_config(configInicial, "ALGORITMO_ASIGNACION", loggerMemoria);
 
     log_info(loggerMemoria, I__CONFIG_GENERIDO_CARGADO, MEMORIA);
-}
-
-
-void cargarTablaDeSegmentos(int max_segmentos) {
-    tablaSegmentos->segmentos = malloc(max_segmentos * sizeof(t_segmento));
-    tablaSegmentos->cantidad_segmentos_usados = 0;
-    tablaSegmentos->capacidad_segmentos = max_segmentos;
-}
-
-void agregar_segmento(t_tabla_segmentos* tabla, t_segmento nuevo_segmento) {
-    if (tabla->cantidad_segmentos_usados < tabla->capacidad_segmentos) {
-        tabla->segmentos[tabla->cantidad_segmentos_usados] = nuevo_segmento;
-        tabla->cantidad_segmentos_usados++;
-
-        return;
-    }
-
-    // TODO: ver como manejar Error
-    log_error(loggerMemoria, "No se puede agregar más segmentos, se alcanzó el límite máximo");
-    abort();
 }
 
 void iterator(char* value) {

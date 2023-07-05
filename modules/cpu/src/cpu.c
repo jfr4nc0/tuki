@@ -335,7 +335,7 @@ void instruccion_set(char* registro,char* valor) {
 		registrosCpu->RDX = set_valor;
 	}
 
-	usleep(configCpu->RETARDO_INSTRUCCION*1000);
+	sleep(configCpu->RETARDO_INSTRUCCION/1000);
 }
 
 void instruccion_mov_in(char* registro,char* dir_logica) {
