@@ -60,7 +60,7 @@ bool añadir_segmento(int idProceso, size_t size, void* direccion_base);
 bool comparar_tabla_segmentos_por_segmento_id(const t_segmento_tabla* segmento1, const t_segmento_tabla* segmento2);
 bool comparar_segmentos_por_segmento_id(const t_segmento* segmento1, const t_segmento* segmento2);
 size_t suma_size_huecos_disponibles(t_list* huecosLibres);
-void inicializar_proceso(int idProceso, size_t pcbSize);
+codigo_operacion inicializar_proceso(int idProceso, size_t pcbSize);
 void finalizar_proceso(int idProceso);
 void compactar_memoria();
 int guardarSegmentoEnTabla(t_segmento* segmento, int idProceso);
@@ -68,6 +68,6 @@ int guardarSegmentoEnTabla(t_segmento* segmento, int idProceso);
 void iteratorTabla(t_segmento_tabla* elemento);
 
 void iteratorSegmento(t_segmento* elemento);
-
+t_list* obtener_tabla_segmentos_por_proceso_id(int procesoId);
 
 #endif

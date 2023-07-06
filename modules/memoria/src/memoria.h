@@ -41,6 +41,7 @@ void ejecutar_kernel_pedido(void *);
 void iterator(char*);
 void ejecutar_instrucciones(int, char*);
 void atender_conexiones(int);
-void administrar_instrucciones(int, int);
+void administrar_cliente(int, int);
+void administrar_instrucciones(int cliente, codigo_operacion codigoOperacion);
 
 #endif

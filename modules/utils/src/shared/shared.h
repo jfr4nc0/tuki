@@ -56,8 +56,12 @@ typedef enum {
     I_DELETE_SEGMENT,
     I_YIELD,
     I_EXIT,
+    AUX_CREATE_PCB,
     // Auxiliares
 	AUX_MENSAJE,
+	AUX_OK,
+	AUX_ERROR,
+    AUX_SOLO_CON_COMPACTACION,
 	AUX_NEW_PROCESO, // Notifica a kernel que hay un nuevo proceso y se le envia la lista de instrucciones
 	AUX_SOY_CPU, // Notifica a memoria que el modulo que se conectó es CPU
 	AUX_SOY_KERNEL, // Notifica a memoria que el modulo que se conectó es KERNEL
@@ -130,8 +134,8 @@ void agregar_a_paquete(t_paquete*, void*, size_t);
 void enviar_paquete(t_paquete*, int);
 void eliminar_paquete(t_paquete*);
 int armar_conexion(t_config*, char*, t_log*);
-void enviar_operacion(int conexion, codigo_operacion, int tamanio, void* valor);
-void identificarse(int, codigo_operacion);
+void enviar_operacion(int conexion, codigo_operacion, size_t tamanio, void* valor);
+void enviar_codigo_operacion(int, codigo_operacion);
 
 /*----------------------------- FUNCIONES SERVIDOR ----------------------------*/
 

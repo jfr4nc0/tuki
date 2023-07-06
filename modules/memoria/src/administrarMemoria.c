@@ -35,17 +35,19 @@ void iteratorSegmento(t_segmento* elemento) {
 	log_debug(loggerMemoria, "Segmento id %d, posicion %p, size %zu", elemento->id, elemento->direccionBase, elemento->size);
 }
 
-void inicializar_proceso(int idProceso, size_t pcbSize) {
+codigo_operacion inicializar_proceso(int idProceso, size_t pcbSize) {
     void* respuesta = crear_segmento(idProceso, pcbSize);
 
     if (respuesta == (void*)-1) {
 		log_error(loggerMemoria, "Segmentation Fault (no hay memoria), para proceso %d, por peticion de tamaño: %zu", idProceso, pcbSize);
+        return AUX_ERROR;
 	}else if(respuesta == NULL) {
 		log_warning(loggerMemoria, "Peticion de proceso %d, para tamaño %zu, solo se puede haciendo compactacion y usando los huecos libres", idProceso, pcbSize);
+        return AUX_SOLO_CON_COMPACTACION;
 	}else{
 		log_info(loggerMemoria, "Memoria usada: %p", respuesta);
-	}
-	return;
+        return AUX_OK;
+    }
 }
 
 void finalizar_proceso(int idProceso) {
@@ -231,11 +233,30 @@ bool comparar_segmentos_por_segmento_id(const t_segmento* segmento1, const t_seg
 bool comparar_tabla_segmentos_por_segmento_id(const t_segmento_tabla* tablaSegmento1, const t_segmento_tabla* tablaSegmento2) {
     return tablaSegmento1->segmento->id <= tablaSegmento2->segmento->id;
 }
+
 bool filtrar_tabla_segmentos_por_proceso_id(const void* tablaElemento, void* idProceso) {
     int idProcesoCasteado = *((int*)idProceso);
     t_segmento_tabla* tablaElementoCasteado = (t_segmento_tabla*)tablaElemento;
     return (tablaElementoCasteado->idProceso == idProcesoCasteado);
 }
+
+t_list* obtener_tabla_segmentos_por_proceso_id(int procesoId) {
+    t_segmento_tabla* segmentoTabla;
+    t_list* segmentos = malloc(sizeof(t_list));
+    segmentos = list_create();
+
+    // TODO: Ver si se puede hacer algo del estilo segmentos = list_filter(memoria->tablaDeSegmentos, (procesoId == (.idProceso)).segmento)
+    for(int i = 0; i < list_size(memoria->tablaDeSegmentos); i++) {
+        segmentoTabla = list_get(memoria->tablaDeSegmentos, i);
+
+        if (segmentoTabla->idProceso == procesoId) {
+            list_add(segmentos, segmentoTabla->segmento);
+        }
+    }
+
+    return segmentos;
+}
+
 ////////////////////////////////////////////////
 
 void* calcular_direccion(void* posicionBase, size_t desplazamiento) {
@@ -287,8 +308,6 @@ void* buscar_espacio_contiguo(size_t size) {
         // Para la siguiente iteración
         proximaDireccion = calcular_direccion(proximoSegmento->direccionBase, proximoSegmento->size);
     }
-
-    return proximoSegmento->direccionBase;
 }
 
 t_segmento* ubicar_segmento_mas_cercano(t_list* tablaSegmentos, void* direccion) {

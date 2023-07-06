@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
     conexionCPU = armar_conexion(config, CPU, kernelLogger);
     conexionFileSystem = armar_conexion(config, FILE_SYSTEM, kernelLogger);
     conexionMemoria = armar_conexion(config, MEMORIA, kernelLogger);
-    identificarse(conexionMemoria, AUX_SOY_KERNEL); // Le dice a memoria que módulo se conectó
+    enviar_codigo_operacion(conexionMemoria, AUX_SOY_KERNEL); // Le dice a memoria que módulo se conectó
 
     int servidorKernel = iniciar_servidor(config, kernelLogger);
 
@@ -85,7 +85,22 @@ void proceso_a_ready() {
 		sem_post(&sem_lista_estados[ENUM_NEW]);
 		sem_post(&sem_lista_estados[ENUM_READY]);
 
-		// TODO: PONER código donde actualice el PCB andes de moverlo a READY
+		if (conexionMemoria > 0) {
+			// Creo el pcb en memoria
+			enviar_operacion(conexionMemoria, AUX_CREATE_PCB, sizeof(int), &pcb->id_proceso);
+			codigo_operacion codigoRespuesta = recibir_operacion(conexionMemoria);
+			if (codigoRespuesta == AUX_ERROR) {
+				log_error(kernelLogger, "Segmentation fault la creacion del proceso %d, ", pcb->id_proceso);
+			} else if (codigoRespuesta == AUX_SOLO_CON_COMPACTACION) {
+				log_info(kernelLogger, "Se necesita compactar para proceso %d", pcb->id_proceso);
+			} else if (codigoRespuesta == AUX_OK) {
+				t_list* segmentos = recibir_paquete(conexionMemoria);
+				log_debug(kernelLogger, "Se creó en memoria el proceso %d, semgmentos creados: %d", pcb->id_proceso, list_size(segmentos));
+				pcb->lista_segmentos = segmentos;
+			} else {
+				log_error(kernelLogger, "Error interno en Modulo Memoria para crear proceso id: %d.", pcb->id_proceso);
+			}
+		}
 
 		cambiar_estado_proceso(pcb, ENUM_READY);
 		list_add(lista_estados[ENUM_READY], pcb);

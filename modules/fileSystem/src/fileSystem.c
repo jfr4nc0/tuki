@@ -8,7 +8,7 @@ int main(int argc, char** argv) {
 
     int conexionMemoria = armar_conexion(config, MEMORIA, logger);
     // Notifico a memoria que soy el módulo file system
-    identificarse(conexionMemoria, AUX_SOY_FILE_SYSTEM);
+    enviar_codigo_operacion(conexionMemoria, AUX_SOY_FILE_SYSTEM);
 
     int servidorFileSystem = iniciar_servidor(config, logger);
 

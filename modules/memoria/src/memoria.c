@@ -9,10 +9,10 @@ int main() {
     cargar_config_memoria(configInicial);
 
     int servidorMemoria = iniciar_servidor(configInicial, loggerMemoria);
+    inicializar_memoria(memoriaConfig->TAM_MEMORIA, memoriaConfig->TAM_SEGMENTO_0);
 
     atender_conexiones(servidorMemoria);
 
-    inicializar_memoria(memoriaConfig->TAM_MEMORIA, memoriaConfig->TAM_SEGMENTO_0);
     terminar_programa(servidorMemoria, loggerMemoria, configInicial);
     free(memoriaConfig);
     liberar_memoria();
@@ -28,12 +28,12 @@ void atender_conexiones(int servidorMemoria) {
         // No se almacena ya que se ignora, pero necesito llamarlo para liberar el mensaje
         recibir_paquete(clienteAceptado);
 
-        administrar_instrucciones(clienteAceptado, modulo);
+        administrar_cliente(clienteAceptado, modulo);
     }
     return;
 }
 
-void administrar_instrucciones(int clienteAceptado, int modulo) {
+void administrar_cliente(int clienteAceptado, int modulo) {
         pthread_t thread_cpu;
         pthread_t thread_kernel;
         pthread_t thread_file_system;
@@ -93,11 +93,27 @@ void iterator(char* value) {
 
 void ejecutar_instrucciones(int cliente, char* modulo) {
 	log_info(loggerMemoria, "Esperando instrucciones de: %s ", modulo);
-    int codigoDeOperacion = recibir_operacion(cliente);
+
+	codigo_operacion codigoDeOperacion = recibir_operacion(cliente);
     log_info(loggerMemoria, I__RECIBO_INSTRUCCION, codigoDeOperacion, modulo);
-    t_list* listaRecibida = recibir_paquete(cliente);
-    list_iterate(listaRecibida, (void*) iterator);
-    enviar_mensaje("Instrucción recibida", cliente, loggerMemoria);
+    administrar_instrucciones(cliente, codigoDeOperacion);
 
     return;
+}
+
+void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion) {
+    codigo_operacion codigoRespuesta = AUX_ERROR;
+
+    // Operacion crear PCB en memoria
+	if (codigoDeOperacion == AUX_CREATE_PCB) {
+		t_list* listaRecibida = recibir_paquete(cliente);
+		int idProceso = *(int*)list_get(listaRecibida, 0);
+	    codigoRespuesta = inicializar_proceso(idProceso, sizeof(int));
+	    t_list* obtenerSegmentosPorIdProceso = obtener_tabla_segmentos_por_proceso_id(idProceso);
+
+		if (codigoRespuesta == AUX_OK) {
+			return enviar_operacion(cliente, codigoRespuesta, sizeof(obtenerSegmentosPorIdProceso), obtenerSegmentosPorIdProceso);
+		}
+        return enviar_codigo_operacion(cliente, codigoRespuesta);
+	}
 }

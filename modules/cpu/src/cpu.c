@@ -18,7 +18,7 @@ int main(int argc, char** argv) {
 
 
     int conexionCpuMemoria = armar_conexion(config, MEMORIA, loggerCpu);
-    identificarse(conexionCpuMemoria, AUX_SOY_CPU);
+    enviar_codigo_operacion(conexionCpuMemoria, AUX_SOY_CPU);
 
     inicializar_registros();
 

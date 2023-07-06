@@ -404,23 +404,26 @@ void enviar_paquete(t_paquete* paquete, int clienteAceptado) {
 /*
  * Crea un paquete, le agrega el valor pasado como parametro, lo envia, y luego libera el paquete
  */
-void enviar_operacion(int conexion, codigo_operacion codOperacion, int tamanio_valor, void* valor) {
-    t_paquete* paquete = crear_paquete(codOperacion);
-    if (tamanio_valor>0) {
-        agregar_a_paquete(paquete, valor, tamanio_valor);
-    }
-    enviar_paquete(paquete, conexion);
-    free(paquete);
+void enviar_operacion(int conexion, codigo_operacion codOperacion, size_t tamanio_valor, void* valor) {
+	if (conexion > 0) {
+		t_paquete* paquete = crear_paquete(codOperacion);
+		if (tamanio_valor>0) {
+			agregar_a_paquete(paquete, valor, tamanio_valor);
+		}
+		enviar_paquete(paquete, conexion);
+		free(paquete);
+	}
 }
 
 /*
  * Variable auxiliar, si solo me quiero identificar no hace falta que agregue ningun valor al paquete
  */
-void identificarse(int conexion, codigo_operacion identificacion) {
+void enviar_codigo_operacion(int conexion, codigo_operacion codigoOperacion) {
 	if (conexion > 0) {
-		enviar_operacion(conexion, identificacion, 0, 0);
+		enviar_operacion(conexion, codigoOperacion, 0, 0);
 	}
 }
+
 /*----------------------- FUNCIONES SERVIDOR -------------------*/
 int iniciar_servidor(t_config* config, t_log* logger) {
     int socket_servidor;
