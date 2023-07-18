@@ -27,7 +27,7 @@ extern registros_cpu* registrosCpu;
 
 void cargar_config(t_config*);
 char** decode_instruccion(char*);
-void ejecutar_instruccion();
+void ejecutar_instruccion(char** instruccion, PCB* pcb);
 void ejecutar_proceso(PCB* pcb, int);
 void cargar_registros(PCB* pcb);
 char* fetch_instruccion(PCB* pcb);

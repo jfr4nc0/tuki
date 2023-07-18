@@ -8,17 +8,25 @@
 #include <commons/log.h>
 #include <commons/string.h>
 #include <commons/config.h>
-#include<signal.h>
-#include<unistd.h>
-#include<sys/socket.h>
+#include <signal.h>
+#include <unistd.h>
+#include <sys/socket.h>
 #include <pthread.h>
 
 // Internas
+#include "compartido.h"
+#include "administrarFileSystem.h"
+#include "estructuras.h"
 #include <shared/shared.h>
+
+t_log* loggerFileSystem;
+
+t_list* listaFCB;
 
 // Paths
 #define DEFAULT_LOG_PATH        "logs/file_system.log"
 #define DEFAULT_CONFIG_PATH     "tuki-pruebas/prueba-base/fileSystem.config"
+#define CONFIG_PROPIO_PATH      "tuki-pruebas/prueba-base/fileSystem_propio.config"
 
 //// LOGS
 #define ACCESO_BITMAP            "Acceso a Bitmap - Bloque: <NUMERO BLOQUE> - Estado: <ESTADO>" Nota: El estado es 0 o 1 donde 0 es libre y 1 es ocupado.
