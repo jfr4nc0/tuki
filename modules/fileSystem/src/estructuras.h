@@ -3,13 +3,17 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include <unistd.h>
+#include <stdio.h>
 #include <fcntl.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/stat.h>
 #include <sys/mman.h>
+#include <commons/log.h>
 #include <commons/bitarray.h>
 #include <commons/config.h>
-
-#include "compartido.h"
+#include <dirent.h>
+#include <limits.h>
 
 #include <shared/shared.h>
 
@@ -45,17 +49,20 @@ typedef struct {
 
 extern t_log* loggerFileSystem;
 extern t_config_file_system* configFileSystem;
+extern t_bitmap* bitmap;
+extern t_dictionary* listaFcbs;
 
-
+#define ERROR_ABRIR_ARCHIVO      "No se pudo abrir el archivo: %s"
 
 void inicializar_estructuras(t_config* config);
 
-void cargar_config(t_config* config);
+t_config_file_system* cargar_config(t_config* config);
 t_superbloque* crear_superbloque (char *pathSuperbloque);
-void cargar_config(t_config* config);
 t_bitarray* create_bitmap(int entries);
 void abrir_bitmap (char* pathBitmap, uint32_t blockCount);
 void crear_archivo_de_bloques(char* pathArchivoDeBloques, uint32_t blockCount, uint32_t blockSize);
-void abrir_fcbs(char* path_fcbs);
+uint32_t calcularSizeBloques(uint32_t nuevoSize, uint32_t viejoSize);
+t_fcb* cargar_fcb(char *pathFcb, uint32_t sizeBloques);
+void abrir_fcbs(char *pathFcb, uint32_t sizeBloques);
 
 #endif

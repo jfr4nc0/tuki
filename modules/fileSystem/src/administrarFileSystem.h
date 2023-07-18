@@ -1,8 +1,8 @@
 #ifndef ADMINISTRAR_FILE_SYSTEM_ESTRUCTURAS_H_
 #define ADMINISTRAR_FILE_SYSTEM_ESTRUCTURAS_H_
 
-#include "compartido.h"
+#include "estructuras.h"
 
-t_log* loggerFileSystem;
+extern t_log* loggerFileSystem;
 
 #endif

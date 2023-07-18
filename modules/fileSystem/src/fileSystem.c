@@ -4,9 +4,7 @@
 int main(int argc, char** argv) {
     loggerFileSystem = iniciar_logger(DEFAULT_LOG_PATH, ENUM_FILE_SYSTEM);
     t_config* config = iniciar_config(DEFAULT_CONFIG_PATH, loggerFileSystem);
-    cargar_config(config);
-
-    t_config* configPropio = iniciar_config(CONFIG_PROPIO_PATH, loggerFileSystem);
+    inicializar_estructuras(config);
 
     int conexionMemoria = armar_conexion(config, MEMORIA, loggerFileSystem);
     // Notifico a memoria que soy el módulo file system
