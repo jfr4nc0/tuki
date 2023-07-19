@@ -35,19 +35,26 @@ void iteratorSegmento(t_segmento* elemento) {
 	log_debug(loggerMemoria, "Segmento id %d, posicion %p, size %zu", elemento->id, elemento->direccionBase, elemento->size);
 }
 
-codigo_operacion inicializar_proceso(int idProceso, size_t pcbSize) {
-    void* respuesta = crear_segmento(idProceso, pcbSize);
-
+/*
+** Maneja el flujo de respuesta de la funcion crear_segmento
+*/
+codigo_operacion adapter_respuesta_segmento(int pid, size_t size, void* respuesta){
     if (respuesta == (void*)-1) {
-		log_error(loggerMemoria, "Segmentation Fault (no hay memoria), para proceso %d, por peticion de tamaño: %zu", idProceso, pcbSize);
+		log_error(loggerMemoria, "Segmentation Fault (no hay memoria), para proceso %d, por peticion de tamaño: %zu", pid, size);
         return AUX_ERROR;
 	}else if(respuesta == NULL) {
-		log_warning(loggerMemoria, "Peticion de proceso %d, para tamaño %zu, solo se puede haciendo compactacion y usando los huecos libres", idProceso, pcbSize);
+		log_warning(loggerMemoria, "Peticion de proceso %d, para tamaño %zu, solo se puede haciendo compactacion y usando los huecos libres", pid, size);
         return AUX_SOLO_CON_COMPACTACION;
 	}else{
 		log_info(loggerMemoria, "Memoria usada: %p", respuesta);
         return AUX_OK;
     }
+}
+
+codigo_operacion inicializar_proceso(int pid, size_t pcbSize) {
+    void* respuesta = crear_segmento(pid, pcbSize);
+
+    return adapter_respuesta_segmento(pid,pcbSize,respuesta);
 }
 
 void finalizar_proceso(int idProceso) {
@@ -107,6 +114,12 @@ void compactar_memoria() {
         direccionBaseActual = calcular_direccion(direccionBaseActual, segmento->size);
     }
     list_clean(memoria->huecosLibres);
+}
+
+codigo_operacion crear_segmento_por_pid(int pid, size_t size){
+    void* respuesta = crear_segmento(pid, size);
+
+    return adapter_respuesta_segmento(pid,size,respuesta);
 }
 
 void* crear_segmento(int idProceso, size_t size) {
