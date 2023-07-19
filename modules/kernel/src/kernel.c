@@ -144,12 +144,27 @@ void crear_hilo_planificador() {
 }
 
 void proximo_a_ejecutar() {
+/*
+	// Desalojo de PCBs
+	pthread_t manejo_desalojo;
+	pthread_create(&manejo_desalojo, NULL, __ejecucion_desalojo_pcb, NULL); //TODO
+	pthread_detach(manejo_desalojo);
+*/
+	//Dispatcher
 	while(1) {
+		//sem_wait(&sem_cpu_disponible);
 		// Este if tiene sentido? no se puede manejar con semaforos si hay elementos? O conviene un while(1) si no encuentra o algo así?
 		if(!list_is_empty(lista_estados[ENUM_READY])) {
-			sem_wait(&sem_cpu_disponible);
 			PCB* pcbParaEjecutar;
-
+			sem_wait(&sem_cpu_disponible);
+/*
+			if (string_equals_ignore_case(kernelConfig->ALGORITMO_PLANIFICACION, "FIFO")) {
+				pcbParaEjecutar = elegir_pcb_segun_fifo(estado);
+			}
+			else if (string_equals_ignore_case(kernelConfig->ALGORITMO_PLANIFICACION, "HRRN") {
+				pcbParaEjecutar = elegir_pcb_segun_hrrn(estado);
+			}
+*/
 			// TODO: Mover a una función si hay demasiados algoritmos de planificacion distintos
 			if(string_equals_ignore_case(kernelConfig->ALGORITMO_PLANIFICACION, "HRRN")) {
 				list_sort(lista_estados[ENUM_EXECUTING], (void*) criterio_hrrn);
@@ -164,9 +179,39 @@ void proximo_a_ejecutar() {
 
 			cambiar_estado_proceso(pcbParaEjecutar, ENUM_EXECUTING);
 
-			envio_pcb(conexionCPU, pcbParaEjecutar, OP_EXECUTE_PCB);
+			log_trace(kernelLogger, "---------------MOSTRANDO PCB A ENVIAR A CPU---------------");
+			mostrar_pcb(pcbParaEjecutar);
+
+			envio_pcb_a_cpu(conexionCPU, pcbParaEjecutar, OP_EXECUTE_PCB);
 		}
 	}
+}
+
+void mostrar_pcb(PCB* pcb){
+	log_trace(kernelLogger, "PID: %d", pcb->id_proceso);
+	char* estado = nombres_estados[pcb->estado];
+	log_trace(kernelLogger, "ESTADO: %s", estado);
+	log_trace(kernelLogger, "INSTRUCCIONES A EJECUTAR: ");
+	list_iterate(pcb->lista_instrucciones, (void*) iterator);
+	log_trace(kernelLogger, "PROGRAM COUNTER: %d", pcb->contador_instrucciones);
+	log_trace(kernelLogger, "Registro AX: %s", pcb->registrosCpu->AX);
+	log_trace(kernelLogger, "Registro BX: %s", pcb->registrosCpu->BX);
+	log_trace(kernelLogger, "Registro CX: %s", pcb->registrosCpu->CX);
+	log_trace(kernelLogger, "Registro DX: %s", pcb->registrosCpu->DX);
+	log_trace(kernelLogger, "Registro EAX: %s", pcb->registrosCpu->EAX);
+	log_trace(kernelLogger, "Registro EBX: %s", pcb->registrosCpu->EBX);
+	log_trace(kernelLogger, "Registro ECX: %s", pcb->registrosCpu->ECX);
+	log_trace(kernelLogger, "Registro EDX: %s", pcb->registrosCpu->EDX);
+	log_trace(kernelLogger, "Registro RAX: %s", pcb->registrosCpu->RAX);
+	log_trace(kernelLogger, "Registro RBX: %s", pcb->registrosCpu->RBX);
+	log_trace(kernelLogger, "Registro RCX: %s", pcb->registrosCpu->RCX);
+	log_trace(kernelLogger, "Registro RDX: %s", pcb->registrosCpu->RDX);
+	log_trace(kernelLogger, "LISTA SEGMENTOS: ");
+	list_iterate(pcb->lista_segmentos, (void*) iterator);
+	log_trace(kernelLogger, "LISTA ARCHIVOS ABIERTOS: ");
+	list_iterate(pcb->lista_archivos_abiertos, (void*) iterator);
+	log_trace(kernelLogger, "ESTIMACION HHRN: %f", pcb->processor_burst);
+	log_trace(kernelLogger, "TIMESTAMP EN EL QUE EL PROCESO LLEGO A READY POR ULTIMA VEZ: %f", pcb->ready_timestamp);
 }
 
 /*
@@ -206,7 +251,7 @@ PCB* nuevo_proceso(t_list* listaInstrucciones, int clienteAceptado) {
 	pcb->lista_archivos_abiertos = list_create();
 	pcb->processor_burst = kernelConfig->ESTIMACION_INICIAL;
 	pcb->ready_timestamp = 0; //TODO
-	pcb->hrrn_alfa = kernelConfig->HRRN_ALFA;
+	//pcb->hrrn_alfa = kernelConfig->HRRN_ALFA;
 
 	agregar_a_lista_con_sem(pcb, ENUM_NEW);
 	log_info(kernelLogger, "Se crea el proceso %d en NEW", pcb->id_proceso);
@@ -352,6 +397,40 @@ void envio_pcb(int conexion, PCB* pcb, codigo_operacion codigo) {
 	enviar_paquete(paquete, conexion);
 	eliminar_paquete(paquete);
 }
+// ---------------------------------------PRUEBAS
+void envio_pcb_a_cpu(int conexion, PCB* pcb_a_enviar, codigo_operacion codigo) {
+	t_paquete* paquete = crear_paquete(codigo);
+	agregar_pcb_a_paquete_para_cpu(paquete, pcb_a_enviar);
+	enviar_paquete(paquete, conexion);
+	eliminar_paquete(paquete);
+}
+
+void agregar_pcb_a_paquete_para_cpu(t_paquete* paquete, PCB* pcb) {
+	agregar_int_a_paquete(paquete, pcb->id_proceso);
+	agregar_int_a_paquete(paquete, pcb->estado);
+	agregar_lista_a_paquete(paquete, pcb->lista_instrucciones);
+	agregar_int_a_paquete(paquete, pcb->contador_instrucciones);
+	agregar_lista_a_paquete(paquete, pcb->lista_segmentos);
+	agregar_lista_a_paquete(paquete, pcb->lista_archivos_abiertos);
+	agregar_registros_a_paquete_cpu(paquete, pcb->registrosCpu);
+	agregar_valor_a_paquete(paquete, &pcb->processor_burst, sizeof(double));
+	agregar_valor_a_paquete(paquete, &pcb->ready_timestamp, sizeof(double));
+}
+
+void agregar_registros_a_paquete_cpu(t_paquete* paquete, registros_cpu* registrosCpu) {
+	 agregar_int_a_paquete(paquete, registrosCpu->AX);
+	 agregar_int_a_paquete(paquete, registrosCpu->BX);
+	 agregar_int_a_paquete(paquete, registrosCpu->CX);
+	 agregar_int_a_paquete(paquete, registrosCpu->DX);
+	 agregar_long_a_paquete(paquete, registrosCpu->EAX);
+	 agregar_long_a_paquete(paquete, registrosCpu->EBX);
+	 agregar_long_a_paquete(paquete, registrosCpu->ECX);
+	 agregar_long_a_paquete(paquete, registrosCpu->EDX);
+	 agregar_longlong_a_paquete(paquete, registrosCpu->RAX);
+	 agregar_longlong_a_paquete(paquete, registrosCpu->RBX);
+	 agregar_longlong_a_paquete(paquete, registrosCpu->RCX);
+	 agregar_longlong_a_paquete(paquete, registrosCpu->RDX);
+}
 
 void agregar_lista_a_paquete(t_paquete* paquete, t_list* lista) {
 	int tamanio = list_size(lista);
@@ -424,7 +503,6 @@ void agregar_pcb_a_paquete(t_paquete* paquete, PCB* pcb) {
 	agregar_registros_a_paquete(paquete, pcb->registrosCpu);
 	agregar_valor_a_paquete(paquete, &pcb->processor_burst, sizeof(double));
 	agregar_valor_a_paquete(paquete, &pcb->ready_timestamp, sizeof(double));
-	agregar_valor_a_paquete(paquete, &pcb->hrrn_alfa, sizeof(double));
 }
 ////////////////////////////////////////
 

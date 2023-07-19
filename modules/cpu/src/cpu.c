@@ -20,8 +20,9 @@ int main(int argc, char** argv) {
     inicializar_registros();
 
     int servidorCPU = iniciar_servidor(config, loggerCpu);
-    int clienteKernel = esperar_cliente(servidorCPU, loggerCpu);
+
     while (1) {
+    	int clienteKernel = esperar_cliente(servidorCPU, loggerCpu);
 	    //pthread_t hilo_ejecucion;
 	    pthread_t hilo_dispatcher;
 		//pthread_create(&hilo_ejecucion, NULL, (void *) procesar_instruccion, int servidorCPU); //  TODO: Avisar posibles errores o si el kernel se desconecto.
@@ -69,17 +70,17 @@ void procesar_instruccion(void * clienteAceptado) {
 
 	codigo_operacion codigoOperacion = recibir_operacion(clienteKernel);
 	if (codigoOperacion != OP_EXECUTE_PCB) {
-		log_error(kernelLogger, "No se recibió un codigo de operacion de tipo pcb. Codigo recibido %d", codigoOperacion);
+		log_error(loggerCpu, "No se recibió un codigo de operacion de tipo pcb. Codigo recibido %d", codigoOperacion);
 		abort();
 	}
 
 	PCB* pcb = recibir_pcb(clienteKernel);
+
 	ejecutar_proceso(pcb, clienteKernel);
 	free(pcb);
 
 	return;
 }
-
 
 PCB* recibir_pcb(int clienteAceptado) {
 	PCB* pcb = malloc(sizeof(PCB));
@@ -91,6 +92,7 @@ PCB* recibir_pcb(int clienteAceptado) {
 	buffer = recibir_buffer(&tamanio, clienteAceptado);
 
 	pcb->id_proceso = leer_int(buffer, &desplazamiento);
+
 	pcb->estado = leer_int(buffer, &desplazamiento);
 
 	pcb->lista_instrucciones = leer_string_array(buffer, &desplazamiento); // NO esta funcionando bien
@@ -290,7 +292,8 @@ void ejecutar_instruccion(char** instruccion, PCB* pcb, int clienteKernel) {
 			instruccion_delete_segment(instruccion[1]);
 			break;
 		case I_YIELD:
-			//enviar_pcb_desalojado_a_kernel(pcb, clienteKernel);
+			enviar_pcb_desalojado_a_kernel(pcb, clienteKernel);
+			log_info(loggerCpu, "-------------------------------------------------");
 			terminar_ejecucion = true;
 			break;
 		case I_EXIT:
@@ -340,7 +343,7 @@ void instruccion_set(char* registro,char* valor) {
 
 	//sleep(configCpu->RETARDO_INSTRUCCION/1000);
 }
-/*
+
 void enviar_pcb_desalojado_a_kernel(PCB* pcb, int socket){
 	envio_pcb_a_kernel_con_codigo(socket, pcb, DESALOJO_YIELD);
 }
@@ -351,7 +354,72 @@ void envio_pcb_a_kernel_con_codigo(int conexion, PCB* pcb, codigo_operacion codi
 	enviar_paquete(paquete, conexion);
 	eliminar_paquete(paquete);
 }
-*/
+
+// Repetidas
+void agregar_pcb_a_paquete(t_paquete* paquete, PCB* pcb) {
+	agregar_int_a_paquete(paquete, pcb->id_proceso);
+	agregar_int_a_paquete(paquete, pcb->estado);
+	agregar_lista_a_paquete(paquete, pcb->lista_instrucciones);
+	agregar_int_a_paquete(paquete, pcb->contador_instrucciones);
+	agregar_lista_a_paquete(paquete, pcb->lista_segmentos);
+	agregar_lista_a_paquete(paquete, pcb->lista_archivos_abiertos);
+	agregar_registros_a_paquete_para_kernel(paquete, pcb->registrosCpu);
+	agregar_valor_a_paquete(paquete, &pcb->processor_burst, sizeof(double));
+	agregar_valor_a_paquete(paquete, &pcb->ready_timestamp, sizeof(double));
+}
+void agregar_int_a_paquete(t_paquete* paquete, int valor) {
+    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(int));
+    memcpy(paquete->buffer->stream + paquete->buffer->size, &valor, sizeof(int));
+    paquete->buffer->size += sizeof(int);
+}
+void agregar_lista_a_paquete(t_paquete* paquete, t_list* lista) {
+	int tamanio = list_size(lista);
+	agregar_int_a_paquete(paquete, tamanio);
+
+	for(int i = 0; i < tamanio; i++) {
+		void* elemento = list_get(lista, i);
+		char* palabra = (char*)elemento;
+		strtok(palabra, "$"); // Removemos el salto de linea
+		log_debug(kernelLogger, "Agregando instruccion: %s, tamanio %zu", palabra, strlen(palabra));
+		agregar_a_paquete(paquete, palabra, strlen(palabra));
+	}
+
+}
+void agregar_registros_a_paquete_para_kernel(t_paquete* paquete, registros_cpu* registrosCpu) {
+	 agregar_registro4bytes_a_paquete(paquete, registrosCpu->AX);
+	 agregar_registro4bytes_a_paquete(paquete, registrosCpu->BX);
+	 agregar_registro4bytes_a_paquete(paquete, registrosCpu->CX);
+	 agregar_registro4bytes_a_paquete(paquete, registrosCpu->DX);
+	 agregar_registro8bytes_a_paquete(paquete, registrosCpu->EAX);
+	 agregar_registro8bytes_a_paquete(paquete, registrosCpu->EBX);
+	 agregar_registro8bytes_a_paquete(paquete, registrosCpu->ECX);
+	 agregar_registro8bytes_a_paquete(paquete, registrosCpu->EDX);
+	 agregar_registro16bytes_a_paquete(paquete, registrosCpu->RAX);
+	 agregar_registro16bytes_a_paquete(paquete, registrosCpu->RBX);
+	 agregar_registro16bytes_a_paquete(paquete, registrosCpu->RCX);
+	 agregar_registro16bytes_a_paquete(paquete, registrosCpu->RDX);
+}
+void agregar_registro4bytes_a_paquete(t_paquete* paquete, char* valor) {
+    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(4));
+    memcpy(paquete->buffer->stream + paquete->buffer->size, &valor, sizeof(4));
+    paquete->buffer->size += sizeof(4);
+}
+void agregar_registro8bytes_a_paquete(t_paquete* paquete, char* valor) {
+    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(8));
+    memcpy(paquete->buffer->stream + paquete->buffer->size, &valor, sizeof(8));
+    paquete->buffer->size += sizeof(8);
+}
+void agregar_registro16bytes_a_paquete(t_paquete* paquete, char* valor) {
+    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(16));
+    memcpy(paquete->buffer->stream + paquete->buffer->size, &valor, sizeof(16));
+    paquete->buffer->size += sizeof(16);
+}
+void agregar_valor_a_paquete(t_paquete* paquete, void* valor, int tamanio) {
+    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + tamanio);
+    memcpy(paquete->buffer->stream + paquete->buffer->size, valor, tamanio);
+    paquete->buffer->size += tamanio;
+}
+//
 void instruccion_mov_in(char* registro,char* dir_logica) {
 
 }

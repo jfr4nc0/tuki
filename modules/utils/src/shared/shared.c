@@ -559,6 +559,7 @@ t_list* recibir_paquete(int clienteAceptado) {
     return valores;
 }
 
+
 /*----------------------- MANDAR A DORMIR -------------------*/
 
 void intervalo_de_pausa(int duracionEnMilisegundos) {

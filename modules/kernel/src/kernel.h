@@ -52,7 +52,6 @@ typedef struct {
 	t_list* lista_archivos_abiertos; // Contendrá la lista de archivos abiertos del proceso con la posición del puntero de cada uno de ellos.
 	double processor_burst; // Estimacion utilizada para planificar los procesos en el algoritmo HRRN, la misma tendra un valor inicial definido por archivo de config y sera recalculada bajo la formula de promedio ponderado
 	double ready_timestamp; // Timestamp en que el proceso llegó a ready por última vez (utilizado para el cálculo de tiempo de espera del algoritmo HRRN).
-	double hrrn_alfa;
 }PCB;
 
 typedef struct{
@@ -72,7 +71,7 @@ void recibir_de_consola(void*);
 void iterator(char* value);
 PCB* nuevo_proceso(t_list* , int);
 void proceso_a_ready();
-
+void mostrar_pcb(PCB*);
 
 static bool criterio_hrrn(PCB*, PCB*);
 double calculo_HRRN(PCB*);
@@ -105,6 +104,12 @@ void agregar_arreglo_a_paquete(t_paquete* , char** );
 void agregar_valor_a_paquete(t_paquete* , void* , int );
 void agregar_registros_a_paquete(t_paquete* , registros_cpu* );
 void envio_pcb(int , PCB* , codigo_operacion );
+
+// PRUEBAS
+void envio_pcb_a_cpu(int , PCB* , codigo_operacion );
+void agregar_pcb_a_paquete_para_cpu(t_paquete* , PCB* );
+void agregar_registros_a_paquete_cpu(t_paquete* , registros_cpu* );
+
 ////////////////////////////////////////////////////
 
 int obtener_recursos(int);

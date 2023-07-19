@@ -70,4 +70,11 @@ void instruccion_yield();
 void instruccion_exit();
 void devolver_pcb_kernel(PCB*, int, codigo_operacion);
 
+void agregar_registros_a_paquete_para_kernel(t_paquete* , registros_cpu* );
+void agregar_registro4bytes_a_paquete(t_paquete* , char* );
+void agregar_registro8bytes_a_paquete(t_paquete* , char* );
+void agregar_registro16bytes_a_paquete(t_paquete* , char* );
+
+
+
 #endif

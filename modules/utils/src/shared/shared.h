@@ -150,6 +150,7 @@ int recibir_operacion(int);
 void* recibir_buffer(int*, int);
 void* leer_de_buffer(char*, int*, size_t);
 
+
 void intervalo_de_pausa(int );
 
 #endif
