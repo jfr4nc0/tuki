@@ -381,18 +381,19 @@ void agregar_valor_a_paquete(t_paquete* paquete, void* valor, int tamanio) {
 }
 
 void agregar_registros_a_paquete(t_paquete* paquete, registros_cpu* registrosCpu) {
-	 agregar_int_a_paquete(paquete, registrosCpu->AX);
-	 agregar_int_a_paquete(paquete, registrosCpu->BX);
-	 agregar_int_a_paquete(paquete, registrosCpu->CX);
-	 agregar_int_a_paquete(paquete, registrosCpu->DX);
-	 agregar_long_a_paquete(paquete, registrosCpu->EAX);
-	 agregar_long_a_paquete(paquete, registrosCpu->EBX);
-	 agregar_long_a_paquete(paquete, registrosCpu->ECX);
-	 agregar_long_a_paquete(paquete, registrosCpu->EDX);
-	 agregar_longlong_a_paquete(paquete, registrosCpu->RAX);
-	 agregar_longlong_a_paquete(paquete, registrosCpu->RBX);
-	 agregar_longlong_a_paquete(paquete, registrosCpu->RCX);
-	 agregar_longlong_a_paquete(paquete, registrosCpu->RDX);
+
+	agregar_valor_a_paquete(paquete, registrosCpu->AX, 4);
+	agregar_valor_a_paquete(paquete, registrosCpu->BX, 4);
+	agregar_valor_a_paquete(paquete, registrosCpu->CX, 4);
+	agregar_valor_a_paquete(paquete, registrosCpu->DX, 4);
+	agregar_valor_a_paquete(paquete, registrosCpu->EAX, 8);
+	agregar_valor_a_paquete(paquete, registrosCpu->EBX, 8);
+	agregar_valor_a_paquete(paquete, registrosCpu->ECX, 8);
+	agregar_valor_a_paquete(paquete, registrosCpu->EDX, 8);
+	agregar_valor_a_paquete(paquete, registrosCpu->RAX, 16);
+	agregar_valor_a_paquete(paquete, registrosCpu->RBX, 16);
+	agregar_valor_a_paquete(paquete, registrosCpu->RCX, 16);
+	agregar_valor_a_paquete(paquete, registrosCpu->RDX, 16);
 }
 
 void agregar_long_a_paquete(t_paquete* paquete, long valor) {
@@ -423,6 +424,7 @@ void agregar_pcb_a_paquete(t_paquete* paquete, PCB* pcb) {
 	agregar_registros_a_paquete(paquete, pcb->registrosCpu);
 	agregar_valor_a_paquete(paquete, &pcb->processor_burst, sizeof(double));
 	agregar_valor_a_paquete(paquete, &pcb->ready_timestamp, sizeof(double));
+	agregar_valor_a_paquete(paquete, &pcb->hrrn_alfa, sizeof(double));
 }
 ////////////////////////////////////////
 

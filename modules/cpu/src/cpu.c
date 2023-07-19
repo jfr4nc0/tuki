@@ -6,7 +6,7 @@ cpu_config_t* configCpu;
 int conexionCpuKernel;
 registros_cpu* registrosCpu;
 
-bool hubo_interrupcion = false;
+bool terminar_ejecucion = false;
 codigo_operacion ultimaOperacion;
 
 int main(int argc, char** argv) {
@@ -151,12 +151,12 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
 
 	// while(f_eop!=1 && f_interruption!=1 && f_io!=1 && f_pagefault!=1 && f_segfault!=1) {
 
-    while ((posicion_actual < cantidad_instrucciones) && !hubo_interrupcion) {
+    while ((posicion_actual < cantidad_instrucciones) && !terminar_ejecucion) {
 	    instruccion = string_duplicate((char *)list_get(pcb->lista_instrucciones, pcb->contador_instrucciones));
 		instruccion_decodificada = decode_instruccion(instruccion);
 
         log_info(loggerCpu, "Ejecutando instruccion: %s", instruccion_decodificada[0]);
-        ejecutar_instruccion(instruccion_decodificada, pcb);
+        ejecutar_instruccion(instruccion_decodificada, pcb, clienteKernel);
 
         // Evaluar si la instruccion genero una excepcion "f_pagefault"
         // Caso afirmativo => No se actualiza el program counter del pcb
@@ -173,8 +173,8 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
     free(instruccion_decodificada);
 
 	// Si hubo interrupcion de algun tipo se lo comunico a kernel pero sacamos
-	if (hubo_interrupcion) {
-		hubo_interrupcion = false;
+	if (terminar_ejecucion) {
+		terminar_ejecucion = false;
 	}
 
 	devolver_pcb_kernel(pcb, clienteKernel, ultimaOperacion);
@@ -218,7 +218,7 @@ void guardar_contexto_de_ejecucion(PCB* pcb) {
 	registrosCpu->RDX = pcb->registrosCpu->RDX;
 }
 
-void ejecutar_instruccion(char** instruccion, PCB* pcb) {
+void ejecutar_instruccion(char** instruccion, PCB* pcb, int clienteKernel) {
 
 	int operacion = keyFromString(instruccion[0]);
 
@@ -290,13 +290,12 @@ void ejecutar_instruccion(char** instruccion, PCB* pcb) {
 			instruccion_delete_segment(instruccion[1]);
 			break;
 		case I_YIELD:
-			instruccion_yield();
-			log_info(loggerCpu, "------------------------------");
-			hubo_interrupcion = true;
+			//enviar_pcb_desalojado_a_kernel(pcb, clienteKernel);
+			terminar_ejecucion = true;
 			break;
 		case I_EXIT:
 			instruccion_exit();
-			hubo_interrupcion = true;
+			terminar_ejecucion = true;
 
 			break;
 	}
@@ -341,7 +340,18 @@ void instruccion_set(char* registro,char* valor) {
 
 	//sleep(configCpu->RETARDO_INSTRUCCION/1000);
 }
+/*
+void enviar_pcb_desalojado_a_kernel(PCB* pcb, int socket){
+	envio_pcb_a_kernel_con_codigo(socket, pcb, DESALOJO_YIELD);
+}
 
+void envio_pcb_a_kernel_con_codigo(int conexion, PCB* pcb, codigo_operacion codigo) {
+	t_paquete* paquete = crear_paquete(codigo);
+	agregar_pcb_a_paquete(paquete, pcb);
+	enviar_paquete(paquete, conexion);
+	eliminar_paquete(paquete);
+}
+*/
 void instruccion_mov_in(char* registro,char* dir_logica) {
 
 }
@@ -379,9 +389,6 @@ void instruccion_create_segment(char* id_segmento, char* tamanio) {
 
 }
 void instruccion_delete_segment(char* id_segmento) {
-
-}
-void instruccion_yield() {
 
 }
 void instruccion_exit() {

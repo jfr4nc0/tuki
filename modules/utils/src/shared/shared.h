@@ -57,6 +57,8 @@ typedef enum {
     I_YIELD,
     I_EXIT,
     AUX_CREATE_PCB,
+	// Desalojos
+	DESALOJO_YIELD,
     // Auxiliares
 	AUX_MENSAJE,
 	AUX_OK,

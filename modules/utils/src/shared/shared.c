@@ -42,6 +42,8 @@ int keyFromString(char *key) {
 
 /*-------------------- FUNCIONES GENERALES --------------------*/
 
+
+
 char** leer_arreglo_string(char* buffer, int* desplazamiento) {
 
 	int longitud = leer_int(buffer, desplazamiento);
