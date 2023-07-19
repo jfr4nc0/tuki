@@ -61,6 +61,7 @@ typedef struct{
     sem_t sem_recurso;
 }t_recurso;
 
+typedef struct timespec timestamp;
 
 /*----------------- FUNCIONES ------------------*/
 
@@ -76,8 +77,13 @@ void mostrar_pcb(PCB*);
 static bool criterio_hrrn(PCB*, PCB*);
 double calculo_HRRN(PCB*);
 double rafaga_estimada(PCB*);
+void *__ejecucion_desalojo_pcb(void *);
+PCB* elegir_pcb_segun_fifo();
+PCB* elegir_pcb_segun_hrrn();
+void *manejo_desalojo_pcb(void *);
+void recibir_proceso_desalojado(PCB* );
 
-void crear_hilo_planificador();
+void crear_hilo_planificador(int);
 void proximo_a_ejecutar();
 char* pids_on_list(pcb_estado estado);
 

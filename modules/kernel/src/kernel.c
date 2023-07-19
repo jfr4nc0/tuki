@@ -125,7 +125,7 @@ void recibir_de_consola(void *clienteAceptado) {
 
 	nuevo_proceso(listaInstrucciones, conexionConConsola);
 
-	crear_hilo_planificador();
+	crear_hilo_planificador(clienteAceptado);
 
     list_destroy(listaInstrucciones);
 
@@ -134,57 +134,146 @@ void recibir_de_consola(void *clienteAceptado) {
     return;
 }
 
-void crear_hilo_planificador() {
+void crear_hilo_planificador(int socket) {
     log_info(kernelLogger, "Inicialización del planificador %s...", kernelConfig->ALGORITMO_PLANIFICACION);
-    pthread_create(&planificador_corto_plazo, NULL, (void*) proximo_a_ejecutar, NULL);
+    pthread_create(&planificador_corto_plazo, NULL, (void*) proximo_a_ejecutar, &socket);
     pthread_detach(planificador_corto_plazo);
 
     // Acá va el manejo de memoria y CPU con hilos.
 
 }
 
-void proximo_a_ejecutar() {
-/*
+void proximo_a_ejecutar(void * socket) {
+
 	// Desalojo de PCBs
 	pthread_t manejo_desalojo;
-	pthread_create(&manejo_desalojo, NULL, __ejecucion_desalojo_pcb, NULL); //TODO
+	pthread_create(&manejo_desalojo, NULL, manejo_desalojo_pcb, &socket); //TODO
 	pthread_detach(manejo_desalojo);
-*/
+
 	//Dispatcher
 	while(1) {
-		//sem_wait(&sem_cpu_disponible);
+		sem_wait(&sem_cpu_disponible);
 		// Este if tiene sentido? no se puede manejar con semaforos si hay elementos? O conviene un while(1) si no encuentra o algo así?
 		if(!list_is_empty(lista_estados[ENUM_READY])) {
 			PCB* pcbParaEjecutar;
-			sem_wait(&sem_cpu_disponible);
-/*
-			if (string_equals_ignore_case(kernelConfig->ALGORITMO_PLANIFICACION, "FIFO")) {
-				pcbParaEjecutar = elegir_pcb_segun_fifo(estado);
-			}
-			else if (string_equals_ignore_case(kernelConfig->ALGORITMO_PLANIFICACION, "HRRN") {
-				pcbParaEjecutar = elegir_pcb_segun_hrrn(estado);
-			}
-*/
-			// TODO: Mover a una función si hay demasiados algoritmos de planificacion distintos
-			if(string_equals_ignore_case(kernelConfig->ALGORITMO_PLANIFICACION, "HRRN")) {
-				list_sort(lista_estados[ENUM_EXECUTING], (void*) criterio_hrrn);
-			}
 
-			sem_wait(&sem_lista_estados[ENUM_READY]);
-
-			sem_wait(&sem_lista_estados[ENUM_EXECUTING]);
-			pcbParaEjecutar = list_get(lista_estados[ENUM_READY], 0);
-			sem_post(&sem_lista_estados[ENUM_READY]);
-			sem_post(&sem_lista_estados[ENUM_EXECUTING]);
+			if(string_equals_ignore_case(kernelConfig->ALGORITMO_PLANIFICACION, "FIFO")) {
+				pcbParaEjecutar = elegir_pcb_segun_fifo();
+			}
+			else if (string_equals_ignore_case(kernelConfig->ALGORITMO_PLANIFICACION, "HRRN")) {
+				pcbParaEjecutar = elegir_pcb_segun_hrrn();
+			}
 
 			cambiar_estado_proceso(pcbParaEjecutar, ENUM_EXECUTING);
 
 			log_trace(kernelLogger, "---------------MOSTRANDO PCB A ENVIAR A CPU---------------");
 			mostrar_pcb(pcbParaEjecutar);
 
-			envio_pcb_a_cpu(conexionCPU, pcbParaEjecutar, OP_EXECUTE_PCB);
+
 		}
 	}
+}
+
+void *manejo_desalojo_pcb(void *socket){
+
+	for(;;){
+		PCB* pcb_en_ejecucion = list_get(lista_estados[ENUM_EXECUTING], 0);
+
+		timestamp inicio_ejecucion_proceso;
+		timestamp fin_ejecucion_proceso;
+
+		set_timespec(&inicio_ejecucion_proceso);
+		envio_pcb_a_cpu(conexionCPU, pcb_en_ejecucion, OP_EXECUTE_PCB);
+		recibir_proceso_desajolado(socket); //ME QUEDE ACA
+		set_timespec(&fin_ejecucion_proceso);
+
+	}
+	return NULL;
+}
+
+void recibir_proceso_desalojado(int socket){
+	PCB* pcb = malloc(sizeof(PCB));
+
+	char* buffer;
+	int tamanio = 0;
+	int desplazamiento = 0;
+
+	buffer = recibir_buffer(&tamanio, socket);
+
+	pcb->id_proceso = leer_int(buffer, &desplazamiento);
+
+	pcb->estado = leer_int(buffer, &desplazamiento);
+
+	pcb->lista_instrucciones = leer_string_array(buffer, &desplazamiento); // NO esta funcionando bien
+
+	pcb->contador_instrucciones = leer_int(buffer, &desplazamiento);
+
+	pcb->lista_segmentos = leer_string_array(buffer, &desplazamiento); //TODO: Modificar cuando se mergee memoria
+
+	pcb->lista_archivos_abiertos = list_create();
+	int cantidad_de_archivos = leer_int(buffer, &desplazamiento);
+	for (int i = 0; i < cantidad_de_archivos; i++) {
+	archivo_abierto_t* archivo_abierto = malloc(sizeof(archivo_abierto_t));
+
+	archivo_abierto->id = leer_int(buffer, &desplazamiento);
+	archivo_abierto->posicion_puntero = leer_int(buffer, &desplazamiento);
+
+	list_add(pcb->lista_archivos_abiertos, archivo_abierto);
+	free(archivo_abierto);
+	}
+
+	pcb->registrosCpu = malloc(sizeof(registros_cpu));
+	pcb->registrosCpu->AX = leer_registro_4_bytes(buffer, &desplazamiento);
+	pcb->registrosCpu->BX = leer_registro_4_bytes(buffer, &desplazamiento);
+	pcb->registrosCpu->CX = leer_registro_4_bytes(buffer, &desplazamiento);
+	pcb->registrosCpu->DX = leer_registro_4_bytes(buffer, &desplazamiento);
+	pcb->registrosCpu->EAX = leer_registro_8_bytes(buffer, &desplazamiento);
+	pcb->registrosCpu->EBX = leer_registro_8_bytes(buffer, &desplazamiento);
+	pcb->registrosCpu->ECX = leer_registro_8_bytes(buffer, &desplazamiento);
+	pcb->registrosCpu->EDX = leer_registro_8_bytes(buffer, &desplazamiento);
+	pcb->registrosCpu->RAX = leer_registro_16_bytes(buffer, &desplazamiento);
+	pcb->registrosCpu->RBX = leer_registro_16_bytes(buffer, &desplazamiento);
+	pcb->registrosCpu->RCX = leer_registro_16_bytes(buffer, &desplazamiento);
+	pcb->registrosCpu->RDX = leer_registro_16_bytes(buffer, &desplazamiento);
+
+	pcb->processor_burst = leer_double(buffer, &desplazamiento);
+	pcb->ready_timestamp = leer_double(buffer, &desplazamiento);
+
+	return pcb;
+}
+
+void set_timespec(timestamp *timespec)
+{
+    int retVal = clock_gettime(CLOCK_REALTIME, timespec);
+
+    if (retVal == -1) {
+        perror("clock_gettime");
+        exit(EXIT_FAILURE);
+    }
+}
+
+PCB* elegir_pcb_segun_fifo(){
+	PCB* pcb;
+	sem_wait(&sem_lista_estados[ENUM_READY]);
+	//sem_wait(&sem_lista_estados[ENUM_EXECUTING]);
+	pcb = list_get(lista_estados[ENUM_READY], 0);
+	sem_post(&sem_lista_estados[ENUM_READY]);
+	//sem_post(&sem_lista_estados[ENUM_EXECUTING]);
+
+	return pcb;
+
+}
+
+PCB* elegir_pcb_segun_hrrn(){
+	PCB* pcb;
+	sem_wait(&sem_lista_estados[ENUM_READY]);
+	//sem_wait(&sem_lista_estados[ENUM_EXECUTING]);
+	list_sort(lista_estados[ENUM_EXECUTING], (void*) criterio_hrrn);
+	pcb = list_get(lista_estados[ENUM_READY], 0);
+	sem_post(&sem_lista_estados[ENUM_READY]);
+	//sem_post(&sem_lista_estados[ENUM_EXECUTING]);
+
+	return pcb;
 }
 
 void mostrar_pcb(PCB* pcb){
