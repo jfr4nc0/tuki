@@ -24,14 +24,13 @@ typedef enum {
 }pcb_estado;
 
 typedef struct {
-    //char* IP_KERNEL;
-	//char* PUERTO_KERNEL;
 	char* IP_MEMORIA;
 	char* PUERTO_MEMORIA;
     char* IP_FILE_SYSTEM;
     char* PUERTO_FILE_SYSTEM;
     char* IP_CPU;
     char* PUERTO_CPU;
+    char* IP_ESCUCHA;
     char* PUERTO_ESCUCHA;
     char* ALGORITMO_PLANIFICACION;
     double ESTIMACION_INICIAL;
@@ -86,7 +85,7 @@ char* pids_on_list(pcb_estado estado);
 void inicializar_semaforos();
 void crear_cola_recursos(char*, int);
 void inicializar_diccionario_recursos();
-
+int inicializar_servidor_kernel(void);
 
 /// Funciones de listas ///
 void cambiar_estado_proceso(PCB*, pcb_estado);

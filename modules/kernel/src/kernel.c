@@ -1,7 +1,7 @@
 #include "kernel.h"
 
 void liberar_recursos_kernel() {
-    free(kernelConfig);
+	free(kernelConfig);
     liberar_listas_estados();
     liberar_conexion(conexionCPU);
     liberar_conexion(conexionMemoria);
@@ -20,20 +20,21 @@ int main(int argc, char** argv) {
     inicializar_listas_estados();
     inicializar_diccionario_recursos();
 
+    conexionMemoria = armar_conexion(config, MEMORIA, kernelLogger);
     conexionCPU = armar_conexion(config, CPU, kernelLogger);
     conexionFileSystem = armar_conexion(config, FILE_SYSTEM, kernelLogger);
-    conexionMemoria = armar_conexion(config, MEMORIA, kernelLogger);
+
     enviar_codigo_operacion(conexionMemoria, AUX_SOY_KERNEL); // Le dice a memoria que módulo se conectó
+
 
     int servidorKernel = iniciar_servidor(config, kernelLogger);
 
     // TODO: Manejar multiples instancias de conexiones de consola al kernel
     inicializar_escucha_conexiones_consolas(servidorKernel);
 
-    /*
-    TODO: NUNCA LLEGA ACA PORQUE SE QUEDA ESPERANDO NUEVAS CONSOLAS,
-    MOVER ESTAS FUNCIONES A CUANDO EL SISTEMA SOLICITE LA FINALIZACION
-    */
+    /*TODO: NUNCA LLEGA ACA PORQUE SE QUEDA ESPERANDO NUEVAS CONSOLAS,
+    MOVER ESTAS FUNCIONES A CUANDO EL SISTEMA SOLICITE LA FINALIZACION*/
+
     terminar_programa(servidorKernel, kernelLogger, config);
     liberar_recursos_kernel();
 

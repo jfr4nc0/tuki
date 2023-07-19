@@ -14,18 +14,15 @@ int main(int argc, char** argv) {
     t_config* config = iniciar_config(DEFAULT_CONFIG_PATH, loggerCpu);
     cargar_config(config);
 
-    int servidorCPU = iniciar_servidor(config, loggerCpu);
-
-
     int conexionCpuMemoria = armar_conexion(config, MEMORIA, loggerCpu);
     enviar_codigo_operacion(conexionCpuMemoria, AUX_SOY_CPU);
 
     inicializar_registros();
 
-
-
+    int servidorCPU = iniciar_servidor(config, loggerCpu);
+    int clienteKernel = esperar_cliente(servidorCPU, loggerCpu);
     while (1) {
-		int clienteKernel = esperar_cliente(servidorCPU, loggerCpu);
+
 	    //pthread_t hilo_ejecucion;
 	    pthread_t hilo_dispatcher;
 		//pthread_create(&hilo_ejecucion, NULL, (void *) procesar_instruccion, int servidorCPU); //  TODO: Avisar posibles errores o si el kernel se desconecto.
@@ -293,6 +290,7 @@ void ejecutar_instruccion(char** instruccion, PCB* pcb) {
 			break;
 		case I_YIELD:
 			instruccion_yield();
+			log_info(loggerCpu, "------------------------------");
 			hubo_interrupcion = true;
 			break;
 		case I_EXIT:
