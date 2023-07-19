@@ -23,7 +23,7 @@
 #define LOG_PUNTERO_DIRECTO_DESASIGNADO         "Puntero Directo Desasignado."
 #define LOG_PUNTERO_INDIRECTO_DESASIGNADO       "Bloque de punteros desasignado"
 
-bool actualizar_tamanio_bloques (t_fcb* fcbArchivo, uint32_t tamanioNuevo);
+bool actualizar_tamanio_bloques(t_fcb* fcbArchivo, uint32_t tamanioNuevo);
 void ampliar_archivo(t_fcb *fcbArchivo, uint32_t tamanioNuevo);
 void asignar_bloques_archivo_vacio(t_fcb *fcbArchivo,uint32_t tamanioNuevo);
 void asignar_bloques_archivo_con_informacion(t_fcb *fcbArchivo,uint32_t tamanioNuevo);

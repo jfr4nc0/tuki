@@ -17,6 +17,8 @@
 #include <shared/shared.h>
 #include "inicializarEstructuras.h"
 
+#include "administrarEstructuras.h"
+
 extern t_log* loggerFileSystem;
 
 #define ERROR_ABRIR_ARCHIVO      "No se pudo abrir el archivo: %s"
@@ -24,5 +26,6 @@ extern t_log* loggerFileSystem;
 t_fcb* crear_fcb_inicial(char *nombreArchivo);
 bool crear_archivo(char *nombreArchivo);
 bool existe_archivo(char *nombreArchivo);
+void truncar_archivo(char *nombreArchivo, uint32_t tamanioNuevo);
 
 #endif

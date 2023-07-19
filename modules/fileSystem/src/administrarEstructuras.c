@@ -1,5 +1,5 @@
 #include "administrarEstructuras.h"
-bool actualizar_tamanio_bloques (t_fcb* fcbArchivo, uint32_t tamanioNuevo) {
+bool actualizar_tamanio_bloques(t_fcb* fcbArchivo, uint32_t tamanioNuevo) {
     uint32_t bloquesAsignados = fcbArchivo->cantidad_bloques_asignados;
     uint32_t bloquesNuevos = calcularSizeBloques(tamanioNuevo);
 
@@ -15,12 +15,12 @@ bool actualizar_tamanio_bloques (t_fcb* fcbArchivo, uint32_t tamanioNuevo) {
 
     fcbArchivo->tamanio_archivo = tamanioNuevo;
     persistir_fcb(fcbArchivo);
+
+    return true;
 }
 
 void ampliar_archivo(t_fcb *fcbArchivo, uint32_t tamanioNuevo)
 {
-    uint32_t tamanioNuevoEnBloques = calcularSizeBloques(tamanioNuevo);
-
     if(fcbArchivo->cantidad_bloques_asignados == 0) {
         asignar_bloques_archivo_vacio(fcbArchivo,tamanioNuevo);
     }

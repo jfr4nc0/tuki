@@ -47,8 +47,7 @@ t_fcb *crear_fcb_inicial(char *nombreArchivo) {
     return fcb;
 }
 
-void truncar_archivo(char *nombreArchivo, uint32_t tamanioNuevo)
-{
+void truncar_archivo(char *nombreArchivo, uint32_t tamanioNuevo) {
     log_info(loggerFileSystem, "Pedido para truncar Archivo: <%s> - Tamaño: <%u>", nombreArchivo, tamanioNuevo);
 
     t_fcb* fcbArchivo = dictionary_get(listaFcbs, nombreArchivo);
