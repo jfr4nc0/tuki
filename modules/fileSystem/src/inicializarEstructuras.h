@@ -1,5 +1,5 @@
-#ifndef FILE_SYSTEM_ESTRUCTURAS_H_
-#define FILE_SYSTEM_ESTRUCTURAS_H_
+#ifndef FILE_SYSTEM_INICIALIZAR_ESTRUCTURAS_H_
+#define FILE_SYSTEM_INICIALIZAR_ESTRUCTURAS_H_
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -51,6 +51,7 @@ extern t_log* loggerFileSystem;
 extern t_config_file_system* configFileSystem;
 extern t_bitmap* bitmap;
 extern t_dictionary* listaFcbs;
+extern uint32_t SIZE_BLOQUE;
 
 #define ERROR_ABRIR_ARCHIVO      "No se pudo abrir el archivo: %s"
 
@@ -61,8 +62,9 @@ t_superbloque* crear_superbloque (char *pathSuperbloque);
 t_bitarray* create_bitmap(int entries);
 void abrir_bitmap (char* pathBitmap, uint32_t blockCount);
 void crear_archivo_de_bloques(char* pathArchivoDeBloques, uint32_t blockCount, uint32_t blockSize);
-uint32_t calcularSizeBloques(uint32_t nuevoSize, uint32_t viejoSize);
-t_fcb* cargar_fcb(char *pathFcb, uint32_t sizeBloques);
-void abrir_fcbs(char *pathFcb, uint32_t sizeBloques);
+uint32_t calcularSizeBloques(uint32_t nuevoSize);
+t_fcb* cargar_fcb(char *pathFcb);
+void abrir_fcbs(char *pathFcb);
+
 
 #endif

@@ -1,11 +1,29 @@
-#include "estructuras.h"
+#include "inicializarEstructuras.h"
 #include <unistd.h>
 
 t_superbloque* superbloque;
 t_config_file_system* configFileSystem;
 t_bitmap* bitmap;
 t_dictionary* listaFcbs;
-// uint32_t sizeBloques;
+uint32_t SIZE_BLOQUE;
+
+/*
+* Funciona como un main, usa todas las funciones que estan debajo
+*/
+void inicializar_estructuras(t_config* config) {
+    configFileSystem = cargar_config(config);
+    superbloque = crear_superbloque(configFileSystem->PATH_SUPERBLOQUE);
+
+    SIZE_BLOQUE = superbloque->block_size;
+
+    abrir_bitmap(configFileSystem->PATH_BITMAP, superbloque->block_count);
+
+    crear_archivo_de_bloques(configFileSystem->PATH_BLOQUES, superbloque->block_count, superbloque->block_size);
+
+    abrir_fcbs(configFileSystem->PATH_FCB);
+
+    return;
+}
 
 t_config_file_system* cargar_config(t_config* config) {
     t_config_file_system* configPuntero = malloc(sizeof(t_config_file_system));
@@ -20,21 +38,6 @@ t_config_file_system* cargar_config(t_config* config) {
 	configPuntero->PUERTO_ESCUCHA = extraer_int_de_config(config, "PUERTO_ESCUCHA", loggerFileSystem);
 
     return configPuntero;
-}
-
-void inicializar_estructuras(t_config* config) {
-    configFileSystem = cargar_config(config);
-    superbloque = crear_superbloque(configFileSystem->PATH_SUPERBLOQUE);
-
-    // sizeBloques = superbloque->block_size;
-
-    abrir_bitmap(configFileSystem->PATH_BITMAP, superbloque->block_count);
-
-    crear_archivo_de_bloques(configFileSystem->PATH_BLOQUES, superbloque->block_count, superbloque->block_size);
-
-    abrir_fcbs(configFileSystem->PATH_FCB, superbloque->block_size);
-
-    return;
 }
 
 t_superbloque* crear_superbloque(char *pathSuperbloque) {
@@ -117,7 +120,7 @@ void crear_archivo_de_bloques(char* pathArchivoDeBloques, uint32_t blockCount, u
 }
 
 
-void abrir_fcbs(char* path_fcbs, uint32_t sizeBloques) {
+void abrir_fcbs(char* path_fcbs) {
 	DIR *dir;
 	struct dirent *ent;
 	char rutaFcb[PATH_MAX];
@@ -132,8 +135,9 @@ void abrir_fcbs(char* path_fcbs, uint32_t sizeBloques) {
 
 	while ((ent = readdir(dir)) != NULL) {
 		if (ent->d_type == DT_REG) {
+            // Ruta completa del archivo es el nombre del archivo + el path hacia la ruta de los fcb
 			snprintf(rutaFcb, sizeof(rutaFcb), "%s/%s", path_fcbs, ent->d_name);
-			fcb_temp = cargar_fcb(rutaFcb, sizeBloques);
+			fcb_temp = cargar_fcb(rutaFcb);
 			nombreTemp = fcb_temp->nombre_archivo;
 			dictionary_put(listaFcbs, nombreTemp, (void*)fcb_temp);
 		} else {
@@ -144,8 +148,7 @@ void abrir_fcbs(char* path_fcbs, uint32_t sizeBloques) {
 	log_debug(loggerFileSystem, "Lista de fcbs inicializada.");
 }
 
-t_fcb* cargar_fcb(char *pathFcb, uint32_t sizeBloques)
-{
+t_fcb* cargar_fcb(char *pathFcb) {
     t_config* config_fcb = config_create(pathFcb);
     t_fcb* fcb = malloc(sizeof(t_fcb));
 
@@ -153,15 +156,17 @@ t_fcb* cargar_fcb(char *pathFcb, uint32_t sizeBloques)
     fcb->tamanio_archivo = (uint32_t) extraer_int_de_config(config_fcb, "TAMANIO_ARCHIVO", loggerFileSystem);
     fcb->puntero_directo = (uint32_t) extraer_int_de_config(config_fcb, "PUNTERO_DIRECTO", loggerFileSystem);
     fcb->puntero_indirecto = (uint32_t) extraer_int_de_config(config_fcb, "PUNTERO_INDIRECTO", loggerFileSystem);
-    fcb->cantidad_bloques_asignados = calcularSizeBloques(fcb->tamanio_archivo, sizeBloques);
+    fcb->cantidad_bloques_asignados = calcularSizeBloques(fcb->tamanio_archivo);
 
     return fcb;
 }
 
-uint32_t calcularSizeBloques(uint32_t nuevoSize, uint32_t viejoSize) {
-    uint32_t size = nuevoSize / viejoSize;
+uint32_t calcularSizeBloques(uint32_t nuevoSize) {
+    uint32_t size = nuevoSize / SIZE_BLOQUE;
 
-    size = (nuevoSize%viejoSize == 0) ? size : size +1;
+    size = (nuevoSize%SIZE_BLOQUE == 0) ? size : size +1;
 
     log_debug(loggerFileSystem, "Bloques nuevos: %d, quedando con bloques asignados: %d.", nuevoSize, size);
+
+    return size;
 }

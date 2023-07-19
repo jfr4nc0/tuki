@@ -14,8 +14,8 @@
 #include <pthread.h>
 
 // Internas
-#include "administrarFileSystem.h"
-#include "estructuras.h"
+#include "administrarInstrucciones.h"
+#include "inicializarEstructuras.h"
 #include <shared/shared.h>
 
 t_log* loggerFileSystem;
