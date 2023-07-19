@@ -257,6 +257,36 @@ int leer_int(char* buffer, int* desp) {
 	return respuesta;
 }
 
+char* leer_registro_4_bytes(char* buffer, int* desp){
+	int size = 4;
+
+	char* respuesta = malloc(size);
+	memcpy(respuesta, buffer+(*desp), size);
+	(*desp)+=size;
+
+	return respuesta;
+}
+
+char* leer_registro_8_bytes(char* buffer, int* desp){
+	int size = 8;
+
+	char* respuesta = malloc(size);
+	memcpy(respuesta, buffer+(*desp), size);
+	(*desp)+=size;
+
+	return respuesta;
+}
+
+char* leer_registro_16_bytes(char* buffer, int* desp){
+	int size = 16;
+
+	char* respuesta = malloc(size);
+	memcpy(respuesta, buffer+(*desp), size);
+	(*desp)+=size;
+
+	return respuesta;
+}
+
 char* leer_string(char* buffer, int* desp) {
 	int size = leer_int(buffer, desp);
 
@@ -526,3 +556,20 @@ t_list* recibir_paquete(int clienteAceptado) {
     free(buffer);
     return valores;
 }
+
+/*----------------------- MANDAR A DORMIR -------------------*/
+
+void intervalo_de_pausa(int duracionEnMilisegundos) {
+    const uint32_t SECS_MILISECS = 1000;
+    const uint32_t MILISECS_NANOSECS = 1000000;
+    struct timespec timeSpec;
+
+    // Time in seconds and nano seconds calculation
+    timeSpec.tv_sec = duracionEnMilisegundos / SECS_MILISECS;
+    timeSpec.tv_nsec = (duracionEnMilisegundos % SECS_MILISECS) * MILISECS_NANOSECS;
+
+    nanosleep(&timeSpec, &timeSpec);
+
+    return;
+}
+

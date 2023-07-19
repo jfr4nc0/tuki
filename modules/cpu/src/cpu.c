@@ -22,7 +22,6 @@ int main(int argc, char** argv) {
     int servidorCPU = iniciar_servidor(config, loggerCpu);
     int clienteKernel = esperar_cliente(servidorCPU, loggerCpu);
     while (1) {
-
 	    //pthread_t hilo_ejecucion;
 	    pthread_t hilo_dispatcher;
 		//pthread_create(&hilo_ejecucion, NULL, (void *) procesar_instruccion, int servidorCPU); //  TODO: Avisar posibles errores o si el kernel se desconecto.
@@ -113,18 +112,18 @@ PCB* recibir_pcb(int clienteAceptado) {
 	}
 
 	pcb->registrosCpu = malloc(sizeof(registros_cpu));
-	pcb->registrosCpu->AX = leer_int(buffer, &desplazamiento);
-	pcb->registrosCpu->BX = leer_int(buffer, &desplazamiento);
-	pcb->registrosCpu->CX = leer_int(buffer, &desplazamiento);
-	pcb->registrosCpu->DX = leer_int(buffer, &desplazamiento);
-	pcb->registrosCpu->EAX = leer_long(buffer, &desplazamiento);
-	pcb->registrosCpu->EBX = leer_long(buffer, &desplazamiento);
-	pcb->registrosCpu->ECX = leer_long(buffer, &desplazamiento);
-	pcb->registrosCpu->EDX = leer_long(buffer, &desplazamiento);
-	pcb->registrosCpu->RAX = leer_long_long(buffer, &desplazamiento);
-	pcb->registrosCpu->RBX = leer_long_long(buffer, &desplazamiento);
-	pcb->registrosCpu->RCX = leer_long_long(buffer, &desplazamiento);
-	pcb->registrosCpu->RDX = leer_long_long(buffer, &desplazamiento);
+	pcb->registrosCpu->AX = leer_registro_4_bytes(buffer, &desplazamiento);
+	pcb->registrosCpu->BX = leer_registro_4_bytes(buffer, &desplazamiento);
+	pcb->registrosCpu->CX = leer_registro_4_bytes(buffer, &desplazamiento);
+	pcb->registrosCpu->DX = leer_registro_4_bytes(buffer, &desplazamiento);
+	pcb->registrosCpu->EAX = leer_registro_8_bytes(buffer, &desplazamiento);
+	pcb->registrosCpu->EBX = leer_registro_8_bytes(buffer, &desplazamiento);
+	pcb->registrosCpu->ECX = leer_registro_8_bytes(buffer, &desplazamiento);
+	pcb->registrosCpu->EDX = leer_registro_8_bytes(buffer, &desplazamiento);
+	pcb->registrosCpu->RAX = leer_registro_16_bytes(buffer, &desplazamiento);
+	pcb->registrosCpu->RBX = leer_registro_16_bytes(buffer, &desplazamiento);
+	pcb->registrosCpu->RCX = leer_registro_16_bytes(buffer, &desplazamiento);
+	pcb->registrosCpu->RDX = leer_registro_16_bytes(buffer, &desplazamiento);
 
 	pcb->processor_burst = leer_double(buffer, &desplazamiento);
 	pcb->ready_timestamp = leer_double(buffer, &desplazamiento);
@@ -234,6 +233,8 @@ void ejecutar_instruccion(char** instruccion, PCB* pcb) {
 	switch(operacion) {
 		case I_SET:
 			// SET (Registro, Valor)
+			int retardo = configCpu->RETARDO_INSTRUCCION;
+			intervalo_de_pausa(retardo);
 			instruccion_set(instruccion[1],instruccion[2]);
 			break;
 		case I_MOV_IN:
@@ -305,35 +306,40 @@ void ejecutar_instruccion(char** instruccion, PCB* pcb) {
 
 void instruccion_set(char* registro,char* valor) {
 
+	/*
 	int set_valor = atoi(valor);
+	if(set_valor == 0){
+		log_info(loggerCpu, "Hubo un error.");
+	}
+	*/
 
 	if (strcmp(registro, "AX") == 0) {
-		registrosCpu->AX = set_valor;
+		registrosCpu->AX = valor;
 	} else if (strcmp(registro, "BX") == 0) {
-		registrosCpu->BX = set_valor;
+		registrosCpu->BX = valor;
 	} else if (strcmp(registro, "CX") == 0) {
-		registrosCpu->CX = set_valor;
+		registrosCpu->CX = valor;
 	} else if (strcmp(registro, "DX") == 0) {
-		registrosCpu->DX = set_valor;
+		registrosCpu->DX = valor;
 	} else if (strcmp(registro, "EAX") == 0) {
-		registrosCpu->EAX = set_valor;
+		registrosCpu->EAX = valor;
 	} else if (strcmp(registro, "EBX") == 0) {
-		registrosCpu->EBX = set_valor;
+		registrosCpu->EBX = valor;
 	} else if (strcmp(registro, "ECX") == 0) {
-		registrosCpu->ECX = set_valor;
+		registrosCpu->ECX = valor;
 	} else if (strcmp(registro, "EDX") == 0) {
-		registrosCpu->EDX = set_valor;
+		registrosCpu->EDX = valor;
 	} else if (strcmp(registro, "RAX") == 0) {
-		registrosCpu->RAX = set_valor;
+		registrosCpu->RAX = valor;
 	} else if (strcmp(registro, "RBX") == 0) {
-		registrosCpu->RBX = set_valor;
+		registrosCpu->RBX = valor;
 	} else if (strcmp(registro, "RCX") == 0) {
-		registrosCpu->RCX = set_valor;
+		registrosCpu->RCX = valor;
 	} else if (strcmp(registro, "RDX") == 0) {
-		registrosCpu->RDX = set_valor;
+		registrosCpu->RDX = valor;
 	}
 
-	sleep(configCpu->RETARDO_INSTRUCCION/1000);
+	//sleep(configCpu->RETARDO_INSTRUCCION/1000);
 }
 
 void instruccion_mov_in(char* registro,char* dir_logica) {

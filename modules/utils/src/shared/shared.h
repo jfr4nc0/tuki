@@ -69,22 +69,22 @@ typedef enum {
 }codigo_operacion;
 typedef struct {
     // Registros de 4 bytes
-    int AX;
-    int BX;
-    int CX;
-    int DX;
+    char* AX;
+    char* BX;
+    char* CX;
+    char* DX;
 
     // Registros de 8 bytes
-    long EAX;
-    long EBX;
-    long ECX;
-    long EDX;
+    char* EAX;
+    char* EBX;
+    char* ECX;
+    char* EDX;
 
     // Registro de 16 bytes
-    long long RAX;
-    long long RBX;
-    long long RCX;
-    long long RDX;
+    char* RAX;
+    char* RBX;
+    char* RCX;
+    char* RDX;
 } registros_cpu;
 
 typedef struct {
@@ -122,7 +122,9 @@ double leer_double(char*, int*);
 char* leer_string(char* buffer, int* desp);
 t_list* leer_string_array(char* buffer, int* desp);
 char** leer_arreglo_string(char* , int* );
-
+char* leer_registro_4_bytes(char* , int* );
+char* leer_registro_8_bytes(char* , int* );
+char* leer_registro_16_bytes(char* , int* );
 
 /*----------------------------- FUNCIONES CLIENTE ----------------------------*/
 
@@ -145,5 +147,7 @@ t_list* recibir_paquete(int);
 int recibir_operacion(int);
 void* recibir_buffer(int*, int);
 void* leer_de_buffer(char*, int*, size_t);
+
+void intervalo_de_pausa(int );
 
 #endif
