@@ -130,9 +130,12 @@ void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion) 
 		}
 		case I_CREATE_SEGMENT:
 		{
-			// t_segmento* segmento = recibir_segmento_kernel();
-			// codigoRespuesta = crear_segmento(pid, sizeof(segmento));
-			// enviar_codigo_operacion(cliente,codigoRespuesta);
+			t_segmento* segmento = recibir_segmento_kernel(listaRecibida);
+			codigoRespuesta = crear_segmento_por_pid(pid, segmento);
+
+			if(codigoRespuesta == AUX_OK){
+				enviar_operacion(cliente,codigoRespuesta, sizeof(segmento->direccionBase), segmento->direccionBase);
+			} else { enviar_codigo_operacion(cliente, codigoRespuesta);}
 			break;
 		}
 		case I_DELETE_SEGMENT:

@@ -38,21 +38,24 @@ void iteratorSegmento(t_segmento* elemento) {
 /*
 ** Maneja el flujo de respuesta de la funcion crear_segmento
 */
-codigo_operacion adapter_respuesta_segmento(int pid, size_t size, void* respuesta){
+codigo_operacion adapter_respuesta_segmento(int pid, t_segmento* segmento, void* respuesta){
     if (respuesta == (void*)-1) {
-		log_error(loggerMemoria, "Segmentation Fault (no hay memoria), para proceso %d, por peticion de tamaño: %zu", pid, size);
+		log_error(loggerMemoria, "Segmentation Fault (no hay memoria), para proceso %d, por peticion de tamaño: %zu", pid, segmento->size);
         return AUX_ERROR;
 	}else if(respuesta == NULL) {
-		log_warning(loggerMemoria, "Peticion de proceso %d, para tamaño %zu, solo se puede haciendo compactacion y usando los huecos libres", pid, size);
+		log_warning(loggerMemoria, "Peticion de proceso %d, para tamaño %zu, solo se puede haciendo compactacion y usando los huecos libres", pid, segmento->size);
         return AUX_SOLO_CON_COMPACTACION;
 	}else{
+        segmento->direccionBase = respuesta;
 		log_info(loggerMemoria, "Memoria usada: %p", respuesta);
         return AUX_OK;
     }
 }
 
 codigo_operacion inicializar_proceso(int pid, size_t pcbSize) {
-    void* respuesta = crear_segmento(pid, pcbSize);
+    t_segmento* segmento;
+    segmento->size = pcbSize;
+    void* respuesta = crear_segmento(pid, segmento->size);
 
     return adapter_respuesta_segmento(pid,pcbSize,respuesta);
 }
@@ -116,10 +119,10 @@ void compactar_memoria() {
     list_clean(memoria->huecosLibres);
 }
 
-codigo_operacion crear_segmento_por_pid(int pid, size_t size){
-    void* respuesta = crear_segmento(pid, size);
+codigo_operacion crear_segmento_por_pid(int pid, t_segmento* segmento){
+    void* respuesta = crear_segmento(pid, segmento->size);
 
-    return adapter_respuesta_segmento(pid,size,respuesta);
+    return adapter_respuesta_segmento(pid,segmento,respuesta);
 }
 
 void* crear_segmento(int idProceso, size_t size) {
@@ -149,7 +152,8 @@ bool añadir_segmento(int idProceso, size_t size, void* direccion_base) {
 
     if (list_add(memoria->segmentos, segmento) >=0 &&
         guardarSegmentoEnTabla(segmento, idProceso) >=0) {
-    	log_info(loggerMemoria, "Segmento id %d, de tamaño %zu, creado por proceso %d", segmento->id, size, idProceso);
+    	// log_info(loggerMemoria, "Segmento id %d, de tamaño %zu, creado por proceso %d", segmento->id, size, idProceso);
+        log_info(loggerMemoria,CREACION_DE_SEGMENTO,idProceso,segmento->id,segmento->direccionBase,segmento->size);
         log_info(loggerMemoria, "Logueo tabla segmentos: ");
         list_iterate(memoria->tablaDeSegmentos, (void*) iteratorTabla);
         log_info(loggerMemoria, "Logueo lista segmentos: ");
@@ -268,6 +272,14 @@ t_list* obtener_tabla_segmentos_por_proceso_id(int procesoId) {
     }
 
     return segmentos;
+}
+
+// TODO Implementar recibir el segmento enviado por el kernel
+t_segmento* recibir_segmento_kernel(t_list* pcbRecibido){
+    t_segmento* segmento;
+    
+
+    return segmento;
 }
 
 ////////////////////////////////////////////////
