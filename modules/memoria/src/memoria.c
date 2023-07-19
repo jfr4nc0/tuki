@@ -11,6 +11,8 @@ int main() {
     int servidorMemoria = iniciar_servidor(configInicial, loggerMemoria);
     inicializar_memoria(memoriaConfig->TAM_MEMORIA, memoriaConfig->TAM_SEGMENTO_0);
 
+	testing_funciones();
+
     atender_conexiones(servidorMemoria);
 
     terminar_programa(servidorMemoria, loggerMemoria, configInicial);
@@ -18,6 +20,11 @@ int main() {
     liberar_memoria();
 
 	return 0;
+}
+
+void testing_funciones(){
+	codigo_operacion res;
+	res = inicializar_proceso(1,128);
 }
 
 void atender_conexiones(int servidorMemoria) {
