@@ -22,6 +22,7 @@ int main(int argc, char** argv) {
 
     conexionMemoria = armar_conexion(config, MEMORIA, kernelLogger);
     conexionCPU = armar_conexion(config, CPU, kernelLogger);
+    log_info(kernelLogger, "Conexion cpu inicial: %d", conexionCPU);
     conexionFileSystem = armar_conexion(config, FILE_SYSTEM, kernelLogger);
 
     enviar_codigo_operacion(conexionMemoria, AUX_SOY_KERNEL); // Le dice a memoria que módulo se conectó
@@ -176,7 +177,8 @@ void proximo_a_ejecutar(void * socket) {
 
 void *manejo_desalojo_pcb(void* socket) {
 
-	int clienteKernel = (int) (intptr_t)socket;
+	// int clienteKernel = (int) (intptr_t)socket;
+	int clienteKernel = conexionCPU;
 
 	for(;;){
 		PCB* pcb_en_ejecucion = list_get(lista_estados[ENUM_EXECUTING], 0);
@@ -193,7 +195,7 @@ void *manejo_desalojo_pcb(void* socket) {
 	return NULL;
 }
 
-void recibir_proceso_desajolado(PCB* pcb_en_ejecucion, int* socket_cpu) {
+void recibir_proceso_desajolado(PCB* pcb_en_ejecucion, int socket_cpu) {
 
 	PCB* pcb_recibido;
 
@@ -210,7 +212,7 @@ void recibir_proceso_desajolado(PCB* pcb_en_ejecucion, int* socket_cpu) {
 	return;
 }
 
-PCB* recibir_pcb_de_cpu(int* clienteAceptado) {
+PCB* recibir_pcb_de_cpu(int clienteAceptado) {
 	PCB* pcb = malloc(sizeof(PCB));
 
 	char* buffer;
@@ -262,6 +264,7 @@ PCB* recibir_pcb_de_cpu(int* clienteAceptado) {
 	pcb->processor_burst = leer_double(buffer, &desplazamiento);
 	pcb->ready_timestamp = leer_double(buffer, &desplazamiento);
 	log_info(kernelLogger, "---------------------------------------------Recibi el proceso de PID: %d", pcb->id_proceso);
+	mostrar_pcb(pcb);
 	return pcb;
 }
 
