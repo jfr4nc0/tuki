@@ -520,10 +520,10 @@ int esperar_cliente(int socket_servidor, t_log* logger) {
 // TODO: en vez de int debería devolver el tipo de dato de codigo_operacion
 int recibir_operacion(int clienteAceptado) {
     codigo_operacion cod_op;
-    if(recv(clienteAceptado, &cod_op, sizeof(int), MSG_WAITALL) > 0) {
+    if(recv(clienteAceptado, &cod_op, sizeof(codigo_operacion), MSG_WAITALL) > 0) {
         return cod_op;
     }else {
-        close(clienteAceptado);
+    	close(clienteAceptado);
         return -1;
     }
 }

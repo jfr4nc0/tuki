@@ -175,7 +175,7 @@ void proximo_a_ejecutar(void * socket) {
 }
 
 void *manejo_desalojo_pcb(void* socket) {
-//	int clienteKernel = (int) (intptr_t)socket;
+
 	int clienteKernel = (int) (intptr_t)socket;
 
 	for(;;){
@@ -187,20 +187,30 @@ void *manejo_desalojo_pcb(void* socket) {
 		set_timespec(&inicio_ejecucion_proceso);
 		envio_pcb_a_cpu(conexionCPU, pcb_en_ejecucion, OP_EXECUTE_PCB);
 		recibir_proceso_desajolado(pcb_en_ejecucion, clienteKernel);
-
 		set_timespec(&fin_ejecucion_proceso);
 
 	}
 	return NULL;
 }
 
-void recibir_proceso_desajolado(PCB* pcb_recibido, int socket_cpu) {
-	 pcb_recibido = recibir_pcb_de_cpu(socket_cpu);
+void recibir_proceso_desajolado(PCB* pcb_en_ejecucion, int* socket_cpu) {
 
-	 return;
+	PCB* pcb_recibido;
+
+	pcb_recibido = recibir_pcb_de_cpu(socket_cpu);
+
+	int id_proceso_en_ejecucion = pcb_en_ejecucion->id_proceso;
+	int id_pcb_recibido = pcb_recibido->id_proceso;
+
+	if(id_proceso_en_ejecucion != id_pcb_recibido) {
+	    log_error(kernelLogger, "El PID: %d del proceso desalojado no coincide con el proceso en ejecución con PID: %d", id_proceso_en_ejecucion, id_pcb_recibido);
+	    exit(EXIT_FAILURE);
+	}
+
+	return;
 }
 
-PCB* recibir_pcb_de_cpu(int clienteAceptado) {
+PCB* recibir_pcb_de_cpu(int* clienteAceptado) {
 	PCB* pcb = malloc(sizeof(PCB));
 
 	char* buffer;
@@ -208,10 +218,12 @@ PCB* recibir_pcb_de_cpu(int clienteAceptado) {
 	int desplazamiento = 0;
 
 	codigo_operacion codigoOperacion = recibir_operacion(clienteAceptado);
-
+	log_info(kernelLogger, "CODIGO DE OPERACION RECIBIDO: %d", codigoOperacion);
 	buffer = recibir_buffer(&tamanio, clienteAceptado);
 
 	pcb->id_proceso = leer_int(buffer, &desplazamiento);
+
+
 
 	pcb->estado = leer_int(buffer, &desplazamiento);
 

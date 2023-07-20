@@ -352,7 +352,6 @@ void enviar_pcb_desalojado_a_kernel(PCB* pcb, int socket){
 void envio_pcb_a_kernel_con_codigo(int conexion, PCB* pcb, codigo_operacion codigo) {
 	t_paquete* paquete = crear_paquete(codigo);
 	agregar_pcb_a_paquete(paquete, pcb);
-
 	enviar_paquete(paquete, conexion);
 	eliminar_paquete(paquete);
 }

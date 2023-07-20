@@ -82,7 +82,7 @@ PCB* elegir_pcb_segun_fifo();
 PCB* elegir_pcb_segun_hrrn();
 void *manejo_desalojo_pcb(void *);
 void recibir_proceso_desalojado(PCB*, int );
-PCB* recibir_pcb_de_cpu(int);
+PCB* recibir_pcb_de_cpu(int*);
 
 void crear_hilo_planificador(void*);
 void proximo_a_ejecutar();
