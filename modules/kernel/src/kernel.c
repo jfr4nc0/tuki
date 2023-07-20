@@ -580,6 +580,7 @@ void agregar_pcb_a_paquete_para_cpu(t_paquete* paquete, PCB* pcb) {
 	agregar_int_a_paquete(paquete, pcb->estado);
 	agregar_lista_a_paquete(paquete, pcb->lista_instrucciones);
 	agregar_int_a_paquete(paquete, pcb->contador_instrucciones);
+
 	agregar_lista_a_paquete(paquete, pcb->lista_segmentos);
 	agregar_lista_a_paquete(paquete, pcb->lista_archivos_abiertos);
 	agregar_registros_a_paquete(paquete, pcb->registrosCpu);
@@ -631,19 +632,36 @@ void agregar_valor_a_paquete(t_paquete* paquete, void* valor, int tamanio) {
 
 void agregar_registros_a_paquete(t_paquete* paquete, registros_cpu* registrosCpu) {
 
-	agregar_valor_a_paquete(paquete, registrosCpu->AX, 4);
-	agregar_valor_a_paquete(paquete, registrosCpu->BX, 4);
-	agregar_valor_a_paquete(paquete, registrosCpu->CX, 4);
-	agregar_valor_a_paquete(paquete, registrosCpu->DX, 4);
-	agregar_valor_a_paquete(paquete, registrosCpu->EAX, 8);
-	agregar_valor_a_paquete(paquete, registrosCpu->EBX, 8);
-	agregar_valor_a_paquete(paquete, registrosCpu->ECX, 8);
-	agregar_valor_a_paquete(paquete, registrosCpu->EDX, 8);
-	agregar_valor_a_paquete(paquete, registrosCpu->RAX, 16);
-	agregar_valor_a_paquete(paquete, registrosCpu->RBX, 16);
-	agregar_valor_a_paquete(paquete, registrosCpu->RCX, 16);
-	agregar_valor_a_paquete(paquete, registrosCpu->RDX, 16);
+	agregar_registro4bytes_a_paquete(paquete, registrosCpu->AX);
+	//log_error(kernelLogger, "REGISTRO AX: %d", registrosCpu->AX);
+	agregar_registro4bytes_a_paquete(paquete, registrosCpu->BX);
+	agregar_registro4bytes_a_paquete(paquete, registrosCpu->CX);
+	agregar_registro4bytes_a_paquete(paquete, registrosCpu->DX);
+	agregar_registro8bytes_a_paquete(paquete, registrosCpu->EAX);
+	agregar_registro8bytes_a_paquete(paquete, registrosCpu->EBX);
+	agregar_registro8bytes_a_paquete(paquete, registrosCpu->ECX);
+	agregar_registro8bytes_a_paquete(paquete, registrosCpu->EDX);
+	agregar_registro16bytes_a_paquete(paquete, registrosCpu->RAX);
+	agregar_registro16bytes_a_paquete(paquete, registrosCpu->RBX);
+	agregar_registro16bytes_a_paquete(paquete, registrosCpu->RCX);
+	agregar_registro16bytes_a_paquete(paquete, registrosCpu->RDX);
 }
+void agregar_registro4bytes_a_paquete(t_paquete* paquete, char* valor) {
+    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(4));
+    memcpy(paquete->buffer->stream + paquete->buffer->size, &valor, sizeof(4));
+    paquete->buffer->size += sizeof(4);
+}
+void agregar_registro8bytes_a_paquete(t_paquete* paquete, char* valor) {
+    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(8));
+    memcpy(paquete->buffer->stream + paquete->buffer->size, &valor, sizeof(8));
+    paquete->buffer->size += sizeof(8);
+}
+void agregar_registro16bytes_a_paquete(t_paquete* paquete, char* valor) {
+    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(16));
+    memcpy(paquete->buffer->stream + paquete->buffer->size, &valor, sizeof(16));
+    paquete->buffer->size += sizeof(16);
+}
+
 
 void agregar_long_a_paquete(t_paquete* paquete, long valor) {
     paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(long));

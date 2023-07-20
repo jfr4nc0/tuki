@@ -110,6 +110,10 @@ void agregar_int_a_paquete(t_paquete* , int );
 void agregar_arreglo_a_paquete(t_paquete* , char** );
 void agregar_valor_a_paquete(t_paquete* , void* , int );
 void agregar_registros_a_paquete(t_paquete* , registros_cpu* );
+void agregar_registro4bytes_a_paquete(t_paquete* , char* );
+void agregar_registro8bytes_a_paquete(t_paquete* , char* );
+void agregar_registro16bytes_a_paquete(t_paquete* , char* );
+
 void envio_pcb(int , PCB* , codigo_operacion );
 
 // PRUEBAS

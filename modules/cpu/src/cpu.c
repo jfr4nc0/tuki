@@ -75,7 +75,18 @@ void procesar_instruccion(void * clienteAceptado) {
 	}
 
 	PCB* pcb = recibir_pcb(clienteKernel);
-
+	log_trace(loggerCpu, "Registro AX: %s", pcb->registrosCpu->AX);
+		log_trace(loggerCpu, "Registro BX: %s", pcb->registrosCpu->BX);
+		log_trace(loggerCpu, "Registro CX: %s", pcb->registrosCpu->CX);
+		log_trace(loggerCpu, "Registro DX: %s", pcb->registrosCpu->DX);
+		log_trace(loggerCpu, "Registro EAX: %s", pcb->registrosCpu->EAX);
+		log_trace(loggerCpu, "Registro EBX: %s", pcb->registrosCpu->EBX);
+		log_trace(loggerCpu, "Registro ECX: %s", pcb->registrosCpu->ECX);
+		log_trace(loggerCpu, "Registro EDX: %s", pcb->registrosCpu->EDX);
+		log_trace(loggerCpu, "Registro RAX: %s", pcb->registrosCpu->RAX);
+		log_trace(loggerCpu, "Registro RBX: %s", pcb->registrosCpu->RBX);
+		log_trace(loggerCpu, "Registro RCX: %s", pcb->registrosCpu->RCX);
+		log_trace(loggerCpu, "Registro RDX: %s", pcb->registrosCpu->RDX);
 	ejecutar_proceso(pcb, clienteKernel);
 	free(pcb);
 
@@ -179,10 +190,10 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
 		hubo_interrupcion = false;
 	}
 
-	mostrar_pcb(pcb);
+	//mostrar_pcb(pcb);
+
 	enviar_pcb_desalojado_a_kernel(pcb, clienteKernel);
 }
-
 
 void mostrar_pcb(PCB* pcb){
 	log_trace(loggerCpu, "PID: %d", pcb->id_proceso);
