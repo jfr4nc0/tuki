@@ -80,11 +80,11 @@ double rafaga_estimada(PCB*);
 void *__ejecucion_desalojo_pcb(void *);
 PCB* elegir_pcb_segun_fifo();
 PCB* elegir_pcb_segun_hrrn();
-void *manejo_desalojo_pcb(void *);
+void *manejo_desalojo_pcb();
 void recibir_proceso_desalojado(PCB*, int );
 PCB* recibir_pcb_de_cpu(int);
 
-void crear_hilo_planificador(void*);
+void crear_hilo_planificador();
 void proximo_a_ejecutar();
 char* pids_on_list(pcb_estado estado);
 

@@ -24,6 +24,7 @@ cpu_config_t* configCpu;
 
 extern registros_cpu* registrosCpu;
 
+void mostrar_pcb(PCB* );
 
 void cargar_config(t_config*);
 char** decode_instruccion(char*);

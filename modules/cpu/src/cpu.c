@@ -178,9 +178,42 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
 	if (hubo_interrupcion) {
 		hubo_interrupcion = false;
 	}
-
+	log_error(loggerCpu, "REGISTRO AX: %s", pcb->registrosCpu->AX);
+	mostrar_pcb(pcb);
 	enviar_pcb_desalojado_a_kernel(pcb, clienteKernel);
 }
+
+
+void mostrar_pcb(PCB* pcb){
+	log_trace(loggerCpu, "PID: %d", pcb->id_proceso);
+	char* estado = nombres_estados[pcb->estado];
+	log_trace(loggerCpu, "ESTADO: %s", estado);
+	log_trace(loggerCpu, "INSTRUCCIONES A EJECUTAR: ");
+	list_iterate(pcb->lista_instrucciones, (void*) iterator);
+	log_trace(loggerCpu, "PROGRAM COUNTER: %d", pcb->contador_instrucciones);
+	log_trace(loggerCpu, "Registro AX: %s", pcb->registrosCpu->AX);
+	log_trace(loggerCpu, "Registro BX: %s", pcb->registrosCpu->BX);
+	log_trace(loggerCpu, "Registro CX: %s", pcb->registrosCpu->CX);
+	log_trace(loggerCpu, "Registro DX: %s", pcb->registrosCpu->DX);
+	log_trace(loggerCpu, "Registro EAX: %s", pcb->registrosCpu->EAX);
+	log_trace(loggerCpu, "Registro EBX: %s", pcb->registrosCpu->EBX);
+	log_trace(loggerCpu, "Registro ECX: %s", pcb->registrosCpu->ECX);
+	log_trace(loggerCpu, "Registro EDX: %s", pcb->registrosCpu->EDX);
+	log_trace(loggerCpu, "Registro RAX: %s", pcb->registrosCpu->RAX);
+	log_trace(loggerCpu, "Registro RBX: %s", pcb->registrosCpu->RBX);
+	log_trace(loggerCpu, "Registro RCX: %s", pcb->registrosCpu->RCX);
+	log_trace(loggerCpu, "Registro RDX: %s", pcb->registrosCpu->RDX);
+	log_trace(loggerCpu, "LISTA SEGMENTOS: ");
+	list_iterate(pcb->lista_segmentos, (void*) iterator);
+	log_trace(loggerCpu, "LISTA ARCHIVOS ABIERTOS: ");
+	list_iterate(pcb->lista_archivos_abiertos, (void*) iterator);
+	log_trace(loggerCpu, "ESTIMACION HHRN: %f", pcb->processor_burst);
+	log_trace(loggerCpu, "TIMESTAMP EN EL QUE EL PROCESO LLEGO A READY POR ULTIMA VEZ: %f", pcb->ready_timestamp);
+}
+void iterator(char* value) {
+    log_info(loggerCpu, "%s ", value);
+}
+
 
 void cargar_registros(PCB* pcb) {
 	registrosCpu->AX = pcb->registrosCpu->AX;
@@ -206,18 +239,19 @@ char** decode_instruccion(char* linea_a_parsear) {
 }
 
 void guardar_contexto_de_ejecucion(PCB* pcb) {
-	registrosCpu->AX = pcb->registrosCpu->AX;
-	registrosCpu->BX = pcb->registrosCpu->BX;
-	registrosCpu->CX = pcb->registrosCpu->CX;
-	registrosCpu->DX = pcb->registrosCpu->DX;
-	registrosCpu->EAX = pcb->registrosCpu->EAX;
-	registrosCpu->EBX = pcb->registrosCpu->EBX;
-	registrosCpu->ECX = pcb->registrosCpu->ECX;
-	registrosCpu->EDX = pcb->registrosCpu->EDX;
-	registrosCpu->RAX = pcb->registrosCpu->RAX;
-	registrosCpu->RBX = pcb->registrosCpu->RBX;
-	registrosCpu->RCX = pcb->registrosCpu->RCX;
-	registrosCpu->RDX = pcb->registrosCpu->RDX;
+	pcb->registrosCpu->AX = registrosCpu->AX;
+	pcb->registrosCpu->BX = registrosCpu->BX;
+	pcb->registrosCpu->CX = registrosCpu->CX;
+	pcb->registrosCpu->DX = registrosCpu->DX;
+	pcb->registrosCpu->EAX = registrosCpu->EAX;
+	pcb->registrosCpu->EBX = registrosCpu->EBX;
+	pcb->registrosCpu->ECX = registrosCpu->ECX;
+	pcb->registrosCpu->EDX = registrosCpu->EDX;
+	pcb->registrosCpu->RAX = registrosCpu->RAX;
+	pcb->registrosCpu->RBX = registrosCpu->RBX;
+	pcb->registrosCpu->RCX = registrosCpu->RCX;
+	pcb->registrosCpu->RDX = registrosCpu->RDX;
+
 }
 
 void ejecutar_instruccion(char** instruccion, PCB* pcb, int clienteKernel) {
@@ -238,6 +272,7 @@ void ejecutar_instruccion(char** instruccion, PCB* pcb, int clienteKernel) {
 			int retardo = configCpu->RETARDO_INSTRUCCION;
 			intervalo_de_pausa(retardo);
 			instruccion_set(instruccion[1],instruccion[2]);
+			//log_info(loggerCpu, "REGISTRO AX: %s", registrosCpu->AX);
 			break;
 		case I_MOV_IN:
 			// MOV_IN (Registro, Dirección Lógica)

@@ -126,7 +126,7 @@ void recibir_de_consola(void *clienteAceptado) {
 
 	nuevo_proceso(listaInstrucciones, conexionConConsola);
 
-	crear_hilo_planificador(clienteAceptado);
+	crear_hilo_planificador();
 
     list_destroy(listaInstrucciones);
 
@@ -135,20 +135,20 @@ void recibir_de_consola(void *clienteAceptado) {
     return;
 }
 
-void crear_hilo_planificador(void* socket) {
+void crear_hilo_planificador() {
     log_info(kernelLogger, "Inicialización del planificador %s...", kernelConfig->ALGORITMO_PLANIFICACION);
-    pthread_create(&planificador_corto_plazo, NULL, (void*) proximo_a_ejecutar, socket);
+    pthread_create(&planificador_corto_plazo, NULL, (void*) proximo_a_ejecutar, NULL);
     pthread_detach(planificador_corto_plazo);
 
     // Acá va el manejo de memoria y CPU con hilos.
 
 }
 
-void proximo_a_ejecutar(void * socket) {
+void proximo_a_ejecutar() {
 
 	// Desalojo de PCBs
 	pthread_t manejo_desalojo;
-	pthread_create(&manejo_desalojo, NULL, manejo_desalojo_pcb, socket); //TODO
+	pthread_create(&manejo_desalojo, NULL, manejo_desalojo_pcb, NULL); //TODO
 	pthread_detach(manejo_desalojo);
 
 	//Dispatcher
@@ -175,10 +175,9 @@ void proximo_a_ejecutar(void * socket) {
 	}
 }
 
-void *manejo_desalojo_pcb(void* socket) {
+void *manejo_desalojo_pcb() {
 
 	// int clienteKernel = (int) (intptr_t)socket;
-	int clienteKernel = conexionCPU;
 
 	for(;;){
 		PCB* pcb_en_ejecucion = list_get(lista_estados[ENUM_EXECUTING], 0);
@@ -187,9 +186,12 @@ void *manejo_desalojo_pcb(void* socket) {
 		timestamp fin_ejecucion_proceso;
 
 		set_timespec(&inicio_ejecucion_proceso);
+
 		envio_pcb_a_cpu(conexionCPU, pcb_en_ejecucion, OP_EXECUTE_PCB);
-		recibir_proceso_desajolado(pcb_en_ejecucion, clienteKernel);
+		recibir_proceso_desajolado(pcb_en_ejecucion, conexionCPU);
 		set_timespec(&fin_ejecucion_proceso);
+
+
 
 	}
 	return NULL;
