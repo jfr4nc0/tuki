@@ -50,7 +50,7 @@ typedef struct {
 extern t_log* loggerFileSystem;
 extern t_config_file_system* configFileSystem;
 extern t_bitmap* bitmap;
-extern t_dictionary* listaFcbs;
+extern t_dictionary* dictionaryFcbs;
 extern uint32_t SIZE_BLOQUE;
 
 #define ERROR_ABRIR_ARCHIVO      "No se pudo abrir el archivo: %s"

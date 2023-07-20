@@ -2,7 +2,7 @@
 
 
 bool existe_archivo(char *nombreArchivo) {
-    bool existeArchivo = dictionary_has_key(listaFcbs, nombreArchivo);
+    bool existeArchivo = dictionary_has_key(dictionaryFcbs, nombreArchivo);
 
     if (existeArchivo) {
         log_debug(loggerFileSystem, "Archivo %s existe y se encuentra en el fcb", nombreArchivo);
@@ -32,7 +32,7 @@ bool crear_archivo(char *nombreArchivo) {
         return false;
     }
 
-    dictionary_put(listaFcbs, nombreArchivo, (void*)nuevoFcb);
+    dictionary_put(dictionaryFcbs, nombreArchivo, (void*)nuevoFcb);
     log_info(loggerFileSystem, "Archivo nuevo creado: %s", nombreArchivo);
     return nuevoFcb;
 }
@@ -50,7 +50,7 @@ t_fcb *crear_fcb_inicial(char *nombreArchivo) {
 void truncar_archivo(char *nombreArchivo, uint32_t tamanioNuevo) {
     log_info(loggerFileSystem, "Pedido para truncar Archivo: <%s> - Tamaño: <%u>", nombreArchivo, tamanioNuevo);
 
-    t_fcb* fcbArchivo = dictionary_get(listaFcbs, nombreArchivo);
+    t_fcb* fcbArchivo = dictionary_get(dictionaryFcbs, nombreArchivo);
 
     if (fcbArchivo == NULL) {
         log_error(loggerFileSystem, "No se encontró el fcb en la lista de fcbs.");

@@ -4,7 +4,7 @@
 t_superbloque* superbloque;
 t_config_file_system* configFileSystem;
 t_bitmap* bitmap;
-t_dictionary* listaFcbs;
+t_dictionary* dictionaryFcbs;
 uint32_t SIZE_BLOQUE;
 
 /*
@@ -133,15 +133,16 @@ void abrir_fcbs(char* path_fcbs) {
 		return;
 	}
 
+	dictionaryFcbs = dictionary_create();
 	while ((ent = readdir(dir)) != NULL) {
 		if (ent->d_type == DT_REG) {
             // Ruta completa del archivo es el nombre del archivo + el path hacia la ruta de los fcb
 			snprintf(rutaFcb, sizeof(rutaFcb), "%s/%s", path_fcbs, ent->d_name);
 			fcb_temp = cargar_fcb(rutaFcb);
 			nombreTemp = fcb_temp->nombre_archivo;
-			dictionary_put(listaFcbs, nombreTemp, (void*)fcb_temp);
+			dictionary_put(dictionaryFcbs, nombreTemp, (void*)fcb_temp);
 		} else {
-			log_warning(loggerFileSystem, "La variable (%d) no es %d", ent->d_type, DT_REG);
+			log_warning(loggerFileSystem, "FCB: EL ent->d_type (%d) no es %d", ent->d_type, DT_REG);
 		}
 	}
 	closedir(dir);
