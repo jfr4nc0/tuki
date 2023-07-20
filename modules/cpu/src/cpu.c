@@ -178,7 +178,7 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
 	if (hubo_interrupcion) {
 		hubo_interrupcion = false;
 	}
-	log_error(loggerCpu, "REGISTRO AX: %s", pcb->registrosCpu->AX);
+
 	mostrar_pcb(pcb);
 	enviar_pcb_desalojado_a_kernel(pcb, clienteKernel);
 }

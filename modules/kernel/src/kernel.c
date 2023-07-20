@@ -582,7 +582,7 @@ void agregar_pcb_a_paquete_para_cpu(t_paquete* paquete, PCB* pcb) {
 	agregar_int_a_paquete(paquete, pcb->contador_instrucciones);
 	agregar_lista_a_paquete(paquete, pcb->lista_segmentos);
 	agregar_lista_a_paquete(paquete, pcb->lista_archivos_abiertos);
-	agregar_registros_a_paquete_cpu(paquete, pcb->registrosCpu);
+	agregar_registros_a_paquete(paquete, pcb->registrosCpu);
 	agregar_valor_a_paquete(paquete, &pcb->processor_burst, sizeof(double));
 	agregar_valor_a_paquete(paquete, &pcb->ready_timestamp, sizeof(double));
 }
