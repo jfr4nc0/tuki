@@ -6,7 +6,7 @@ cpu_config_t* configCpu;
 int conexionCpuKernel;
 registros_cpu* registrosCpu;
 
-bool terminar_ejecucion = false;
+bool hubo_interrupcion = false;
 codigo_operacion ultimaOperacion;
 
 int main(int argc, char** argv) {
@@ -153,7 +153,7 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
 
 	// while(f_eop!=1 && f_interruption!=1 && f_io!=1 && f_pagefault!=1 && f_segfault!=1) {
 
-    while ((posicion_actual < cantidad_instrucciones) && !terminar_ejecucion) {
+    while ((posicion_actual < cantidad_instrucciones) && !hubo_interrupcion) {
 	    instruccion = string_duplicate((char *)list_get(pcb->lista_instrucciones, pcb->contador_instrucciones));
 		instruccion_decodificada = decode_instruccion(instruccion);
 
@@ -175,11 +175,11 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
     free(instruccion_decodificada);
 
 	// Si hubo interrupcion de algun tipo se lo comunico a kernel pero sacamos
-	if (terminar_ejecucion) {
-		terminar_ejecucion = false;
+	if (hubo_interrupcion) {
+		hubo_interrupcion = false;
 	}
 
-	devolver_pcb_kernel(pcb, clienteKernel, ultimaOperacion);
+	enviar_pcb_desalojado_a_kernel(pcb, clienteKernel);
 }
 
 void cargar_registros(PCB* pcb) {
@@ -292,13 +292,13 @@ void ejecutar_instruccion(char** instruccion, PCB* pcb, int clienteKernel) {
 			instruccion_delete_segment(instruccion[1]);
 			break;
 		case I_YIELD:
-			enviar_pcb_desalojado_a_kernel(pcb, clienteKernel);
-			log_info(loggerCpu, "-------------------------------------------------");
-			terminar_ejecucion = true;
+			//enviar_pcb_desalojado_a_kernel(pcb, clienteKernel);
+
+			hubo_interrupcion = true;
 			break;
 		case I_EXIT:
 			instruccion_exit();
-			terminar_ejecucion = true;
+			hubo_interrupcion = true;
 
 			break;
 	}
@@ -345,12 +345,14 @@ void instruccion_set(char* registro,char* valor) {
 }
 
 void enviar_pcb_desalojado_a_kernel(PCB* pcb, int socket){
+
 	envio_pcb_a_kernel_con_codigo(socket, pcb, DESALOJO_YIELD);
 }
 
 void envio_pcb_a_kernel_con_codigo(int conexion, PCB* pcb, codigo_operacion codigo) {
 	t_paquete* paquete = crear_paquete(codigo);
 	agregar_pcb_a_paquete(paquete, pcb);
+
 	enviar_paquete(paquete, conexion);
 	eliminar_paquete(paquete);
 }
@@ -359,7 +361,9 @@ void envio_pcb_a_kernel_con_codigo(int conexion, PCB* pcb, codigo_operacion codi
 void agregar_pcb_a_paquete(t_paquete* paquete, PCB* pcb) {
 	agregar_int_a_paquete(paquete, pcb->id_proceso);
 	agregar_int_a_paquete(paquete, pcb->estado);
+
 	agregar_lista_a_paquete(paquete, pcb->lista_instrucciones);
+
 	agregar_int_a_paquete(paquete, pcb->contador_instrucciones);
 	agregar_lista_a_paquete(paquete, pcb->lista_segmentos);
 	agregar_lista_a_paquete(paquete, pcb->lista_archivos_abiertos);
@@ -380,7 +384,7 @@ void agregar_lista_a_paquete(t_paquete* paquete, t_list* lista) {
 		void* elemento = list_get(lista, i);
 		char* palabra = (char*)elemento;
 		strtok(palabra, "$"); // Removemos el salto de linea
-		log_debug(kernelLogger, "Agregando instruccion: %s, tamanio %zu", palabra, strlen(palabra));
+		log_debug(loggerCpu, "Agregando instruccion: %s, tamanio %zu", palabra, strlen(palabra));
 		agregar_a_paquete(paquete, palabra, strlen(palabra));
 	}
 

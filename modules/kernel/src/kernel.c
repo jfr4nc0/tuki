@@ -184,14 +184,74 @@ void *manejo_desalojo_pcb(void *socket){
 
 		set_timespec(&inicio_ejecucion_proceso);
 		envio_pcb_a_cpu(conexionCPU, pcb_en_ejecucion, OP_EXECUTE_PCB);
-		recibir_proceso_desajolado(socket); //ME QUEDE ACA
+		recibir_proceso_desajolado(pcb_en_ejecucion, socket);
+
 		set_timespec(&fin_ejecucion_proceso);
 
 	}
 	return NULL;
 }
 
-void recibir_proceso_desalojado(int socket){
+void recibir_proceso_desajolado(PCB* pcb_recibido, int socket_cpu){
+	 pcb_recibido = recibir_pcb_de_cpu(socket_cpu);
+
+	 return;
+}
+
+PCB* recibir_pcb_de_cpu(int clienteAceptado) {
+	PCB* pcb = malloc(sizeof(PCB));
+
+	char* buffer;
+	int tamanio = 0;
+	int desplazamiento = 0;
+
+	buffer = recibir_buffer(&tamanio, clienteAceptado);
+
+	pcb->id_proceso = leer_int(buffer, &desplazamiento);
+
+	pcb->estado = leer_int(buffer, &desplazamiento);
+
+	pcb->lista_instrucciones = leer_string_array(buffer, &desplazamiento); // NO esta funcionando bien
+
+	pcb->contador_instrucciones = leer_int(buffer, &desplazamiento);
+
+	pcb->lista_segmentos = leer_string_array(buffer, &desplazamiento); //TODO: Modificar cuando se mergee memoria
+
+	pcb->lista_archivos_abiertos = list_create();
+	int cantidad_de_archivos = leer_int(buffer, &desplazamiento);
+	for (int i = 0; i < cantidad_de_archivos; i++) {
+			archivo_abierto_t* archivo_abierto = malloc(sizeof(archivo_abierto_t));
+
+		    archivo_abierto->id = leer_int(buffer, &desplazamiento);
+		    archivo_abierto->posicion_puntero = leer_int(buffer, &desplazamiento);
+
+		    list_add(pcb->lista_archivos_abiertos, archivo_abierto);
+		    free(archivo_abierto);
+	}
+
+	pcb->registrosCpu = malloc(sizeof(registros_cpu));
+	pcb->registrosCpu->AX = leer_registro_4_bytes(buffer, &desplazamiento);
+	pcb->registrosCpu->BX = leer_registro_4_bytes(buffer, &desplazamiento);
+	pcb->registrosCpu->CX = leer_registro_4_bytes(buffer, &desplazamiento);
+	pcb->registrosCpu->DX = leer_registro_4_bytes(buffer, &desplazamiento);
+	pcb->registrosCpu->EAX = leer_registro_8_bytes(buffer, &desplazamiento);
+	pcb->registrosCpu->EBX = leer_registro_8_bytes(buffer, &desplazamiento);
+	pcb->registrosCpu->ECX = leer_registro_8_bytes(buffer, &desplazamiento);
+	pcb->registrosCpu->EDX = leer_registro_8_bytes(buffer, &desplazamiento);
+	pcb->registrosCpu->RAX = leer_registro_16_bytes(buffer, &desplazamiento);
+	pcb->registrosCpu->RBX = leer_registro_16_bytes(buffer, &desplazamiento);
+	pcb->registrosCpu->RCX = leer_registro_16_bytes(buffer, &desplazamiento);
+	pcb->registrosCpu->RDX = leer_registro_16_bytes(buffer, &desplazamiento);
+
+	pcb->processor_burst = leer_double(buffer, &desplazamiento);
+	pcb->ready_timestamp = leer_double(buffer, &desplazamiento);
+	log_info(kernelLogger, "---------------------------------------------Recibi el proceso de PID: %d", pcb->id_proceso);
+	return pcb;
+}
+
+
+/*
+PCB* recibir_proceso_desalojado(int socket){
 	PCB* pcb = malloc(sizeof(PCB));
 
 	char* buffer;
@@ -241,7 +301,7 @@ void recibir_proceso_desalojado(int socket){
 
 	return pcb;
 }
-
+*/
 void set_timespec(timestamp *timespec)
 {
     int retVal = clock_gettime(CLOCK_REALTIME, timespec);
