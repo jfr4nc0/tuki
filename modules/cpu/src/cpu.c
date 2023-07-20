@@ -376,6 +376,7 @@ void agregar_int_a_paquete(t_paquete* paquete, int valor) {
     memcpy(paquete->buffer->stream + paquete->buffer->size, &valor, sizeof(int));
     paquete->buffer->size += sizeof(int);
 }
+
 void agregar_lista_a_paquete(t_paquete* paquete, t_list* lista) {
 	int tamanio = list_size(lista);
 	agregar_int_a_paquete(paquete, tamanio);

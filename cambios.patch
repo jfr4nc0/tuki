@@ -1,0 +1,96 @@
+diff --git a/modules/cpu/src/cpu.c b/modules/cpu/src/cpu.c
+index 2094abc..2167803 100644
+--- a/modules/cpu/src/cpu.c
++++ b/modules/cpu/src/cpu.c
+@@ -359,6 +359,7 @@ void envio_pcb_a_kernel_con_codigo(int conexion, PCB* pcb, codigo_operacion codi
+ 
+ // Repetidas
+ void agregar_pcb_a_paquete(t_paquete* paquete, PCB* pcb) {
++	log_info(loggerCpu, "Proceso id %d", pcb->id_proceso);
+ 	agregar_int_a_paquete(paquete, pcb->id_proceso);
+ 	agregar_int_a_paquete(paquete, pcb->estado);
+ 
+@@ -376,6 +377,7 @@ void agregar_int_a_paquete(t_paquete* paquete, int valor) {
+     memcpy(paquete->buffer->stream + paquete->buffer->size, &valor, sizeof(int));
+     paquete->buffer->size += sizeof(int);
+ }
++
+ void agregar_lista_a_paquete(t_paquete* paquete, t_list* lista) {
+ 	int tamanio = list_size(lista);
+ 	agregar_int_a_paquete(paquete, tamanio);
+diff --git a/modules/kernel/src/kernel.c b/modules/kernel/src/kernel.c
+index 70a73d7..3a1cc26 100644
+--- a/modules/kernel/src/kernel.c
++++ b/modules/kernel/src/kernel.c
+@@ -134,9 +134,9 @@ void recibir_de_consola(void *clienteAceptado) {
+     return;
+ }
+ 
+-void crear_hilo_planificador(int socket) {
++void crear_hilo_planificador(void* socket) {
+     log_info(kernelLogger, "Inicialización del planificador %s...", kernelConfig->ALGORITMO_PLANIFICACION);
+-    pthread_create(&planificador_corto_plazo, NULL, (void*) proximo_a_ejecutar, &socket);
++    pthread_create(&planificador_corto_plazo, NULL, (void*) proximo_a_ejecutar, socket);
+     pthread_detach(planificador_corto_plazo);
+ 
+     // Acá va el manejo de memoria y CPU con hilos.
+@@ -147,7 +147,7 @@ void proximo_a_ejecutar(void * socket) {
+ 
+ 	// Desalojo de PCBs
+ 	pthread_t manejo_desalojo;
+-	pthread_create(&manejo_desalojo, NULL, manejo_desalojo_pcb, &socket); //TODO
++	pthread_create(&manejo_desalojo, NULL, manejo_desalojo_pcb, socket); //TODO
+ 	pthread_detach(manejo_desalojo);
+ 
+ 	//Dispatcher
+@@ -174,7 +174,9 @@ void proximo_a_ejecutar(void * socket) {
+ 	}
+ }
+ 
+-void *manejo_desalojo_pcb(void *socket){
++void *manejo_desalojo_pcb(void* socket) {
++//	int clienteKernel = (int) (intptr_t)socket;
++	int clienteKernel = (int) (intptr_t)socket;
+ 
+ 	for(;;){
+ 		PCB* pcb_en_ejecucion = list_get(lista_estados[ENUM_EXECUTING], 0);
+@@ -184,7 +186,7 @@ void *manejo_desalojo_pcb(void *socket){
+ 
+ 		set_timespec(&inicio_ejecucion_proceso);
+ 		envio_pcb_a_cpu(conexionCPU, pcb_en_ejecucion, OP_EXECUTE_PCB);
+-		recibir_proceso_desajolado(pcb_en_ejecucion, socket);
++		recibir_proceso_desajolado(pcb_en_ejecucion, clienteKernel);
+ 
+ 		set_timespec(&fin_ejecucion_proceso);
+ 
+@@ -192,7 +194,7 @@ void *manejo_desalojo_pcb(void *socket){
+ 	return NULL;
+ }
+ 
+-void recibir_proceso_desajolado(PCB* pcb_recibido, int socket_cpu){
++void recibir_proceso_desajolado(PCB* pcb_recibido, int socket_cpu) {
+ 	 pcb_recibido = recibir_pcb_de_cpu(socket_cpu);
+ 
+ 	 return;
+@@ -205,6 +207,8 @@ PCB* recibir_pcb_de_cpu(int clienteAceptado) {
+ 	int tamanio = 0;
+ 	int desplazamiento = 0;
+ 
++	codigo_operacion codigoOperacion = recibir_operacion(clienteAceptado);
++
+ 	buffer = recibir_buffer(&tamanio, clienteAceptado);
+ 
+ 	pcb->id_proceso = leer_int(buffer, &desplazamiento);
+diff --git a/modules/kernel/src/kernel.h b/modules/kernel/src/kernel.h
+index 7b57742..c05bd29 100644
+--- a/modules/kernel/src/kernel.h
++++ b/modules/kernel/src/kernel.h
+@@ -84,7 +84,7 @@ void *manejo_desalojo_pcb(void *);
+ void recibir_proceso_desalojado(PCB*, int );
+ PCB* recibir_pcb_de_cpu(int);
+ 
+-void crear_hilo_planificador(int);
++void crear_hilo_planificador(void*);
+ void proximo_a_ejecutar();
+ char* pids_on_list(pcb_estado estado);
+ 

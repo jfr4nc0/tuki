@@ -134,9 +134,9 @@ void recibir_de_consola(void *clienteAceptado) {
     return;
 }
 
-void crear_hilo_planificador(int socket) {
+void crear_hilo_planificador(void* socket) {
     log_info(kernelLogger, "Inicialización del planificador %s...", kernelConfig->ALGORITMO_PLANIFICACION);
-    pthread_create(&planificador_corto_plazo, NULL, (void*) proximo_a_ejecutar, &socket);
+    pthread_create(&planificador_corto_plazo, NULL, (void*) proximo_a_ejecutar, socket);
     pthread_detach(planificador_corto_plazo);
 
     // Acá va el manejo de memoria y CPU con hilos.
@@ -147,7 +147,7 @@ void proximo_a_ejecutar(void * socket) {
 
 	// Desalojo de PCBs
 	pthread_t manejo_desalojo;
-	pthread_create(&manejo_desalojo, NULL, manejo_desalojo_pcb, &socket); //TODO
+	pthread_create(&manejo_desalojo, NULL, manejo_desalojo_pcb, socket); //TODO
 	pthread_detach(manejo_desalojo);
 
 	//Dispatcher
@@ -174,7 +174,9 @@ void proximo_a_ejecutar(void * socket) {
 	}
 }
 
-void *manejo_desalojo_pcb(void *socket){
+void *manejo_desalojo_pcb(void* socket) {
+//	int clienteKernel = (int) (intptr_t)socket;
+	int clienteKernel = (int) (intptr_t)socket;
 
 	for(;;){
 		PCB* pcb_en_ejecucion = list_get(lista_estados[ENUM_EXECUTING], 0);
@@ -184,7 +186,7 @@ void *manejo_desalojo_pcb(void *socket){
 
 		set_timespec(&inicio_ejecucion_proceso);
 		envio_pcb_a_cpu(conexionCPU, pcb_en_ejecucion, OP_EXECUTE_PCB);
-		recibir_proceso_desajolado(pcb_en_ejecucion, socket);
+		recibir_proceso_desajolado(pcb_en_ejecucion, clienteKernel);
 
 		set_timespec(&fin_ejecucion_proceso);
 
@@ -192,7 +194,7 @@ void *manejo_desalojo_pcb(void *socket){
 	return NULL;
 }
 
-void recibir_proceso_desajolado(PCB* pcb_recibido, int socket_cpu){
+void recibir_proceso_desajolado(PCB* pcb_recibido, int socket_cpu) {
 	 pcb_recibido = recibir_pcb_de_cpu(socket_cpu);
 
 	 return;
@@ -204,6 +206,8 @@ PCB* recibir_pcb_de_cpu(int clienteAceptado) {
 	char* buffer;
 	int tamanio = 0;
 	int desplazamiento = 0;
+
+	codigo_operacion codigoOperacion = recibir_operacion(clienteAceptado);
 
 	buffer = recibir_buffer(&tamanio, clienteAceptado);
 
