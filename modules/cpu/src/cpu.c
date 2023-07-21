@@ -51,18 +51,19 @@ void cargar_config(t_config* config) {
 
 void inicializar_registros() {
 	registrosCpu = malloc(sizeof(registros_cpu));
-	registrosCpu->AX = 0;
-	registrosCpu->BX = 0;
-	registrosCpu->CX = 0;
-	registrosCpu->DX = 0;
-	registrosCpu->EAX = 0;
-	registrosCpu->EBX = 0;
-	registrosCpu->ECX = 0;
-	registrosCpu->EDX = 0;
-	registrosCpu->RAX = 0;
-	registrosCpu->RBX = 0;
-	registrosCpu->RCX = 0;
-	registrosCpu->RDX = 0;
+	strcpy(registrosCpu->AX, "_AX");
+    strcpy(registrosCpu->BX, "_BX");
+    strcpy(registrosCpu->CX, "_CX");
+    strcpy(registrosCpu->DX, "_DX");
+    strcpy(registrosCpu->EAX, "R_EAX");
+    strcpy(registrosCpu->EBX, "R_EBX");
+    strcpy(registrosCpu->ECX, "R_EcX");
+    strcpy(registrosCpu->EDX, "R_EDX");
+    strcpy(registrosCpu->RAX, "R_RAX");
+    strcpy(registrosCpu->RBX, "R_RBX");
+    strcpy(registrosCpu->RCX, "R_RCX");
+    strcpy(registrosCpu->RDX, "R_RDX");
+
 }
 
 void procesar_instruccion(void * clienteAceptado) {
@@ -76,17 +77,17 @@ void procesar_instruccion(void * clienteAceptado) {
 
 	PCB* pcb = recibir_pcb(clienteKernel);
 	log_trace(loggerCpu, "Registro AX: %s", pcb->registrosCpu->AX);
-		log_trace(loggerCpu, "Registro BX: %s", pcb->registrosCpu->BX);
-		log_trace(loggerCpu, "Registro CX: %s", pcb->registrosCpu->CX);
-		log_trace(loggerCpu, "Registro DX: %s", pcb->registrosCpu->DX);
-		log_trace(loggerCpu, "Registro EAX: %s", pcb->registrosCpu->EAX);
-		log_trace(loggerCpu, "Registro EBX: %s", pcb->registrosCpu->EBX);
-		log_trace(loggerCpu, "Registro ECX: %s", pcb->registrosCpu->ECX);
-		log_trace(loggerCpu, "Registro EDX: %s", pcb->registrosCpu->EDX);
-		log_trace(loggerCpu, "Registro RAX: %s", pcb->registrosCpu->RAX);
-		log_trace(loggerCpu, "Registro RBX: %s", pcb->registrosCpu->RBX);
-		log_trace(loggerCpu, "Registro RCX: %s", pcb->registrosCpu->RCX);
-		log_trace(loggerCpu, "Registro RDX: %s", pcb->registrosCpu->RDX);
+	log_trace(loggerCpu, "Registro BX: %s", pcb->registrosCpu->BX);
+	log_trace(loggerCpu, "Registro CX: %s", pcb->registrosCpu->CX);
+	log_trace(loggerCpu, "Registro DX: %s", pcb->registrosCpu->DX);
+	log_trace(loggerCpu, "Registro EAX: %s", pcb->registrosCpu->EAX);
+	log_trace(loggerCpu, "Registro EBX: %s", pcb->registrosCpu->EBX);
+	log_trace(loggerCpu, "Registro ECX: %s", pcb->registrosCpu->ECX);
+	log_trace(loggerCpu, "Registro EDX: %s", pcb->registrosCpu->EDX);
+	log_trace(loggerCpu, "Registro RAX: %s", pcb->registrosCpu->RAX);
+	log_trace(loggerCpu, "Registro RBX: %s", pcb->registrosCpu->RBX);
+	log_trace(loggerCpu, "Registro RCX: %s", pcb->registrosCpu->RCX);
+	log_trace(loggerCpu, "Registro RDX: %s", pcb->registrosCpu->RDX);
 	ejecutar_proceso(pcb, clienteKernel);
 	free(pcb);
 
@@ -101,6 +102,20 @@ PCB* recibir_pcb(int clienteAceptado) {
 	int desplazamiento = 0;
 
 	buffer = recibir_buffer(&tamanio, clienteAceptado);
+
+	pcb->registrosCpu = malloc(sizeof(registros_cpu));
+	strcpy(pcb->registrosCpu->AX, leer_registro_4_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->BX, leer_registro_4_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->CX, leer_registro_4_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->DX, leer_registro_4_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->EAX,  leer_registro_8_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->EBX,  leer_registro_8_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->ECX,  leer_registro_8_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->EDX,  leer_registro_8_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->RAX,  leer_registro_16_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->RBX,  leer_registro_16_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->RCX,  leer_registro_16_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->RDX,  leer_registro_16_bytes(buffer, &desplazamiento));
 
 	pcb->id_proceso = leer_int(buffer, &desplazamiento);
 
@@ -123,20 +138,6 @@ PCB* recibir_pcb(int clienteAceptado) {
 		    list_add(pcb->lista_archivos_abiertos, archivo_abierto);
 		    free(archivo_abierto);
 	}
-
-	pcb->registrosCpu = malloc(sizeof(registros_cpu));
-	pcb->registrosCpu->AX = leer_registro_4_bytes(buffer, &desplazamiento);
-	pcb->registrosCpu->BX = leer_registro_4_bytes(buffer, &desplazamiento);
-	pcb->registrosCpu->CX = leer_registro_4_bytes(buffer, &desplazamiento);
-	pcb->registrosCpu->DX = leer_registro_4_bytes(buffer, &desplazamiento);
-	pcb->registrosCpu->EAX = leer_registro_8_bytes(buffer, &desplazamiento);
-	pcb->registrosCpu->EBX = leer_registro_8_bytes(buffer, &desplazamiento);
-	pcb->registrosCpu->ECX = leer_registro_8_bytes(buffer, &desplazamiento);
-	pcb->registrosCpu->EDX = leer_registro_8_bytes(buffer, &desplazamiento);
-	pcb->registrosCpu->RAX = leer_registro_16_bytes(buffer, &desplazamiento);
-	pcb->registrosCpu->RBX = leer_registro_16_bytes(buffer, &desplazamiento);
-	pcb->registrosCpu->RCX = leer_registro_16_bytes(buffer, &desplazamiento);
-	pcb->registrosCpu->RDX = leer_registro_16_bytes(buffer, &desplazamiento);
 
 	pcb->processor_burst = leer_double(buffer, &desplazamiento);
 	pcb->ready_timestamp = leer_double(buffer, &desplazamiento);
@@ -227,18 +228,18 @@ void iterator(char* value) {
 
 
 void cargar_registros(PCB* pcb) {
-	registrosCpu->AX = pcb->registrosCpu->AX;
-	registrosCpu->BX = pcb->registrosCpu->BX;
-	registrosCpu->CX = pcb->registrosCpu->CX;
-	registrosCpu->DX = pcb->registrosCpu->DX;
-	registrosCpu->AX = pcb->registrosCpu->EAX;
-	registrosCpu->BX = pcb->registrosCpu->EBX;
-	registrosCpu->CX = pcb->registrosCpu->ECX;
-	registrosCpu->DX = pcb->registrosCpu->EDX;
-	registrosCpu->AX = pcb->registrosCpu->RAX;
-	registrosCpu->BX = pcb->registrosCpu->RBX;
-	registrosCpu->CX = pcb->registrosCpu->RCX;
-	registrosCpu->DX = pcb->registrosCpu->RDX;
+	strcpy(registrosCpu->AX, pcb->registrosCpu->AX);
+	strcpy(registrosCpu->BX, pcb->registrosCpu->BX);
+	strcpy(registrosCpu->CX, pcb->registrosCpu->CX);
+	strcpy(registrosCpu->DX, pcb->registrosCpu->DX);
+	strcpy(registrosCpu->EAX,  pcb->registrosCpu->EAX);
+	strcpy(registrosCpu->EBX,  pcb->registrosCpu->EBX);
+	strcpy(registrosCpu->ECX,  pcb->registrosCpu->ECX);
+	strcpy(registrosCpu->EDX,  pcb->registrosCpu->EDX);
+	strcpy(registrosCpu->RAX,  pcb->registrosCpu->RAX);
+	strcpy(registrosCpu->RBX,  pcb->registrosCpu->RBX);
+	strcpy(registrosCpu->RCX,  pcb->registrosCpu->RCX);
+	strcpy(registrosCpu->RDX,  pcb->registrosCpu->RDX);
 }
 
 char** decode_instruccion(char* linea_a_parsear) {
@@ -250,18 +251,18 @@ char** decode_instruccion(char* linea_a_parsear) {
 }
 
 void guardar_contexto_de_ejecucion(PCB* pcb) {
-	pcb->registrosCpu->AX = registrosCpu->AX;
-	pcb->registrosCpu->BX = registrosCpu->BX;
-	pcb->registrosCpu->CX = registrosCpu->CX;
-	pcb->registrosCpu->DX = registrosCpu->DX;
-	pcb->registrosCpu->EAX = registrosCpu->EAX;
-	pcb->registrosCpu->EBX = registrosCpu->EBX;
-	pcb->registrosCpu->ECX = registrosCpu->ECX;
-	pcb->registrosCpu->EDX = registrosCpu->EDX;
-	pcb->registrosCpu->RAX = registrosCpu->RAX;
-	pcb->registrosCpu->RBX = registrosCpu->RBX;
-	pcb->registrosCpu->RCX = registrosCpu->RCX;
-	pcb->registrosCpu->RDX = registrosCpu->RDX;
+	strcpy(pcb->registrosCpu->AX, registrosCpu->AX);
+    strcpy(pcb->registrosCpu->BX, registrosCpu->BX);
+    strcpy(pcb->registrosCpu->CX, registrosCpu->CX);
+    strcpy(pcb->registrosCpu->DX, registrosCpu->DX);
+    strcpy(pcb->registrosCpu->EAX,  registrosCpu->EAX);
+    strcpy(pcb->registrosCpu->EBX,  registrosCpu->EBX);
+    strcpy(pcb->registrosCpu->ECX,  registrosCpu->ECX);
+    strcpy(pcb->registrosCpu->EDX,  registrosCpu->EDX);
+    strcpy(pcb->registrosCpu->RAX,  registrosCpu->RAX);
+    strcpy(pcb->registrosCpu->RBX,  registrosCpu->RBX);
+    strcpy(pcb->registrosCpu->RCX,  registrosCpu->RCX);
+    strcpy(pcb->registrosCpu->RDX,  registrosCpu->RDX);
 
 }
 
@@ -362,29 +363,29 @@ void instruccion_set(char* registro,char* valor) {
 	*/
 
 	if (strcmp(registro, "AX") == 0) {
-		registrosCpu->AX = valor;
+		strcpy(registrosCpu->AX, valor);
 	} else if (strcmp(registro, "BX") == 0) {
-		registrosCpu->BX = valor;
+		strcpy(registrosCpu->BX, valor);
 	} else if (strcmp(registro, "CX") == 0) {
-		registrosCpu->CX = valor;
+		strcpy(registrosCpu->CX, valor);
 	} else if (strcmp(registro, "DX") == 0) {
-		registrosCpu->DX = valor;
+		strcpy(registrosCpu->DX, valor);
 	} else if (strcmp(registro, "EAX") == 0) {
-		registrosCpu->EAX = valor;
+		strcpy(registrosCpu->EAX, valor);
 	} else if (strcmp(registro, "EBX") == 0) {
-		registrosCpu->EBX = valor;
+		strcpy(registrosCpu->EBX, valor);
 	} else if (strcmp(registro, "ECX") == 0) {
-		registrosCpu->ECX = valor;
+		strcpy(registrosCpu->ECX, valor);
 	} else if (strcmp(registro, "EDX") == 0) {
-		registrosCpu->EDX = valor;
+		strcpy(registrosCpu->EDX, valor);
 	} else if (strcmp(registro, "RAX") == 0) {
-		registrosCpu->RAX = valor;
+		strcpy(registrosCpu->RAX, valor);
 	} else if (strcmp(registro, "RBX") == 0) {
-		registrosCpu->RBX = valor;
+		strcpy(registrosCpu->RBX, valor);
 	} else if (strcmp(registro, "RCX") == 0) {
-		registrosCpu->RCX = valor;
+		strcpy(registrosCpu->RCX, valor);
 	} else if (strcmp(registro, "RDX") == 0) {
-		registrosCpu->RDX = valor;
+		strcpy(registrosCpu->RDX, valor);
 	}
 
 	//sleep(configCpu->RETARDO_INSTRUCCION/1000);
@@ -435,6 +436,7 @@ void agregar_lista_a_paquete(t_paquete* paquete, t_list* lista) {
 	}
 
 }
+
 void agregar_registros_a_paquete_para_kernel(t_paquete* paquete, registros_cpu* registrosCpu) {
 	 agregar_registro4bytes_a_paquete(paquete, registrosCpu->AX);
 	 agregar_registro4bytes_a_paquete(paquete, registrosCpu->BX);
@@ -449,21 +451,24 @@ void agregar_registros_a_paquete_para_kernel(t_paquete* paquete, registros_cpu* 
 	 agregar_registro16bytes_a_paquete(paquete, registrosCpu->RCX);
 	 agregar_registro16bytes_a_paquete(paquete, registrosCpu->RDX);
 }
-void agregar_registro4bytes_a_paquete(t_paquete* paquete, char* valor) {
-    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(4));
-    memcpy(paquete->buffer->stream + paquete->buffer->size, &valor, sizeof(4));
-    paquete->buffer->size += sizeof(4);
+
+void agregar_registro4bytes_a_paquete(t_paquete* paquete, char valor[4]) {
+    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(int));
+    memcpy(paquete->buffer->stream + paquete->buffer->size, (void*)valor, sizeof(int));
+    paquete->buffer->size += sizeof(int);
 }
-void agregar_registro8bytes_a_paquete(t_paquete* paquete, char* valor) {
-    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(8));
-    memcpy(paquete->buffer->stream + paquete->buffer->size, &valor, sizeof(8));
-    paquete->buffer->size += sizeof(8);
+void agregar_registro8bytes_a_paquete(t_paquete* paquete, char valor[8]) {
+    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(long));
+    memcpy(paquete->buffer->stream + paquete->buffer->size, (void*)valor, sizeof(long));
+    paquete->buffer->size += sizeof(long);
 }
-void agregar_registro16bytes_a_paquete(t_paquete* paquete, char* valor) {
-    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(16));
-    memcpy(paquete->buffer->stream + paquete->buffer->size, &valor, sizeof(16));
-    paquete->buffer->size += sizeof(16);
+void agregar_registro16bytes_a_paquete(t_paquete* paquete, char valor[16]) {
+    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(long)*2);
+    memcpy(paquete->buffer->stream + paquete->buffer->size, (void*)valor, sizeof(long)*2);
+    paquete->buffer->size += sizeof(long)*2;
 }
+
+
 void agregar_valor_a_paquete(t_paquete* paquete, void* valor, int tamanio) {
     paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + tamanio);
     memcpy(paquete->buffer->stream + paquete->buffer->size, valor, tamanio);

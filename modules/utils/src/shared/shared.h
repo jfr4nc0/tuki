@@ -71,22 +71,22 @@ typedef enum {
 }codigo_operacion;
 typedef struct {
     // Registros de 4 bytes
-    char* AX;
-    char* BX;
-    char* CX;
-    char* DX;
+    char AX[4];
+    char BX[4];
+    char CX[4];
+    char DX[4];
 
     // Registros de 8 bytes
-    char* EAX;
-    char* EBX;
-    char* ECX;
-    char* EDX;
+    char EAX[8];
+    char EBX[8];
+    char ECX[8];
+    char EDX[8];
 
     // Registro de 16 bytes
-    char* RAX;
-    char* RBX;
-    char* RCX;
-    char* RDX;
+    char RAX[16];
+    char RBX[16];
+    char RCX[16];
+    char RDX[16];
 } registros_cpu;
 
 typedef struct {

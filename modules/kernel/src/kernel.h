@@ -110,9 +110,9 @@ void agregar_int_a_paquete(t_paquete* , int );
 void agregar_arreglo_a_paquete(t_paquete* , char** );
 void agregar_valor_a_paquete(t_paquete* , void* , int );
 void agregar_registros_a_paquete(t_paquete* , registros_cpu* );
-void agregar_registro4bytes_a_paquete(t_paquete* , char* );
-void agregar_registro8bytes_a_paquete(t_paquete* , char* );
-void agregar_registro16bytes_a_paquete(t_paquete* , char* );
+void agregar_registro4bytes_a_paquete(t_paquete* , char[4] );
+void agregar_registro8bytes_a_paquete(t_paquete* , char[8] );
+void agregar_registro16bytes_a_paquete(t_paquete* , char[16] );
 
 void envio_pcb(int , PCB* , codigo_operacion );
 
@@ -120,6 +120,7 @@ void envio_pcb(int , PCB* , codigo_operacion );
 void envio_pcb_a_cpu(int , PCB* , codigo_operacion );
 void agregar_pcb_a_paquete_para_cpu(t_paquete* , PCB* );
 void agregar_registros_a_paquete_cpu(t_paquete* , registros_cpu* );
+void recibir_proceso_desajolado(PCB* pcb_en_ejecucion, int socket_cpu);
 
 ////////////////////////////////////////////////////
 

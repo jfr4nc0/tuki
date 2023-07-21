@@ -575,5 +575,3 @@ void intervalo_de_pausa(int duracionEnMilisegundos) {
 
     return;
 }
-
-

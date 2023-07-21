@@ -227,8 +227,6 @@ PCB* recibir_pcb_de_cpu(int clienteAceptado) {
 
 	pcb->id_proceso = leer_int(buffer, &desplazamiento);
 
-
-
 	pcb->estado = leer_int(buffer, &desplazamiento);
 
 	pcb->lista_instrucciones = leer_string_array(buffer, &desplazamiento); // NO esta funcionando bien
@@ -250,18 +248,18 @@ PCB* recibir_pcb_de_cpu(int clienteAceptado) {
 	}
 
 	pcb->registrosCpu = malloc(sizeof(registros_cpu));
-	pcb->registrosCpu->AX = leer_registro_4_bytes(buffer, &desplazamiento);
-	pcb->registrosCpu->BX = leer_registro_4_bytes(buffer, &desplazamiento);
-	pcb->registrosCpu->CX = leer_registro_4_bytes(buffer, &desplazamiento);
-	pcb->registrosCpu->DX = leer_registro_4_bytes(buffer, &desplazamiento);
-	pcb->registrosCpu->EAX = leer_registro_8_bytes(buffer, &desplazamiento);
-	pcb->registrosCpu->EBX = leer_registro_8_bytes(buffer, &desplazamiento);
-	pcb->registrosCpu->ECX = leer_registro_8_bytes(buffer, &desplazamiento);
-	pcb->registrosCpu->EDX = leer_registro_8_bytes(buffer, &desplazamiento);
-	pcb->registrosCpu->RAX = leer_registro_16_bytes(buffer, &desplazamiento);
-	pcb->registrosCpu->RBX = leer_registro_16_bytes(buffer, &desplazamiento);
-	pcb->registrosCpu->RCX = leer_registro_16_bytes(buffer, &desplazamiento);
-	pcb->registrosCpu->RDX = leer_registro_16_bytes(buffer, &desplazamiento);
+	strcpy(pcb->registrosCpu->AX, leer_registro_4_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->BX, leer_registro_4_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->CX, leer_registro_4_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->DX, leer_registro_4_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->EAX, leer_registro_8_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->EBX, leer_registro_8_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->ECX, leer_registro_8_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->EDX, leer_registro_8_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->RAX, leer_registro_16_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->RBX, leer_registro_16_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->RCX, leer_registro_16_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->RDX, leer_registro_16_bytes(buffer, &desplazamiento));
 
 	pcb->processor_burst = leer_double(buffer, &desplazamiento);
 	pcb->ready_timestamp = leer_double(buffer, &desplazamiento);
@@ -404,18 +402,18 @@ PCB* nuevo_proceso(t_list* listaInstrucciones, int clienteAceptado) {
 	pcb->contador_instrucciones = 0;
 
 	pcb->registrosCpu = malloc(sizeof(registros_cpu));
-	pcb->registrosCpu->AX = 0;
-	pcb->registrosCpu->BX = 0;
-	pcb->registrosCpu->CX = 0;
-	pcb->registrosCpu->DX = 0;
-	pcb->registrosCpu->EAX = 0;
-	pcb->registrosCpu->EBX = 0;
-	pcb->registrosCpu->ECX = 0;
-	pcb->registrosCpu->EDX = 0;
-	pcb->registrosCpu->RAX = 0;
-	pcb->registrosCpu->RBX = 0;
-	pcb->registrosCpu->RCX = 0;
-	pcb->registrosCpu->RDX = 0;
+	strcpy(pcb->registrosCpu->AX, "_AX");
+	strcpy(pcb->registrosCpu->BX, "_BX");
+	strcpy(pcb->registrosCpu->CX, "_CX");
+	strcpy(pcb->registrosCpu->DX, "_DX");
+	strcpy(pcb->registrosCpu->EAX, "R_EAX");
+	strcpy(pcb->registrosCpu->EBX, "R_EBX");
+	strcpy(pcb->registrosCpu->ECX, "R_EcX");
+	strcpy(pcb->registrosCpu->EDX, "R_EDX");
+	strcpy(pcb->registrosCpu->RAX, "R_RAX");
+	strcpy(pcb->registrosCpu->RBX, "R_RBX");
+	strcpy(pcb->registrosCpu->RCX, "R_RCX");
+	strcpy(pcb->registrosCpu->RDX, "R_RDX");
 
 	pcb->lista_segmentos = list_create();
 	pcb->lista_archivos_abiertos = list_create();
@@ -576,18 +574,17 @@ void envio_pcb_a_cpu(int conexion, PCB* pcb_a_enviar, codigo_operacion codigo) {
 }
 
 void agregar_pcb_a_paquete_para_cpu(t_paquete* paquete, PCB* pcb) {
+	agregar_registros_a_paquete(paquete, pcb->registrosCpu);
 	agregar_int_a_paquete(paquete, pcb->id_proceso);
 	agregar_int_a_paquete(paquete, pcb->estado);
 	agregar_lista_a_paquete(paquete, pcb->lista_instrucciones);
 	agregar_int_a_paquete(paquete, pcb->contador_instrucciones);
-
 	agregar_lista_a_paquete(paquete, pcb->lista_segmentos);
 	agregar_lista_a_paquete(paquete, pcb->lista_archivos_abiertos);
-	agregar_registros_a_paquete(paquete, pcb->registrosCpu);
 	agregar_valor_a_paquete(paquete, &pcb->processor_burst, sizeof(double));
 	agregar_valor_a_paquete(paquete, &pcb->ready_timestamp, sizeof(double));
 }
-
+/*
 void agregar_registros_a_paquete_cpu(t_paquete* paquete, registros_cpu* registrosCpu) {
 	 agregar_int_a_paquete(paquete, registrosCpu->AX);
 	 agregar_int_a_paquete(paquete, registrosCpu->BX);
@@ -602,6 +599,7 @@ void agregar_registros_a_paquete_cpu(t_paquete* paquete, registros_cpu* registro
 	 agregar_longlong_a_paquete(paquete, registrosCpu->RCX);
 	 agregar_longlong_a_paquete(paquete, registrosCpu->RDX);
 }
+*/
 
 void agregar_lista_a_paquete(t_paquete* paquete, t_list* lista) {
 	int tamanio = list_size(lista);
@@ -646,20 +644,20 @@ void agregar_registros_a_paquete(t_paquete* paquete, registros_cpu* registrosCpu
 	agregar_registro16bytes_a_paquete(paquete, registrosCpu->RCX);
 	agregar_registro16bytes_a_paquete(paquete, registrosCpu->RDX);
 }
-void agregar_registro4bytes_a_paquete(t_paquete* paquete, char* valor) {
-    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(4));
-    memcpy(paquete->buffer->stream + paquete->buffer->size, &valor, sizeof(4));
-    paquete->buffer->size += sizeof(4);
+void agregar_registro4bytes_a_paquete(t_paquete* paquete, char valor[4]) {
+    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(int));
+    memcpy(paquete->buffer->stream + paquete->buffer->size, (void*)valor, sizeof(int));
+    paquete->buffer->size += sizeof(int);
 }
-void agregar_registro8bytes_a_paquete(t_paquete* paquete, char* valor) {
-    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(8));
-    memcpy(paquete->buffer->stream + paquete->buffer->size, &valor, sizeof(8));
-    paquete->buffer->size += sizeof(8);
+void agregar_registro8bytes_a_paquete(t_paquete* paquete, char valor[8]) {
+    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(long));
+    memcpy(paquete->buffer->stream + paquete->buffer->size, (void*)valor, sizeof(long));
+    paquete->buffer->size += sizeof(long);
 }
-void agregar_registro16bytes_a_paquete(t_paquete* paquete, char* valor) {
-    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(16));
-    memcpy(paquete->buffer->stream + paquete->buffer->size, &valor, sizeof(16));
-    paquete->buffer->size += sizeof(16);
+void agregar_registro16bytes_a_paquete(t_paquete* paquete, char valor[16]) {
+    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(long)*2);
+    memcpy(paquete->buffer->stream + paquete->buffer->size, (void*)valor, sizeof(long)*2);
+    paquete->buffer->size += sizeof(long)*2;
 }
 
 
@@ -682,13 +680,13 @@ void agregar_a_lista(PCB* pcb, t_list* lista, sem_t m_sem) {
 }
 
 void agregar_pcb_a_paquete(t_paquete* paquete, PCB* pcb) {
+	agregar_registros_a_paquete(paquete, pcb->registrosCpu);
 	agregar_int_a_paquete(paquete, pcb->id_proceso);
 	agregar_int_a_paquete(paquete, pcb->estado);
 	agregar_lista_a_paquete(paquete, pcb->lista_instrucciones);
 	agregar_int_a_paquete(paquete, pcb->contador_instrucciones);
 	agregar_lista_a_paquete(paquete, pcb->lista_segmentos);
 	agregar_lista_a_paquete(paquete, pcb->lista_archivos_abiertos);
-	agregar_registros_a_paquete(paquete, pcb->registrosCpu);
 	agregar_valor_a_paquete(paquete, &pcb->processor_burst, sizeof(double));
 	agregar_valor_a_paquete(paquete, &pcb->ready_timestamp, sizeof(double));
 }
