@@ -80,37 +80,68 @@ bool leer_archivo(char* nombreArchivo, uint32_t punteroProceso, uint32_t direcci
         return false;
     }
 
-    /* Obtengo cuales son las estructuras que voy a usar para leer, haciendo calculos con los parametros dados */
-    uint32_t bloque = redondear_hacia(punteroProceso, ABAJO);
-    bloque = (bloque == 0) ? fcb->puntero_directo:
-        archivo_de_bloques_leer_n_puntero_de_bloque_de_punteros(fcb->puntero_indirecto, bloque-1);
-    uint32_t espacioDisponible = espacio_disponible_en_bloque_desde_posicion(punteroProceso);
-    uint32_t numeroBloqueArchivo = obtener_bloque_relativo(fcb, punteroProceso);
-
-    /* Leo del archivo de bloques */
-    log_info(loggerFileSystem, ACCESO_BLOQUE, nombreArchivo, bloque, numeroBloqueArchivo);
-    char* buffer = malloc(SIZE_BLOQUE);
-    FILE* archivoDeBloques = abrir_archivo_de_bloques(configFileSystem->PATH_BLOQUES);
-    fseek(archivoDeBloques, bloque, SEEK_SET);
-    size_t rtaLectura = fread(buffer, sizeof(char), cantidadBytes, archivoDeBloques);
-    sleep(configFileSystem->RETARDO_ACCESO_BLOQUE);
-
-    if (rtaLectura!=cantidadBytes || ferror(archivoDeBloques))
+    char* buffer;
+    uint32_t bloque, espacioDisponible, numeroBloqueArchivo, bytesLeidos = 0;
+    bool primeraIteracion = true;
+    while(bytesQueFaltanPorLeer != 0)
     {
-        log_error(loggerFileSystem, "El archivo de bloques no se leyo correctamente.");
-        return false;
+        /* Obtengo cuales son las estructuras que voy a usar para leer, haciendo calculos con los parametros dados */
+        bloque = redondear_hacia(punteroProceso, ABAJO);
+        bloque = (bloque == 0) ? fcb->puntero_directo:
+            archivo_de_bloques_leer_n_puntero_de_bloque_de_punteros(fcb->puntero_indirecto, bloque-1);
+        espacioDisponible = espacio_disponible_en_bloque_desde_posicion(punteroProceso);
+        numeroBloqueArchivo = obtener_bloque_relativo(fcb, punteroProceso);
+
+        /* Leo del archivo de bloques */
+        log_info(loggerFileSystem, ACCESO_BLOQUE, nombreArchivo, bloque, numeroBloqueArchivo);
+        buffer = malloc(SIZE_BLOQUE);
+        FILE* archivoDeBloques = abrir_archivo_de_bloques(configFileSystem->PATH_BLOQUES);
+        fseek(archivoDeBloques, bloque, SEEK_SET);
+        size_t rtaLectura = fread(buffer, sizeof(char), cantidadBytes, archivoDeBloques);
+        sleep(configFileSystem->RETARDO_ACCESO_BLOQUE);
+
+        if (rtaLectura!=cantidadBytes || ferror(archivoDeBloques))
+        {
+            log_error(loggerFileSystem, "El archivo de bloques no se leyo correctamente.");
+            return false;
+        }
+        fclose(archivoDeBloques);
+
+        // Actualizo punteros
+        puntero = puntero + espacioDisponible;
+
+        bytesQueFaltanPorLeer = bytesQueFaltanPorLeer - bytesLeidos;
+
+        memcpy(informacion+bytesLeidos, buffer, bytesLeidos);
+
+        if (primeraIteracion) {
+            bytesLeidos = (cantidadBytes < espacioDisponible) ? cantidadBytes : espacioDisponible;
+            primeraIteracion = false;
+        }
+
+        // Revisar esto
+        bytesLeidos = bytesLeidos + bytesQueFaltanPorLeer;
+
+        bytesQueFaltanPorLeer = 0;
+        puntero = puntero + SIZE_BLOQUE;
+        bytesLeidos = bytesLeidos + SIZE_BLOQUE;
+        bytesQueFaltanPorLeer = bytesQueFaltanPorLeer - SIZE_BLOQUE;
     }
-    fclose(archivoDeBloques);
 
-    // Actualizo punteros
-    puntero = puntero + espacioDisponible;
-    uint32_t bytesLeidos = (cantidadBytes < espacioDisponible) ? cantidadBytes : espacioDisponible;
-    bytesQueFaltanPorLeer = bytesQueFaltanPorLeer - bytesLeidos;
+    /*
+    // Enviar información a memoria para ser escrita a partir de la dirección física
+    solicitar_escritura_memoria(direccionFisica, cantidadBytes, informacion, pidProceso);
+    free(informacion);
+    free(buffer);
 
-    memcpy(informacion, buffer, bytesLeidos);
-
-    // TODO: CONTINUAR DESDE ACÁ
-
+    // Esperar su finalización para poder confirmar el éxito de la operación al Kernel.
+    respuestaMemoria = recibir_buffer_confirmacion_escritura_memoria();
+    if (respuestaMemoria)
+    {
+        enviar_confirmacion_fread_finalizado();
+    }
+    */
+    return true;
 }
 
 
