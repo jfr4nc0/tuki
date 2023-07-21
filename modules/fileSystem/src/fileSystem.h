@@ -22,21 +22,6 @@ t_log* loggerFileSystem;
 
 t_list* listaFCB;
 
-// Paths
-#define DEFAULT_LOG_PATH        "logs/file_system.log"
-#define DEFAULT_CONFIG_PATH     "tuki-pruebas/prueba-base/fileSystem.config"
-#define CONFIG_PROPIO_PATH      "tuki-pruebas/prueba-base/fileSystem_propio.config"
-
-//// LOGS
-#define ACCESO_BITMAP            "Acceso a Bitmap - Bloque: <NUMERO BLOQUE> - Estado: <ESTADO>" Nota: El estado es 0 o 1 donde 0 es libre y 1 es ocupado.
-#define ACCESO_BLOQUE            "Acceso Bloque - Archivo: <NOMBRE_ARCHIVO> - Bloque Archivo: <NUMERO BLOQUE ARCHIVO> - Bloque File System <NUMERO BLOQUE FS>"
-#define APERTURA_ARCHIVO         "Abrir Archivo: <NOMBRE_ARCHIVO>"
-#define CREAR_ARCHIVO            "Crear Archivo: <NOMBRE_ARCHIVO>"
-#define ESCRITURA_ARCHIVO        "Escribir Archivo: <NOMBRE_ARCHIVO> - Puntero: <PUNTERO ARCHIVO> - Memoria: <DIRECCION MEMORIA> - Tamaño: <TAMAÑO>"
-#define LECTURA_ARCHIVO          "Leer Archivo: <NOMBRE_ARCHIVO> - Puntero: <PUNTERO ARCHIVO> - Memoria: <DIRECCION MEMORIA> - Tamaño: <TAMAÑO>"
-#define TRUNCATE_ARCHIVO         "Truncar Archivo: <NOMBRE_ARCHIVO> - Tamaño: <TAMAÑO>"
-/////////
-
 // Functions
 void atender_kernel(int);
 void ejecutar_instrucciones_kernel(void*);

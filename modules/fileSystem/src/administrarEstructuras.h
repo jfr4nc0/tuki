@@ -1,5 +1,5 @@
-#ifndef ADMINISTRAR_FILE_SYSTEM_ADMINISTRAR_INSTRUCCIONES_H_
-#define ADMINISTRAR_FILE_SYSTEM_ADMINISTRAR_INSTRUCCIONES_H_
+#ifndef ADMINISTRAR_FILE_SYSTEM_ADMINISTRAR_ESTRUCTURAS_H_
+#define ADMINISTRAR_FILE_SYSTEM_ADMINISTRAR_ESTRUCTURAS_H_
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -17,11 +17,7 @@
 
 #include <shared/shared.h>
 #include "inicializarEstructuras.h"
-
-#define LOG_BLOQUE_PUNTERO                      "Acceso Bloque de Punteros - Archivo: <%s> - Bloque Archivo: <1> - Bloque File System <%u>"
-#define LOG_BLOQUE_DESASIGNADO                  "Bloque <%u> desasignado al Archivo: <%s>"
-#define LOG_PUNTERO_DIRECTO_DESASIGNADO         "Puntero Directo Desasignado."
-#define LOG_PUNTERO_INDIRECTO_DESASIGNADO       "Bloque de punteros desasignado"
+#include "constantes.h"
 
 bool actualizar_tamanio_bloques(t_fcb* fcbArchivo, uint32_t tamanioNuevo);
 void ampliar_archivo(t_fcb *fcbArchivo, uint32_t tamanioNuevo);

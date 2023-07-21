@@ -97,7 +97,6 @@ FILE* abrir_archivo_de_bloques(char* pathArchivoDeBloques) {
         return NULL;
     }
 
-    log_debug(loggerFileSystem, "bitmap inicializado");
     return archivo;
 }
 
@@ -157,15 +156,15 @@ t_fcb* cargar_fcb(char *pathFcb) {
     fcb->tamanio_archivo = (uint32_t) extraer_int_de_config(config_fcb, "TAMANIO_ARCHIVO", loggerFileSystem);
     fcb->puntero_directo = (uint32_t) extraer_int_de_config(config_fcb, "PUNTERO_DIRECTO", loggerFileSystem);
     fcb->puntero_indirecto = (uint32_t) extraer_int_de_config(config_fcb, "PUNTERO_INDIRECTO", loggerFileSystem);
-    fcb->cantidad_bloques_asignados = calcularSizeBloques(fcb->tamanio_archivo);
+    fcb->cantidad_bloques_asignados = redondear_hacia(fcb->tamanio_archivo, ARRIBA);
 
     return fcb;
 }
 
-uint32_t calcularSizeBloques(uint32_t nuevoSize) {
+uint32_t redondear_hacia(uint32_t nuevoSize, codigo_redondear ABAJO_ARRIBA) {
     uint32_t size = nuevoSize / SIZE_BLOQUE;
 
-    size = (nuevoSize%SIZE_BLOQUE == 0) ? size : size +1;
+    size = (nuevoSize%SIZE_BLOQUE == 0) ? size : size + ABAJO_ARRIBA;
 
     log_debug(loggerFileSystem, "Bloques nuevos: %d, quedando con bloques asignados: %d.", nuevoSize, size);
 

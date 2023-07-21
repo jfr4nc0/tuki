@@ -16,16 +16,20 @@
 
 #include <shared/shared.h>
 #include "inicializarEstructuras.h"
-
 #include "administrarEstructuras.h"
+#include "constantes.h"
 
 extern t_log* loggerFileSystem;
-
-#define ERROR_ABRIR_ARCHIVO      "No se pudo abrir el archivo: %s"
 
 t_fcb* crear_fcb_inicial(char *nombreArchivo);
 bool crear_archivo(char *nombreArchivo);
 bool existe_archivo(char *nombreArchivo);
-void truncar_archivo(char *nombreArchivo, uint32_t tamanioNuevo);
+bool truncar_archivo(char *nombreArchivo, uint32_t tamanioNuevo);
+bool leer_archivo(char* nombreArchivo, uint32_t punteroProceso, uint32_t memoriaDireccion, uint32_t cantidadBytes, uint32_t pidProceso);
+
+// Auxiliares
+uint32_t obtener_posicion_en_bloque(uint32_t punteroFseek);
+uint32_t espacio_disponible_en_bloque_desde_posicion(uint32_t punteroFseek);
+uint32_t obtener_bloque_relativo(t_fcb* fcbArchivo, uint32_t punteroFseek);
 
 #endif
