@@ -68,79 +68,72 @@ Esta operación deberá leer la información correspondiente de los bloques a pa
 Esta información se deberá enviar a la Memoria para ser escrita a partir de la dirección física recibida por parámetro
 y esperar su finalización para poder confirmar el éxito de la operación al Kernel.
 */
-bool leer_archivo(char* nombreArchivo, uint32_t punteroProceso, uint32_t direccionFisica, uint32_t cantidadBytes, uint32_t pidProceso) {
-    log_info(loggerFileSystem, LEER_ARCHIVO, nombreArchivo, punteroProceso, direccionFisica, cantidadBytes);
-    char* informacion = malloc(cantidadBytes);
-    int puntero = punteroProceso; // TODO: VER si hace falta
-    uint32_t bytesQueFaltanPorLeer = cantidadBytes; // TODO: Ver si hace falta
+bool leer_archivo(char* nombreArchivo, uint32_t puntero, uint32_t direccionFisica, uint32_t bytesQueFaltanPorLeer, uint32_t pidProceso) {
+    log_info(loggerFileSystem, LEER_ARCHIVO, nombreArchivo, puntero, direccionFisica, bytesQueFaltanPorLeer);
 
     t_fcb* fcb = dictionary_get(dictionaryFcbs, nombreArchivo);
     if (fcb == NULL) {
         log_error(loggerFileSystem, FCB_NOT_FOUND, nombreArchivo);
         return false;
     }
+    FILE* archivoDeBloques = abrir_archivo_de_bloques(configFileSystem->PATH_BLOQUES);
 
+    char* informacion = malloc(bytesQueFaltanPorLeer);
     char* buffer;
-    uint32_t bloque, espacioDisponible, numeroBloqueArchivo, bytesLeidos = 0;
-    bool primeraIteracion = true;
-    while(bytesQueFaltanPorLeer != 0)
-    {
-        /* Obtengo cuales son las estructuras que voy a usar para leer, haciendo calculos con los parametros dados */
-        bloque = redondear_hacia(punteroProceso, ABAJO);
-        bloque = (bloque == 0) ? fcb->puntero_directo:
-            archivo_de_bloques_leer_n_puntero_de_bloque_de_punteros(fcb->puntero_indirecto, bloque-1);
-        espacioDisponible = espacio_disponible_en_bloque_desde_posicion(punteroProceso);
-        numeroBloqueArchivo = obtener_bloque_relativo(fcb, punteroProceso);
 
-        /* Leo del archivo de bloques */
-        log_info(loggerFileSystem, ACCESO_BLOQUE, nombreArchivo, bloque, numeroBloqueArchivo);
+    uint32_t posicionAbsoluta, espacioDisponible, bytesLeidos, bytesParaLeer = 0;
+    size_t rtaLectura;
+
+
+    // Obtengo la posicion desde la cual voy a empezar a leer informacion.
+    espacioDisponible = SIZE_BLOQUE - obtener_posicion_en_bloque(puntero);
+
+    while(bytesQueFaltanPorLeer != 0) {
+        log_info(loggerFileSystem,"Faltan leer <%u> bytes de los <%u> totales", bytesQueFaltanPorLeer, bytesQueFaltanPorLeer);
         buffer = malloc(SIZE_BLOQUE);
-        FILE* archivoDeBloques = abrir_archivo_de_bloques(configFileSystem->PATH_BLOQUES);
-        fseek(archivoDeBloques, bloque, SEEK_SET);
-        size_t rtaLectura = fread(buffer, sizeof(char), cantidadBytes, archivoDeBloques);
-        sleep(configFileSystem->RETARDO_ACCESO_BLOQUE);
 
-        if (rtaLectura!=cantidadBytes || ferror(archivoDeBloques))
-        {
+        // Se busca la posicion del siguiente bloque
+        posicionAbsoluta = obtener_posicion_absoluta(fcb, puntero);
+        log_info(loggerFileSystem, "Se posiciona en la posicion absoluta: <%u>.", posicionAbsoluta); // LOG A SACAR
+
+        sleep(configFileSystem->RETARDO_ACCESO_BLOQUE);
+        fseek(archivoDeBloques, posicionAbsoluta, SEEK_SET);
+
+        // Si bytesParaLeer es 0 es primera iteracion
+        if (bytesParaLeer == 0) {
+            puntero = puntero + espacioDisponible;
+            bytesParaLeer = (bytesQueFaltanPorLeer < espacioDisponible) ? bytesQueFaltanPorLeer : espacioDisponible;
+        } else {
+            puntero = puntero + SIZE_BLOQUE;
+            bytesParaLeer = (bytesQueFaltanPorLeer < SIZE_BLOQUE) ? bytesQueFaltanPorLeer : SIZE_BLOQUE;
+        }
+
+        rtaLectura = fread(buffer, sizeof(char), bytesParaLeer, archivoDeBloques);
+
+        if (rtaLectura!=bytesParaLeer || ferror(archivoDeBloques)) {
             log_error(loggerFileSystem, "El archivo de bloques no se leyo correctamente.");
-            return false;
         }
         fclose(archivoDeBloques);
 
-        // Actualizo punteros
-        puntero = puntero + espacioDisponible;
+        // Pasar la data leida del buffer al char *informacion.
+        memcpy(informacion+bytesLeidos, buffer, bytesParaLeer);
 
-        bytesQueFaltanPorLeer = bytesQueFaltanPorLeer - bytesLeidos;
-
-        memcpy(informacion+bytesLeidos, buffer, bytesLeidos);
-
-        if (primeraIteracion) {
-            bytesLeidos = (cantidadBytes < espacioDisponible) ? cantidadBytes : espacioDisponible;
-            primeraIteracion = false;
+        if (bytesQueFaltanPorLeer < SIZE_BLOQUE) {
+            bytesLeidos += bytesQueFaltanPorLeer;
+            bytesQueFaltanPorLeer = 0;
+        } else {
+            bytesLeidos += SIZE_BLOQUE;
+            bytesQueFaltanPorLeer -= SIZE_BLOQUE;
         }
 
-        // Revisar esto
-        bytesLeidos = bytesLeidos + bytesQueFaltanPorLeer;
-
-        bytesQueFaltanPorLeer = 0;
-        puntero = puntero + SIZE_BLOQUE;
-        bytesLeidos = bytesLeidos + SIZE_BLOQUE;
-        bytesQueFaltanPorLeer = bytesQueFaltanPorLeer - SIZE_BLOQUE;
+        log_info(loggerFileSystem,"Hasta ahora se leyeron <%u> bytes.", bytesLeidos);
+        log_info(loggerFileSystem,"Faltan leer <%u> bytes.", bytesQueFaltanPorLeer);
     }
 
-    /*
-    // Enviar información a memoria para ser escrita a partir de la dirección física
-    solicitar_escritura_memoria(direccionFisica, cantidadBytes, informacion, pidProceso);
+    // TODO: Enviar información a memoria para ser escrita a partir de la dirección física
     free(informacion);
     free(buffer);
 
-    // Esperar su finalización para poder confirmar el éxito de la operación al Kernel.
-    respuestaMemoria = recibir_buffer_confirmacion_escritura_memoria();
-    if (respuestaMemoria)
-    {
-        enviar_confirmacion_fread_finalizado();
-    }
-    */
     return true;
 }
 
@@ -153,23 +146,25 @@ El tamaño de la información a leer de la memoria y a escribir en los bloques t
 
 
 /////////// Auxiliares //////////
-uint32_t obtener_posicion_en_bloque(uint32_t punteroFseek) {
-    uint32_t posicion, bloqueRelativo;
-    bloqueRelativo = redondear_hacia(punteroFseek, ABAJO);
-    posicion = punteroFseek - SIZE_BLOQUE * bloqueRelativo;
-    return posicion;
-}
-
-uint32_t espacio_disponible_en_bloque_desde_posicion(uint32_t punteroFseek) {
-    uint32_t posicion, espacioDisponible;
-    posicion = obtener_posicion_en_bloque(punteroFseek);
-    espacioDisponible = SIZE_BLOQUE - posicion;
-    return espacioDisponible;
-}
 
 uint32_t obtener_bloque_relativo(t_fcb* fcbArchivo, uint32_t punteroFseek) {
     if ( ( punteroFseek % SIZE_BLOQUE == 0) && punteroFseek != 0) {
         return (punteroFseek / SIZE_BLOQUE)+1;
     }
     return redondear_hacia(punteroFseek, ARRIBA);
+}
+
+uint32_t obtener_bloque_absoluto(t_fcb* fcb, uint32_t punteroFseek) {
+    uint32_t bloque = redondear_hacia(punteroFseek, ABAJO);
+    return (bloque == 0) ? fcb->puntero_directo:
+            archivo_de_bloques_leer_n_puntero_de_bloque_de_punteros(fcb->puntero_indirecto, bloque-1);
+}
+
+uint32_t obtener_posicion_en_bloque(uint32_t punteroFseek) {
+    return punteroFseek - SIZE_BLOQUE * redondear_hacia(punteroFseek, ABAJO);
+}
+
+// Funcion que sirve para saber desde donde empezar a leer/escribir.
+uint32_t obtener_posicion_absoluta(t_fcb* fcb, uint32_t punteroFseek) {
+    return (obtener_bloque_absoluto(fcb, punteroFseek) * SIZE_BLOQUE) + obtener_posicion_en_bloque(punteroFseek);
 }
