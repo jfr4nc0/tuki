@@ -66,7 +66,7 @@ typedef struct timespec timestamp;
 /*----------------- FUNCIONES ------------------*/
 
 void inicializar_estructuras();
-void *_planificador_largo_plazo();
+void _planificador_largo_plazo();
 void* liberar_pcb_de_exit();
 void destruir_pcb(PCB* pcb);
 PCB *desencolar_primer_pcb(pcb_estado estado);
@@ -82,7 +82,7 @@ void inicializar_escucha_conexiones_consolas(int);
 void recibir_de_consola(void*);
 void iterator(char* value);
 PCB* nuevo_proceso(t_list* , int);
-void proceso_a_ready();
+void enviar_proceso_a_ready();
 void mostrar_pcb(PCB*);
 
 static bool criterio_hrrn(PCB*, PCB*);
@@ -137,8 +137,12 @@ codigo_operacion recibir_proceso_desajolado(PCB* pcb_en_ejecucion, int socket_cp
 
 int obtener_recursos(int);
 
+void cambiar_estado_proceso_sin_semaforos(PCB* pcb, pcb_estado estadoNuevo);
+
 /*----------------- SEMAFOROS / HILOS ------------------*/
-sem_t sem_proceso_a_ready;
+sem_t sem_proceso_a_ready_inicializar;
+sem_t sem_proceso_a_ready_terminado;
+sem_t sem_proceso_a_executing;
 sem_t sem_grado_multiprogamacion;
 sem_t sem_cpu_disponible;
 

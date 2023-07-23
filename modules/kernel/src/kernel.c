@@ -25,18 +25,19 @@ int main(int argc, char** argv) {
 
     inicializar_estructuras();
 
-    // int servidorKernel = iniciar_servidor(config, kernelLogger);
+    inicializar_diccionario_recursos();
 
-    // inicializar_diccionario_recursos();
+    int servidorKernel = iniciar_servidor(config, kernelLogger);
+
 
     // TODO: Manejar multiples instancias de conexiones de consola al kernel
-   // inicializar_escucha_conexiones_consolas(servidorKernel);
+    inicializar_escucha_conexiones_consolas(servidorKernel);
 
     /*TODO: NUNCA LLEGA ACA PORQUE SE QUEDA ESPERANDO NUEVAS CONSOLAS,
     MOVER ESTAS FUNCIONES A CUANDO EL SISTEMA SOLICITE LA FINALIZACION*/
 
-    //terminar_programa(servidorKernel, kernelLogger, config);
-    //liberar_recursos_kernel();
+    terminar_programa(servidorKernel, kernelLogger, config);
+    liberar_recursos_kernel();
 
     return 0;
 }
@@ -82,22 +83,15 @@ void inicializar_escucha_conexiones_consolas(int servidorKernel) {
         pthread_t hilo_consola;
         pthread_create(&hilo_consola, NULL, (void*) recibir_de_consola, (void*) (intptr_t) conexionConConsola);
         pthread_detach(hilo_consola);  //Los recursos asociados se liberan automáticamente al finalizar.
-
-        //pthread_t hilo_procesos_a_ready;
-        //pthread_create(&hilo_procesos_a_ready, NULL, (void*) proceso_a_ready, NULL);
-        //pthread_detach(hilo_procesos_a_ready);
     }
 }
 
-void proceso_a_ready() {
+void enviar_proceso_a_ready() {
 	while(1) {
-		sem_wait(&sem_proceso_a_ready);
+		sem_wait(&sem_proceso_a_ready_inicializar);
 		sem_wait(&sem_lista_estados[ENUM_NEW]);
-		sem_wait(&sem_lista_estados[ENUM_READY]);
 		// El tp dice que se obtienen por FIFO
 		PCB* pcb = list_get(lista_estados[ENUM_NEW], 0);
-		sem_post(&sem_lista_estados[ENUM_NEW]);
-		sem_post(&sem_lista_estados[ENUM_READY]);
 
 		if (conexionMemoria > 0) {
 			// Creo el pcb en memoria
@@ -116,9 +110,14 @@ void proceso_a_ready() {
 			}
 		}
 
-		cambiar_estado_proceso(pcb, ENUM_READY);
-		list_add(lista_estados[ENUM_READY], pcb);
+		sem_wait(&sem_lista_estados[ENUM_READY]);
+		cambiar_estado_proceso_sin_semaforos(pcb, ENUM_READY);
+		sem_post(&sem_lista_estados[ENUM_NEW]);
 
+		list_add(lista_estados[ENUM_READY], pcb);
+		sem_post(&sem_lista_estados[ENUM_READY]);
+
+		sem_post(&sem_proceso_a_ready_terminado);
 	}
 }
 
@@ -150,42 +149,23 @@ void recibir_de_consola(void *clienteAceptado) {
 void crear_hilo_planificadores() {
     log_info(kernelLogger, "Inicialización del planificador %s...", kernelConfig->ALGORITMO_PLANIFICACION);
 
-    pthread_create(&planificador_largo_plazo, NULL, _planificador_largo_plazo, NULL);
-    pthread_detach(planificador_largo_plazo);
+    _planificador_largo_plazo();
 
-    pthread_create(&planificador_corto_plazo, NULL, _planificador_corto_plazo, NULL);
+    pthread_create(&planificador_corto_plazo, NULL, (void*) _planificador_corto_plazo, NULL);
     pthread_detach(planificador_corto_plazo);
-
-    // Acá va el manejo de memoria y CPU con hilos.
-
 }
 
-void* _planificador_largo_plazo(){
+void _planificador_largo_plazo() {
+	// TODO: AGREGAR SEMAFOROS ACA, VOS PODES SOFY Y FRAN
     // pthread_t m_liberar_pcb_de_exit;
     // pthread_create(&m_liberar_pcb_de_exit, NULL, (void*) liberar_pcb_de_exit, NULL);
     // pthread_detach(m_liberar_pcb_de_exit);
 
-    for (;;) {
-        // Espera a que haya pcbs en new y que el grado de multiprogramacion lo permita
-        PCB *pcb_a_ready = desencolar_primer_pcb(ENUM_NEW);
-        sem_wait(&sem_grado_multiprogamacion);
+	pthread_t hilo_procesos_a_ready;
+    pthread_create(&hilo_procesos_a_ready, NULL, (void*) enviar_proceso_a_ready, NULL);
+    pthread_detach(hilo_procesos_a_ready);
 
-        // TODO: Pido a la memoria que inicialice al pcb y me devuelva la tabla de segmentos
-        /*
-        t_info_segmentos **tablaSegmentos = adapter_memoria_pedir_inicializacion_proceso(pcbAReady);
-        pcb_set_tabla_segmentos(pcbAReady, tablaSegmentos);
-
-        if (tablaSegmentos == NULL) {
-            terminar_proceso(pcbAReady, FINALIZACION_OUTOFMEMORY);
-        }
-        else {
-           __pcb_pasar_de_new_a_ready(pcbAReady);
-        }
-        */
-        cambiar_estado_proceso(pcb_a_ready, ENUM_READY);
-    }
-
-    return NULL;
+    return;
 }
 
 void* liberar_pcb_de_exit(void* args){
@@ -245,27 +225,8 @@ char* get_nombre_estado(pcb_estado pcb_estado) {
 	return "EL ESTADO NO ESTÁ REGISTRADO"; //TODO: Mejorar este mensaje
 }
 
-int get_numero_estado(pcb_estado estado) {
-	if (estado >= ENUM_NEW) {
-		if(estado == ENUM_NEW){
-			return 0;
-		}else if (estado == ENUM_READY){
-			return 1;
-		}else if (estado == ENUM_EXECUTING){
-			return 2;
-		}else if (estado == ENUM_BLOCKED){
-			return 3;
-		}else if (estado == ENUM_EXIT){
-			return 4;
-		}else {
-			return "EL ESTADO NO ESTÁ REGISTRADO";
-		}
-	}
-}
-
-PCB *desencolar_primer_pcb(pcb_estado estado) {
+PCB* desencolar_primer_pcb(pcb_estado estado) {
     int estadoNumerico = (int)estado;
-    log_info(kernelLogger, "llegue hasta la linea 267");
 	sem_wait(&sem_lista_estados[estadoNumerico]);
     // pthread_mutex_lock(mutex_lista_estados[estado_]);
     PCB *pcb = list_remove(lista_estados[estadoNumerico], 0);
@@ -280,30 +241,28 @@ void _planificador_corto_plazo() {
 
 	// Desalojo de PCBs
 	pthread_t manejo_desalojo;
-	pthread_create(&manejo_desalojo, NULL, manejo_desalojo_pcb, NULL); //TODO
-	pthread_detach(manejo_desalojo);
+	// pthread_create(&manejo_desalojo, NULL, manejo_desalojo_pcb, NULL); //TODO
+	// pthread_detach(manejo_desalojo);
 
 	//Dispatcher
 	while(1) {
 		sem_wait(&sem_cpu_disponible);
-		// Este if tiene sentido? no se puede manejar con semaforos si hay elementos? O conviene un while(1) si no encuentra o algo así?
-		if(!list_is_empty(lista_estados[ENUM_READY])) {
-			PCB* pcbParaEjecutar;
+		sem_wait(&sem_proceso_a_ready_terminado);
+		PCB* pcbParaEjecutar;
 
-			if(string_equals_ignore_case(kernelConfig->ALGORITMO_PLANIFICACION, "FIFO")) {
-				pcbParaEjecutar = elegir_pcb_segun_fifo();
-			}
-			else if (string_equals_ignore_case(kernelConfig->ALGORITMO_PLANIFICACION, "HRRN")) {
-				pcbParaEjecutar = elegir_pcb_segun_hrrn();
-			}
-
-			cambiar_estado_proceso(pcbParaEjecutar, ENUM_EXECUTING);
-
-			log_trace(kernelLogger, "---------------MOSTRANDO PCB A ENVIAR A CPU---------------");
-			mostrar_pcb(pcbParaEjecutar);
-
-
+		if(string_equals_ignore_case(kernelConfig->ALGORITMO_PLANIFICACION, "FIFO")) {
+			pcbParaEjecutar = elegir_pcb_segun_fifo();
 		}
+		else if (string_equals_ignore_case(kernelConfig->ALGORITMO_PLANIFICACION, "HRRN")) {
+			pcbParaEjecutar = elegir_pcb_segun_hrrn();
+		}
+
+		cambiar_estado_proceso(pcbParaEjecutar, ENUM_EXECUTING);
+
+		log_trace(kernelLogger, "---------------MOSTRANDO PCB A ENVIAR A CPU---------------");
+		mostrar_pcb(pcbParaEjecutar);
+
+		sem_post(&sem_proceso_a_executing);
 	}
 }
 
@@ -312,7 +271,10 @@ void *manejo_desalojo_pcb() {
 	// int clienteKernel = (int) (intptr_t)socket;
 
 	for(;;){
+		sem_wait(&sem_proceso_a_executing);
+		sem_wait(&sem_lista_estados[ENUM_EXECUTING]);
 		PCB* pcb_en_ejecucion = list_get(lista_estados[ENUM_EXECUTING], 0);
+		sem_post(&sem_lista_estados[ENUM_EXECUTING]);
 
 		timestamp inicio_ejecucion_proceso;
 		timestamp fin_ejecucion_proceso;
@@ -504,7 +466,7 @@ PCB* elegir_pcb_segun_hrrn(){
 	PCB* pcb;
 	sem_wait(&sem_lista_estados[ENUM_READY]);
 	//sem_wait(&sem_lista_estados[ENUM_EXECUTING]);
-	list_sort(lista_estados[ENUM_EXECUTING], (void*) criterio_hrrn);
+	list_sort(lista_estados[ENUM_READY], (void*) criterio_hrrn);
 	pcb = list_get(lista_estados[ENUM_READY], 0);
 	sem_post(&sem_lista_estados[ENUM_READY]);
 	//sem_post(&sem_lista_estados[ENUM_EXECUTING]);
@@ -581,7 +543,7 @@ PCB* nuevo_proceso(t_list* listaInstrucciones, int clienteAceptado) {
 	agregar_a_lista_con_sem(pcb, ENUM_NEW);
 	log_info(kernelLogger, "Se crea el proceso %d en NEW", pcb->id_proceso);
 
-	sem_post(&sem_proceso_a_ready); // Le envio señal al otro hilo para que cree la estructura y lo mueva a READY cuando pueda
+	sem_post(&sem_proceso_a_ready_inicializar); // Le envio señal al otro hilo para que cree la estructura y lo mueva a READY cuando pueda
 
     return pcb;
     //char* list_ids = pids_on_list(ENUM_READY);
@@ -589,6 +551,18 @@ PCB* nuevo_proceso(t_list* listaInstrucciones, int clienteAceptado) {
 	//log_info(kernelLogger, "El pcb entro en la cola de %s", NEW);
 
     //log_info(kernelLogger, "Cola Ready %s: [%s]",kernelConfig->ALGORITMO_PLANIFICACION,list_ids);
+}
+
+
+void cambiar_estado_proceso_sin_semaforos(PCB* pcb, pcb_estado estadoNuevo) {
+	pcb_estado estadoAnterior = pcb->estado;
+	pcb->estado = estadoNuevo;
+	list_remove_element(lista_estados[estadoAnterior], pcb);
+	list_add(lista_estados[estadoNuevo], pcb);
+
+	char* estadoAntes = nombres_estados[estadoAnterior];
+	char* estadoPosterior = nombres_estados[estadoNuevo];
+    log_info(kernelLogger,"PID: %d - Estado Anterior: %s - Estado Actual: %s", pcb->id_proceso, estadoAntes, estadoPosterior);
 }
 
 /*
@@ -613,25 +587,14 @@ void inicializar_listas_estados() {
 
 		lista_estados[estado] = list_create();
 
-        //sem_init(&sem_lista_estados[estado], 0, obtener_recursos(estado));
+        //sem_init(&sem_lista_estados[estado], 0, );
 		sem_init(&sem_lista_estados[estado], 0, 1);
-		mutex_lista_estados[estado] = (pthread_mutex_t*)malloc(sizeof(pthread_mutex_t));
-		pthread_mutex_init(mutex_lista_estados[estado], NULL);
+		// mutex_lista_estados[estado] = (pthread_mutex_t*)malloc(sizeof(pthread_mutex_t));
+		// pthread_mutex_init(mutex_lista_estados[estado], NULL);
 
 	}
 }
 
-/*
-* Devuelve la cantidad de recursos según el estado
-* Si el estado es NEW, EXIT O EXECUTING fluctuan entre 0 y 1
-*
-* Sino, el máximo va a ser el grado maximo de multiprogramacion que es parte de la configuracion dada por config
-*/
-/*
-int obtener_recursos(int estado) {
-	return (estado == ENUM_BLOCKED || estado == ENUM_READY) ? kernelConfig->GRADO_MAX_MULTIPROGRAMACION : 1;
-}
-*/
 void liberar_listas_estados() {
     for (int estado = 0; estado < CANTIDAD_ESTADOS; estado++) {
         sem_destroy(&sem_lista_estados[estado]);
@@ -713,7 +676,9 @@ void crear_cola_recursos(char* nombre_recurso, int instancias) {
 void inicializar_semaforos() {
 	sem_init(&sem_grado_multiprogamacion, 0, kernelConfig->GRADO_MAX_MULTIPROGRAMACION);
 	sem_init(&sem_cpu_disponible, 0, 1);
-	sem_init(&sem_proceso_a_ready, 0, 0);
+	sem_init(&sem_proceso_a_ready_inicializar, 0, 0);
+	sem_init(&sem_proceso_a_ready_terminado, 0, 0);
+	sem_init(&sem_proceso_a_executing, 0, 0);
 	/* TODO: JOAN Y JOACO
 	 * LOS CHICOS TENIAN ESTOS TAMBIEN Y ES PROBABLE QUE LOS NECESITEN
 	 *
