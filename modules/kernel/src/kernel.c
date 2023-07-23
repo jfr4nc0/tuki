@@ -149,7 +149,8 @@ void recibir_de_consola(void *clienteAceptado) {
 void crear_hilo_planificadores() {
     log_info(kernelLogger, "Inicialización del planificador %s...", kernelConfig->ALGORITMO_PLANIFICACION);
 
-    _planificador_largo_plazo();
+	pthread_create(&planificador_largo_plazo, NULL, (void*) _planificador_largo_plazo, NULL);
+    pthread_detach(planificador_largo_plazo);
 
     pthread_create(&planificador_corto_plazo, NULL, (void*) _planificador_corto_plazo, NULL);
     pthread_detach(planificador_corto_plazo);
@@ -240,9 +241,11 @@ PCB* desencolar_primer_pcb(pcb_estado estado) {
 void _planificador_corto_plazo() {
 
 	// Desalojo de PCBs
+	/*
 	pthread_t manejo_desalojo;
-	// pthread_create(&manejo_desalojo, NULL, manejo_desalojo_pcb, NULL); //TODO
-	// pthread_detach(manejo_desalojo);
+	pthread_create(&manejo_desalojo, NULL, manejo_desalojo_pcb, NULL);
+	pthread_detach(manejo_desalojo);
+*/
 
 	//Dispatcher
 	while(1) {
