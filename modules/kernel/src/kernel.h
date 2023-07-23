@@ -105,7 +105,7 @@ void inicializar_diccionario_recursos();
 int inicializar_servidor_kernel(void);
 
 /// Funciones de listas ///
-void cambiar_estado_proceso(PCB*, pcb_estado);
+void cambiar_estado_proceso_con_semaforos(PCB*, pcb_estado);
 void agregar_a_lista_con_sem(void*, int);
 void liberar_listas_estados();
 void inicializar_listas_estados();
@@ -161,10 +161,9 @@ t_dictionary* diccionario_recursos;
 /*-------------------- LOGS OBLIGATORIOS ------------------*/
 #define ABRIR_ARCHIVO               "PID: <PID> - Abrir Archivo: <NOMBRE ARCHIVO>"
 #define ACTUALIZAR_PUNTERO_ARCHIVO     "PID: <PID> - Actualizar puntero Archivo: <NOMBRE ARCHIVO> - Puntero <PUNTERO>" // Nota: El valor del puntero debe ser luego de ejecutar F_SEEK.
-#define CAMBIO_DE_ESTADO            "PID: <PID> - Estado Anterior: <ESTADO_ANTERIOR> - Estado Actual: <ESTADO_ACTUAL>"
 #define CERRAR_ARCHIVO              "PID: <PID> - Cerrar Archivo: <NOMBRE ARCHIVO>"
 #define CREACION_DE_PROCESO         "Se crea el proceso <PID> en NEW"
-#define CREAR_SEGMENTO                 "PID: <PID> - Crear Segmento - Id: < id SEGMENTO> - Tamaño: <TAMAÑO>"
+#define CREAR_SEGMENTO              "PID: <PID> - Crear Segmento - Id: < id SEGMENTO> - Tamaño: <TAMAÑO>"
 #define ELIMINAR_SEGMENTO           "PID: <PID> - Eliminar Segmento - Id Segmento: < id SEGMENTO>"
 #define ESCRIBIR_ARCHIVO            "PID: <PID> -  Escribir Archivo: <NOMBRE ARCHIVO> - Puntero <PUNTERO> - Dirección Memoria <DIRECCIÓN MEMORIA> - Tamaño <TAMAÑO>"
 #define FIN_COMPACTACIÓN            "Se finalizó el proceso de compactación"
@@ -177,7 +176,10 @@ t_dictionary* diccionario_recursos;
 #define SIGNAL                      "PID: <PID> - Signal: <NOMBRE RECURSO> - Instancias: <INSTANCIAS RECURSO>" // Nota: El valor de las instancias es después de ejecutar el Signal
 #define TRUNCAR_ARCHIVO             "PID: <PID> - Archivo: <NOMBRE ARCHIVO> - Tamaño: <TAMAÑO>"
 #define WAIT                        "PID: <PID> - Wait: <NOMBRE RECURSO> - Instancias: <INSTANCIAS RECURSO>" // Nota: El valor de las instancias es después de ejecutar el Wait
+#define LOG_CAMBIO_DE_ESTADO "PID: %d - Estado Anterior: %s - Estado Actual: %s"
+
 ////////////////////////////////////
+
 
 #define PATH_LOG_KERNEL             "logs/kernel.log"
 #define PATH_CONFIG_KERNEL          "tuki-pruebas/prueba-base/kernel.config"

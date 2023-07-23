@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-void atender_kernel(int clienteAceptado){
+void atender_kernel(int clienteKernel){
 	/*
 	while (1) {
 
@@ -47,10 +47,10 @@ void atender_kernel(int clienteAceptado){
 	}
 	*/
 	//int clienteKernel = (int) (intptr_t)clienteAceptado;
-	int clienteKernel = clienteAceptado;
 	for (;;) {
 
-		PCB *pcb_a_ejecutar = recibir_pcb(clienteKernel);
+		// Kernel no debería mandar dos pcbs simultaneamente a cpu, por las dudas tener en cuenta igual
+		PCB* pcb_a_ejecutar = recibir_pcb(clienteKernel);
 
 		ejecutar_proceso(pcb_a_ejecutar, clienteKernel);
 
@@ -71,18 +71,18 @@ void cargar_config(t_config* config) {
 
 void inicializar_registros() {
 	registrosCpu = malloc(sizeof(registros_cpu));
-	strcpy(registrosCpu->AX, "_AX");
-    strcpy(registrosCpu->BX, "_BX");
-    strcpy(registrosCpu->CX, "_CX");
-    strcpy(registrosCpu->DX, "_DX");
-    strcpy(registrosCpu->EAX, "R_EAX");
-    strcpy(registrosCpu->EBX, "R_EBX");
-    strcpy(registrosCpu->ECX, "R_EcX");
-    strcpy(registrosCpu->EDX, "R_EDX");
-    strcpy(registrosCpu->RAX, "R_RAX");
-    strcpy(registrosCpu->RBX, "R_RBX");
-    strcpy(registrosCpu->RCX, "R_RCX");
-    strcpy(registrosCpu->RDX, "R_RDX");
+	strcpy(registrosCpu->AX, "");
+    strcpy(registrosCpu->BX, "");
+    strcpy(registrosCpu->CX, "");
+    strcpy(registrosCpu->DX, "");
+    strcpy(registrosCpu->EAX, "");
+    strcpy(registrosCpu->EBX, "");
+    strcpy(registrosCpu->ECX, "");
+    strcpy(registrosCpu->EDX, "");
+    strcpy(registrosCpu->RAX, "");
+    strcpy(registrosCpu->RBX, "");
+    strcpy(registrosCpu->RCX, "");
+    strcpy(registrosCpu->RDX, "");
 
 }
 
@@ -169,21 +169,13 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
 
 	cargar_registros(pcb);
 
+	// ¿Por que se le hace malloc?
 	char* instruccion = malloc(sizeof(char*));
 	char** instruccion_decodificada = malloc(sizeof(char*));
 
 	int cantidad_instrucciones = list_size(pcb->lista_instrucciones);
 	int posicion_actual = 0;
 	codigo_operacion codigo_desalojo;
-    // Se tienen en cuenta las posibles causas de interrupciones al proceso
-    // 1. Termina el proceso (f_eop)
-    // 2. Se produce una interrupcion (f_interruption)
-    // 3. IO Exception (f_io)
-    // 4. Page Fault Exception (f_pagefault)
-    // 5. Segmentation Fault (f_segfault)
-    // Denotamos con f_<var> (f: Flag)
-
-	// while(f_eop!=1 && f_interruption!=1 && f_io!=1 && f_pagefault!=1 && f_segfault!=1) {
 
     while ((posicion_actual < cantidad_instrucciones) && !hubo_interrupcion) {
 	    instruccion = string_duplicate((char *)list_get(pcb->lista_instrucciones, pcb->contador_instrucciones));

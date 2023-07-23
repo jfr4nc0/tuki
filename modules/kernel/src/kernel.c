@@ -257,7 +257,7 @@ void _planificador_corto_plazo() {
 			pcbParaEjecutar = elegir_pcb_segun_hrrn();
 		}
 
-		cambiar_estado_proceso(pcbParaEjecutar, ENUM_EXECUTING);
+		cambiar_estado_proceso_con_semaforos(pcbParaEjecutar, ENUM_EXECUTING);
 
 		log_trace(kernelLogger, "---------------MOSTRANDO PCB A ENVIAR A CPU---------------");
 		mostrar_pcb(pcbParaEjecutar);
@@ -521,18 +521,18 @@ PCB* nuevo_proceso(t_list* listaInstrucciones, int clienteAceptado) {
 	pcb->contador_instrucciones = 0;
 
 	pcb->registrosCpu = malloc(sizeof(registros_cpu));
-	strcpy(pcb->registrosCpu->AX, "_AX");
-	strcpy(pcb->registrosCpu->BX, "_BX");
-	strcpy(pcb->registrosCpu->CX, "_CX");
-	strcpy(pcb->registrosCpu->DX, "_DX");
-	strcpy(pcb->registrosCpu->EAX, "R_EAX");
-	strcpy(pcb->registrosCpu->EBX, "R_EBX");
-	strcpy(pcb->registrosCpu->ECX, "R_EcX");
-	strcpy(pcb->registrosCpu->EDX, "R_EDX");
-	strcpy(pcb->registrosCpu->RAX, "R_RAX");
-	strcpy(pcb->registrosCpu->RBX, "R_RBX");
-	strcpy(pcb->registrosCpu->RCX, "R_RCX");
-	strcpy(pcb->registrosCpu->RDX, "R_RDX");
+	strcpy(pcb->registrosCpu->AX, "");
+	strcpy(pcb->registrosCpu->BX, "");
+	strcpy(pcb->registrosCpu->CX, "");
+	strcpy(pcb->registrosCpu->DX, "");
+	strcpy(pcb->registrosCpu->EAX, "");
+	strcpy(pcb->registrosCpu->EBX, "");
+	strcpy(pcb->registrosCpu->ECX, "");
+	strcpy(pcb->registrosCpu->EDX, "");
+	strcpy(pcb->registrosCpu->RAX, "");
+	strcpy(pcb->registrosCpu->RBX, "");
+	strcpy(pcb->registrosCpu->RCX, "");
+	strcpy(pcb->registrosCpu->RDX, "");
 
 	pcb->lista_segmentos = list_create();
 	pcb->lista_archivos_abiertos = list_create();
@@ -562,23 +562,23 @@ void cambiar_estado_proceso_sin_semaforos(PCB* pcb, pcb_estado estadoNuevo) {
 
 	char* estadoAntes = nombres_estados[estadoAnterior];
 	char* estadoPosterior = nombres_estados[estadoNuevo];
-    log_info(kernelLogger,"PID: %d - Estado Anterior: %s - Estado Actual: %s", pcb->id_proceso, estadoAntes, estadoPosterior);
+    log_info(kernelLogger,LOG_CAMBIO_DE_ESTADO, pcb->id_proceso, estadoAntes, estadoPosterior);
 }
 
 /*
- * Esta funcion mueve un proceso de un estado a otro, actualizando listas y pcb
+ * Esta funcion mueve un proceso de un estado a otro CON SEMAFOROS, actualizando listas y pcb
  * @param PCB* pcb PCB que sirve para identificar de que proceso se trata
  * @param pcb_estado estado al que se quiera mover el proceso
  * return void
  */
-void cambiar_estado_proceso(PCB* pcb, pcb_estado estadoNuevo) {
+void cambiar_estado_proceso_con_semaforos(PCB* pcb, pcb_estado estadoNuevo) {
 	pcb_estado estadoAnterior = pcb->estado;
 	pcb->estado = estadoNuevo;
 	mover_de_lista_con_sem(pcb, estadoNuevo, estadoAnterior);
 
 	char* estadoAntes = nombres_estados[estadoAnterior];
 	char* estadoPosterior = nombres_estados[estadoNuevo];
-    log_info(kernelLogger,"PID: %d - Estado Anterior: %s - Estado Actual: %s", pcb->id_proceso, estadoAntes, estadoPosterior);
+    log_info(kernelLogger, LOG_CAMBIO_DE_ESTADO, pcb->id_proceso, estadoAntes, estadoPosterior);
 }
 
 void inicializar_listas_estados() {
