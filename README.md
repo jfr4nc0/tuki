@@ -15,8 +15,6 @@
 
 * [Sofia Marques Gomez](https://www.github.com/smarquesgomez)
 
-* [Lucas Ignacio Rodriguez](https://www.github.com/lucasirod)
-
 * [Joan Franco Canossa](https://www.github.com/jfr4nc0)
 
 * [Joaquin Soaje](https://www.github.com/joaquinsoaje)
