@@ -50,7 +50,7 @@ typedef struct {
 	registros_cpu* registrosCpu;
 	t_list* lista_segmentos;
 	t_list* lista_archivos_abiertos; // Contendrá la lista de archivos abiertos del proceso con la posición del puntero de cada uno de ellos.
-	double processor_burst; // Estimacion utilizada para planificar los procesos en el algoritmo HRRN, la misma tendra un valor inicial definido por archivo de config y sera recalculada bajo la formula de promedio ponderado
+	double estimacion_rafaga; // Estimacion utilizada para planificar los procesos en el algoritmo HRRN, la misma tendra un valor inicial definido por archivo de config y sera recalculada bajo la formula de promedio ponderado
 	double ready_timestamp; // Timestamp en que el proceso llegó a ready por última vez (utilizado para el cálculo de tiempo de espera del algoritmo HRRN).
 }PCB;
 
@@ -64,6 +64,17 @@ typedef struct{
 typedef struct timespec timestamp;
 
 /*----------------- FUNCIONES ------------------*/
+
+void inicializar_estructuras();
+void *_planificador_largo_plazo();
+void* liberar_pcb_de_exit();
+void destruir_pcb(PCB* pcb);
+PCB *desencolar_primer_pcb(pcb_estado estado);
+void _planificador_corto_plazo();
+double obtener_diferencial_de_tiempo_en_milisegundos(timestamp *end, timestamp *start);
+void pcb_estimar_proxima_rafaga(PCB *pcb_ejecutado, double tiempo_en_cpu);
+void set_timespec(timestamp *timespec);
+
 
 t_list* procesar_instrucciones(int, t_list*, t_log*, t_config*);
 void cargar_config_kernel(t_config*, t_log*);
@@ -82,9 +93,9 @@ PCB* elegir_pcb_segun_fifo();
 PCB* elegir_pcb_segun_hrrn();
 void *manejo_desalojo_pcb();
 void recibir_proceso_desalojado(PCB*, int );
-PCB* recibir_pcb_de_cpu(int);
+PCB* recibir_pcb_de_cpu(int clienteAceptado, codigo_operacion* codigo);
 
-void crear_hilo_planificador();
+void crear_hilo_planificadores();
 void proximo_a_ejecutar();
 char* pids_on_list(pcb_estado estado);
 
@@ -120,7 +131,7 @@ void envio_pcb(int , PCB* , codigo_operacion );
 void envio_pcb_a_cpu(int , PCB* , codigo_operacion );
 void agregar_pcb_a_paquete_para_cpu(t_paquete* , PCB* );
 void agregar_registros_a_paquete_cpu(t_paquete* , registros_cpu* );
-void recibir_proceso_desajolado(PCB* pcb_en_ejecucion, int socket_cpu);
+codigo_operacion recibir_proceso_desajolado(PCB* pcb_en_ejecucion, int socket_cpu);
 
 ////////////////////////////////////////////////////
 
@@ -131,12 +142,14 @@ sem_t sem_proceso_a_ready;
 sem_t sem_grado_multiprogamacion;
 sem_t sem_cpu_disponible;
 
+pthread_t planificador_largo_plazo;
 pthread_t planificador_corto_plazo;
 pthread_t thread_memoria;
 pthread_t thread_cpu;
 
 t_list* lista_estados[CANTIDAD_ESTADOS];
 sem_t sem_lista_estados[CANTIDAD_ESTADOS];
+pthread_mutex_t* mutex_lista_estados[CANTIDAD_ESTADOS];
 
 t_dictionary* diccionario_recursos;
 

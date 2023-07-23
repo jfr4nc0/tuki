@@ -59,6 +59,9 @@ typedef enum {
     AUX_CREATE_PCB,
 	// Desalojos
 	DESALOJO_YIELD,
+	DESALOJO_EXIT,
+	I_DESCONOCIDA,
+	TERMINAR_EJECUCION,
     // Auxiliares
 	AUX_MENSAJE,
 	AUX_OK,

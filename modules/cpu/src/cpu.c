@@ -20,16 +20,10 @@ int main(int argc, char** argv) {
     inicializar_registros();
 
     int servidorCPU = iniciar_servidor(config, loggerCpu);
+    int clienteKernel = esperar_cliente(servidorCPU, loggerCpu);
 
-    while (1) {
-    	int clienteKernel = esperar_cliente(servidorCPU, loggerCpu);
-	    //pthread_t hilo_ejecucion;
-	    pthread_t hilo_dispatcher;
-		//pthread_create(&hilo_ejecucion, NULL, (void *) procesar_instruccion, int servidorCPU); //  TODO: Avisar posibles errores o si el kernel se desconecto.
-		pthread_create(&hilo_dispatcher, NULL, (void *) procesar_instruccion, (void*) (intptr_t) clienteKernel);
 
-		pthread_join(hilo_dispatcher, NULL);
-    }
+    atender_kernel(clienteKernel);
 
     terminar_programa(conexionCpuKernel, loggerCpu, config);
 
@@ -40,6 +34,32 @@ int main(int argc, char** argv) {
     return 0;
 }
 
+void atender_kernel(int clienteAceptado){
+	/*
+	while (1) {
+
+		//pthread_t hilo_ejecucion;
+		pthread_t hilo_dispatcher;
+		//pthread_create(&hilo_ejecucion, NULL, (void *) procesar_instruccion, int servidorCPU); //  TODO: Avisar posibles errores o si el kernel se desconecto.
+		pthread_create(&hilo_dispatcher, NULL, (void *) procesar_instruccion, (void*) (intptr_t) clienteKernel);
+
+		pthread_join(hilo_dispatcher, NULL);
+	}
+	*/
+	//int clienteKernel = (int) (intptr_t)clienteAceptado;
+	int clienteKernel = clienteAceptado;
+	for (;;) {
+
+		PCB *pcb_a_ejecutar = recibir_pcb(clienteKernel);
+
+		ejecutar_proceso(pcb_a_ejecutar, clienteKernel);
+
+	    //cpu_pcb_destroy(pcb_a_ejecutar);
+	   	}
+
+	    return;
+
+}
 void cargar_config(t_config* config) {
 	configCpu = malloc(sizeof(cpu_config_t));
 	configCpu->RETARDO_INSTRUCCION = extraer_int_de_config(config, "RETARDO_INSTRUCCION", loggerCpu);
@@ -89,7 +109,7 @@ void procesar_instruccion(void * clienteAceptado) {
 	log_trace(loggerCpu, "Registro RCX: %s", pcb->registrosCpu->RCX);
 	log_trace(loggerCpu, "Registro RDX: %s", pcb->registrosCpu->RDX);
 	ejecutar_proceso(pcb, clienteKernel);
-	free(pcb);
+	//free(pcb);
 
 	return;
 }
@@ -139,7 +159,7 @@ PCB* recibir_pcb(int clienteAceptado) {
 		    free(archivo_abierto);
 	}
 
-	pcb->processor_burst = leer_double(buffer, &desplazamiento);
+	pcb->estimacion_rafaga = leer_double(buffer, &desplazamiento);
 	pcb->ready_timestamp = leer_double(buffer, &desplazamiento);
 
 	return pcb;
@@ -154,7 +174,7 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
 
 	int cantidad_instrucciones = list_size(pcb->lista_instrucciones);
 	int posicion_actual = 0;
-
+	codigo_operacion codigo_desalojo;
     // Se tienen en cuenta las posibles causas de interrupciones al proceso
     // 1. Termina el proceso (f_eop)
     // 2. Se produce una interrupcion (f_interruption)
@@ -170,7 +190,7 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
 		instruccion_decodificada = decode_instruccion(instruccion);
 
         log_info(loggerCpu, "Ejecutando instruccion: %s", instruccion_decodificada[0]);
-        ejecutar_instruccion(instruccion_decodificada, pcb, clienteKernel);
+        ejecutar_instruccion(instruccion_decodificada, pcb, &codigo_desalojo);
 
         // Evaluar si la instruccion genero una excepcion "f_pagefault"
         // Caso afirmativo => No se actualiza el program counter del pcb
@@ -193,7 +213,7 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
 
 	//mostrar_pcb(pcb);
 
-	enviar_pcb_desalojado_a_kernel(pcb, clienteKernel);
+	enviar_pcb_desalojado_a_kernel(pcb, clienteKernel,codigo_desalojo);
 }
 
 void mostrar_pcb(PCB* pcb){
@@ -219,7 +239,7 @@ void mostrar_pcb(PCB* pcb){
 	list_iterate(pcb->lista_segmentos, (void*) iterator);
 	log_trace(loggerCpu, "LISTA ARCHIVOS ABIERTOS: ");
 	list_iterate(pcb->lista_archivos_abiertos, (void*) iterator);
-	log_trace(loggerCpu, "ESTIMACION HHRN: %f", pcb->processor_burst);
+	log_trace(loggerCpu, "ESTIMACION HHRN: %f", pcb->estimacion_rafaga);
 	log_trace(loggerCpu, "TIMESTAMP EN EL QUE EL PROCESO LLEGO A READY POR ULTIMA VEZ: %f", pcb->ready_timestamp);
 }
 void iterator(char* value) {
@@ -266,14 +286,14 @@ void guardar_contexto_de_ejecucion(PCB* pcb) {
 
 }
 
-void ejecutar_instruccion(char** instruccion, PCB* pcb, int clienteKernel) {
+void ejecutar_instruccion(char** instruccion, PCB* pcb, codigo_operacion *codigo_desalojo) {
 
 	int operacion = keyFromString(instruccion[0]);
 
 	if (operacion == -1) {
 		log_warning(loggerCpu, "Desconocemos la instruccion %s", instruccion[0]);
 
-		return;
+		return ;
 	}
 
 	ultimaOperacion = operacion;
@@ -340,15 +360,15 @@ void ejecutar_instruccion(char** instruccion, PCB* pcb, int clienteKernel) {
 			break;
 		case I_YIELD:
 			//enviar_pcb_desalojado_a_kernel(pcb, clienteKernel);
-
+			codigo_desalojo = DESALOJO_YIELD;
 			hubo_interrupcion = true;
 			break;
 		case I_EXIT:
-			instruccion_exit();
+			codigo_desalojo = DESALOJO_EXIT;
 			hubo_interrupcion = true;
-
 			break;
 	}
+	return;
 }
 
 /************** INSTRUCCIONES ***************************/
@@ -391,9 +411,9 @@ void instruccion_set(char* registro,char* valor) {
 	//sleep(configCpu->RETARDO_INSTRUCCION/1000);
 }
 
-void enviar_pcb_desalojado_a_kernel(PCB* pcb, int socket){
+void enviar_pcb_desalojado_a_kernel(PCB* pcb, int socket, codigo_operacion codigo){
 
-	envio_pcb_a_kernel_con_codigo(socket, pcb, DESALOJO_YIELD);
+	envio_pcb_a_kernel_con_codigo(socket, pcb, codigo);
 }
 
 void envio_pcb_a_kernel_con_codigo(int conexion, PCB* pcb, codigo_operacion codigo) {
@@ -414,7 +434,7 @@ void agregar_pcb_a_paquete(t_paquete* paquete, PCB* pcb) {
 	agregar_lista_a_paquete(paquete, pcb->lista_segmentos);
 	agregar_lista_a_paquete(paquete, pcb->lista_archivos_abiertos);
 	agregar_registros_a_paquete_para_kernel(paquete, pcb->registrosCpu);
-	agregar_valor_a_paquete(paquete, &pcb->processor_burst, sizeof(double));
+	agregar_valor_a_paquete(paquete, &pcb->estimacion_rafaga, sizeof(double));
 	agregar_valor_a_paquete(paquete, &pcb->ready_timestamp, sizeof(double));
 }
 void agregar_int_a_paquete(t_paquete* paquete, int valor) {

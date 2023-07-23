@@ -16,10 +16,6 @@ int main(int argc, char** argv) {
 
     log_debug(kernelLogger, "Vamos a usar el algoritmo %s", kernelConfig->ALGORITMO_PLANIFICACION);
 
-    inicializar_semaforos();
-    inicializar_listas_estados();
-    inicializar_diccionario_recursos();
-
     conexionMemoria = armar_conexion(config, MEMORIA, kernelLogger);
     conexionCPU = armar_conexion(config, CPU, kernelLogger);
     log_info(kernelLogger, "Conexion cpu inicial: %d", conexionCPU);
@@ -27,19 +23,31 @@ int main(int argc, char** argv) {
 
     enviar_codigo_operacion(conexionMemoria, AUX_SOY_KERNEL); // Le dice a memoria que módulo se conectó
 
+    inicializar_estructuras();
 
-    int servidorKernel = iniciar_servidor(config, kernelLogger);
+    // int servidorKernel = iniciar_servidor(config, kernelLogger);
+
+    // inicializar_diccionario_recursos();
 
     // TODO: Manejar multiples instancias de conexiones de consola al kernel
-    inicializar_escucha_conexiones_consolas(servidorKernel);
+   // inicializar_escucha_conexiones_consolas(servidorKernel);
 
     /*TODO: NUNCA LLEGA ACA PORQUE SE QUEDA ESPERANDO NUEVAS CONSOLAS,
     MOVER ESTAS FUNCIONES A CUANDO EL SISTEMA SOLICITE LA FINALIZACION*/
 
-    terminar_programa(servidorKernel, kernelLogger, config);
-    liberar_recursos_kernel();
+    //terminar_programa(servidorKernel, kernelLogger, config);
+    //liberar_recursos_kernel();
 
     return 0;
+}
+
+void inicializar_estructuras(){
+
+	inicializar_listas_estados();
+
+	inicializar_semaforos();
+	crear_hilo_planificadores();
+
 }
 
 void cargar_config_kernel(t_config* config, t_log* kernelLogger) {
@@ -66,14 +74,18 @@ void cargar_config_kernel(t_config* config, t_log* kernelLogger) {
 
 
 void inicializar_escucha_conexiones_consolas(int servidorKernel) {
-    while(1) {
-        int conexionConConsola = esperar_cliente(servidorKernel, kernelLogger);
+
+	while(1) {
+
+		int conexionConConsola = esperar_cliente(servidorKernel, kernelLogger);
+
         pthread_t hilo_consola;
-        pthread_t hilo_procesos_a_ready;
         pthread_create(&hilo_consola, NULL, (void*) recibir_de_consola, (void*) (intptr_t) conexionConConsola);
-        pthread_create(&hilo_procesos_a_ready, NULL, (void*) proceso_a_ready, NULL);
-		pthread_detach(hilo_consola);  //Los recursos asociados se liberan automáticamente al finalizar.
-        pthread_detach(hilo_procesos_a_ready);
+        pthread_detach(hilo_consola);  //Los recursos asociados se liberan automáticamente al finalizar.
+
+        //pthread_t hilo_procesos_a_ready;
+        //pthread_create(&hilo_procesos_a_ready, NULL, (void*) proceso_a_ready, NULL);
+        //pthread_detach(hilo_procesos_a_ready);
     }
 }
 
@@ -113,7 +125,7 @@ void proceso_a_ready() {
 void iterator(char* value) {
     log_info(kernelLogger, "%s ", value);
 }
-
+//TODO: REVISAR, NO LLEGUE
 void recibir_de_consola(void *clienteAceptado) {
 
 	log_info(kernelLogger, "Inicializando paquete.");
@@ -126,25 +138,145 @@ void recibir_de_consola(void *clienteAceptado) {
 
 	nuevo_proceso(listaInstrucciones, conexionConConsola);
 
-	crear_hilo_planificador();
+	//crear_hilo_planificador(); //TODO: ESTO ESTA MAL ACA
 
     list_destroy(listaInstrucciones);
 
-    liberar_conexion(conexionConConsola);
+    //liberar_conexion(conexionConConsola);
 
     return;
 }
 
-void crear_hilo_planificador() {
+void crear_hilo_planificadores() {
     log_info(kernelLogger, "Inicialización del planificador %s...", kernelConfig->ALGORITMO_PLANIFICACION);
-    pthread_create(&planificador_corto_plazo, NULL, (void*) proximo_a_ejecutar, NULL);
+
+    pthread_create(&planificador_largo_plazo, NULL, _planificador_largo_plazo, NULL);
+    pthread_detach(planificador_largo_plazo);
+
+    pthread_create(&planificador_corto_plazo, NULL, _planificador_corto_plazo, NULL);
     pthread_detach(planificador_corto_plazo);
 
     // Acá va el manejo de memoria y CPU con hilos.
 
 }
 
-void proximo_a_ejecutar() {
+void* _planificador_largo_plazo(){
+    // pthread_t m_liberar_pcb_de_exit;
+    // pthread_create(&m_liberar_pcb_de_exit, NULL, (void*) liberar_pcb_de_exit, NULL);
+    // pthread_detach(m_liberar_pcb_de_exit);
+
+    for (;;) {
+        // Espera a que haya pcbs en new y que el grado de multiprogramacion lo permita
+        PCB *pcb_a_ready = desencolar_primer_pcb(ENUM_NEW);
+        sem_wait(&sem_grado_multiprogamacion);
+
+        // TODO: Pido a la memoria que inicialice al pcb y me devuelva la tabla de segmentos
+        /*
+        t_info_segmentos **tablaSegmentos = adapter_memoria_pedir_inicializacion_proceso(pcbAReady);
+        pcb_set_tabla_segmentos(pcbAReady, tablaSegmentos);
+
+        if (tablaSegmentos == NULL) {
+            terminar_proceso(pcbAReady, FINALIZACION_OUTOFMEMORY);
+        }
+        else {
+           __pcb_pasar_de_new_a_ready(pcbAReady);
+        }
+        */
+        cambiar_estado_proceso(pcb_a_ready, ENUM_READY);
+    }
+
+    return NULL;
+}
+
+void* liberar_pcb_de_exit(void* args){
+    for (;;) {
+        PCB *pcb_a_liberar = desencolar_primer_pcb(ENUM_EXIT);
+
+        // TODO: MEMORIA --> adapter_memoria_finalizar_proceso(pcbALiberar);
+        //stream_send_empty_buffer(pcb_get_socket(pcbALiberar), HEADER_proceso_terminado);
+
+        //destruir_pcb(pcb_a_liberar);
+        sem_post(&sem_grado_multiprogamacion);
+    }
+
+    return NULL;
+}
+/*
+void destruir_pcb(PCB* pcb) {
+    //pthread_mutex_lock(pcb_get_mutex(pcb));
+
+    t_buffer *instrucciones = pcb->lista_instrucciones;
+    if (instrucciones != NULL) {
+        free(instrucciones->stream);
+        free(instrucciones);
+    }
+
+    registros_cpu *registrosCpu = pcb->registrosCpu;
+    if (registrosCpu != NULL) {
+    	if (registrosCpu->AX != NULL) free(registrosCpu->AX);
+    	if (registrosCpu->BX != NULL) free(registrosCpu->BX);
+    	if (registrosCpu->CX != NULL) free(registrosCpu->CX);
+    	if (registrosCpu->DX != NULL) free(registrosCpu->DX);
+    	// Registros 8 bytes
+    	if (registrosCpu->EAX != NULL) free(registrosCpu->EAX);
+    	if (registrosCpu->EBX != NULL) free(registrosCpu->EBX);
+    	if (registrosCpu->ECX != NULL) free(registrosCpu->ECX);
+    	if (registrosCpu->EDX != NULL) free(registrosCpu->EDX);
+    	// Registros 16 bytes
+    	if (registrosCpu->RAX != NULL) free(registrosCpu->RAX);
+    	if (registrosCpu->RBX != NULL) free(registrosCpu->RBX);
+    	if (registrosCpu->RCX != NULL) free(registrosCpu->RCX);
+    	if (registrosCpu->RDX != NULL) free(registrosCpu->RDX);
+
+    	free(registrosCpu);
+    }
+
+    list_destroy(pcb->lista_segmentos);
+
+    list_destroy(pcb->lista_archivos_abiertos);
+
+    free(pcb);
+}
+*/
+char* get_nombre_estado(pcb_estado pcb_estado) {
+	if (pcb_estado >= ENUM_NEW) {
+		return nombres_estados[pcb_estado];
+	}
+	return "EL ESTADO NO ESTÁ REGISTRADO"; //TODO: Mejorar este mensaje
+}
+
+int get_numero_estado(pcb_estado estado) {
+	if (estado >= ENUM_NEW) {
+		if(estado == ENUM_NEW){
+			return 0;
+		}else if (estado == ENUM_READY){
+			return 1;
+		}else if (estado == ENUM_EXECUTING){
+			return 2;
+		}else if (estado == ENUM_BLOCKED){
+			return 3;
+		}else if (estado == ENUM_EXIT){
+			return 4;
+		}else {
+			return "EL ESTADO NO ESTÁ REGISTRADO";
+		}
+	}
+}
+
+PCB *desencolar_primer_pcb(pcb_estado estado) {
+    int estadoNumerico = (int)estado;
+    log_info(kernelLogger, "llegue hasta la linea 267");
+	sem_wait(&sem_lista_estados[estadoNumerico]);
+    // pthread_mutex_lock(mutex_lista_estados[estado_]);
+    PCB *pcb = list_remove(lista_estados[estadoNumerico], 0);
+    sem_post(&sem_lista_estados[estadoNumerico]);
+    // pthread_mutex_unlock(mutex_lista_estados[estado_]);
+
+    return pcb;
+}
+
+
+void _planificador_corto_plazo() {
 
 	// Desalojo de PCBs
 	pthread_t manejo_desalojo;
@@ -186,22 +318,45 @@ void *manejo_desalojo_pcb() {
 		timestamp fin_ejecucion_proceso;
 
 		set_timespec(&inicio_ejecucion_proceso);
-
 		envio_pcb_a_cpu(conexionCPU, pcb_en_ejecucion, OP_EXECUTE_PCB);
-		recibir_proceso_desajolado(pcb_en_ejecucion, conexionCPU);
+		codigo_operacion codigo = recibir_proceso_desajolado(pcb_en_ejecucion, conexionCPU);
 		set_timespec(&fin_ejecucion_proceso);
 
+		 // Actualizo el estimado en el pcb segun el real ejecutado
+		 double tiempo_en_cpu = obtener_diferencial_de_tiempo_en_milisegundos(&fin_ejecucion_proceso, &inicio_ejecucion_proceso);
+		 pcb_estimar_proxima_rafaga(pcb_en_ejecucion, tiempo_en_cpu);
+
+		 switch(codigo){
+		 	 case DESALOJO_YIELD:
+		 	 {
+		 		 log_error(kernelLogger, "SI FUNCIONA ME MUERO");
+		 	 }
+		 }
 
 
 	}
 	return NULL;
 }
 
-void recibir_proceso_desajolado(PCB* pcb_en_ejecucion, int socket_cpu) {
+double obtener_diferencial_de_tiempo_en_milisegundos(timestamp *end, timestamp *start) {
+    const uint32_t SECS_TO_MILISECS = 1000;
+    const uint32_t NANOSECS_TO_MILISECS = 1000000;
+    return (double) ( (end->tv_sec - start->tv_sec) * SECS_TO_MILISECS + (end->tv_nsec - start->tv_nsec) / NANOSECS_TO_MILISECS );
+}
+void pcb_estimar_proxima_rafaga(PCB *pcb_ejecutado, double tiempo_en_cpu){
+    double alfa_hrrn = kernelConfig->HRRN_ALFA;
+
+    double estimadoProxRafagaPcb = pcb_ejecutado->estimacion_rafaga;
+    double estimadoProxRafagaActualizado = alfa_hrrn * tiempo_en_cpu + (1.0 - alfa_hrrn) * estimadoProxRafagaPcb;
+    pcb_ejecutado->estimacion_rafaga = estimadoProxRafagaActualizado;
+    return;
+}
+codigo_operacion recibir_proceso_desajolado(PCB* pcb_en_ejecucion, int socket_cpu) {
 
 	PCB* pcb_recibido;
+	codigo_operacion codigo;
 
-	pcb_recibido = recibir_pcb_de_cpu(socket_cpu);
+	pcb_recibido = recibir_pcb_de_cpu(socket_cpu, &codigo);
 
 	int id_proceso_en_ejecucion = pcb_en_ejecucion->id_proceso;
 	int id_pcb_recibido = pcb_recibido->id_proceso;
@@ -211,10 +366,11 @@ void recibir_proceso_desajolado(PCB* pcb_en_ejecucion, int socket_cpu) {
 	    exit(EXIT_FAILURE);
 	}
 
-	return;
+
+	return codigo;
 }
 
-PCB* recibir_pcb_de_cpu(int clienteAceptado) {
+PCB* recibir_pcb_de_cpu(int clienteAceptado, codigo_operacion* codigo) {
 	PCB* pcb = malloc(sizeof(PCB));
 
 	char* buffer;
@@ -223,6 +379,7 @@ PCB* recibir_pcb_de_cpu(int clienteAceptado) {
 
 	codigo_operacion codigoOperacion = recibir_operacion(clienteAceptado);
 	log_info(kernelLogger, "CODIGO DE OPERACION RECIBIDO: %d", codigoOperacion);
+	*codigo = codigoOperacion;
 	buffer = recibir_buffer(&tamanio, clienteAceptado);
 
 	pcb->id_proceso = leer_int(buffer, &desplazamiento);
@@ -261,7 +418,7 @@ PCB* recibir_pcb_de_cpu(int clienteAceptado) {
 	strcpy(pcb->registrosCpu->RCX, leer_registro_16_bytes(buffer, &desplazamiento));
 	strcpy(pcb->registrosCpu->RDX, leer_registro_16_bytes(buffer, &desplazamiento));
 
-	pcb->processor_burst = leer_double(buffer, &desplazamiento);
+	pcb->estimacion_rafaga = leer_double(buffer, &desplazamiento);
 	pcb->ready_timestamp = leer_double(buffer, &desplazamiento);
 	log_info(kernelLogger, "---------------------------------------------Recibi el proceso de PID: %d", pcb->id_proceso);
 	mostrar_pcb(pcb);
@@ -315,7 +472,7 @@ PCB* recibir_proceso_desalojado(int socket){
 	pcb->registrosCpu->RCX = leer_registro_16_bytes(buffer, &desplazamiento);
 	pcb->registrosCpu->RDX = leer_registro_16_bytes(buffer, &desplazamiento);
 
-	pcb->processor_burst = leer_double(buffer, &desplazamiento);
+	pcb->estimacion_rafaga = leer_double(buffer, &desplazamiento);
 	pcb->ready_timestamp = leer_double(buffer, &desplazamiento);
 
 	return pcb;
@@ -378,7 +535,7 @@ void mostrar_pcb(PCB* pcb){
 	list_iterate(pcb->lista_segmentos, (void*) iterator);
 	log_trace(kernelLogger, "LISTA ARCHIVOS ABIERTOS: ");
 	list_iterate(pcb->lista_archivos_abiertos, (void*) iterator);
-	log_trace(kernelLogger, "ESTIMACION HHRN: %f", pcb->processor_burst);
+	log_trace(kernelLogger, "ESTIMACION HHRN: %f", pcb->estimacion_rafaga);
 	log_trace(kernelLogger, "TIMESTAMP EN EL QUE EL PROCESO LLEGO A READY POR ULTIMA VEZ: %f", pcb->ready_timestamp);
 }
 
@@ -417,7 +574,7 @@ PCB* nuevo_proceso(t_list* listaInstrucciones, int clienteAceptado) {
 
 	pcb->lista_segmentos = list_create();
 	pcb->lista_archivos_abiertos = list_create();
-	pcb->processor_burst = kernelConfig->ESTIMACION_INICIAL;
+	pcb->estimacion_rafaga = kernelConfig->ESTIMACION_INICIAL;
 	pcb->ready_timestamp = 0; //TODO
 	//pcb->hrrn_alfa = kernelConfig->HRRN_ALFA;
 
@@ -451,9 +608,16 @@ void cambiar_estado_proceso(PCB* pcb, pcb_estado estadoNuevo) {
 }
 
 void inicializar_listas_estados() {
+
 	for (int estado = 0; estado < CANTIDAD_ESTADOS; estado++) {
+
 		lista_estados[estado] = list_create();
-        sem_init(&sem_lista_estados[estado], 0, obtener_recursos(estado));
+
+        //sem_init(&sem_lista_estados[estado], 0, obtener_recursos(estado));
+		sem_init(&sem_lista_estados[estado], 0, 1);
+		mutex_lista_estados[estado] = (pthread_mutex_t*)malloc(sizeof(pthread_mutex_t));
+		pthread_mutex_init(mutex_lista_estados[estado], NULL);
+
 	}
 }
 
@@ -463,10 +627,11 @@ void inicializar_listas_estados() {
 *
 * Sino, el máximo va a ser el grado maximo de multiprogramacion que es parte de la configuracion dada por config
 */
+/*
 int obtener_recursos(int estado) {
 	return (estado == ENUM_BLOCKED || estado == ENUM_READY) ? kernelConfig->GRADO_MAX_MULTIPROGRAMACION : 1;
 }
-
+*/
 void liberar_listas_estados() {
     for (int estado = 0; estado < CANTIDAD_ESTADOS; estado++) {
         sem_destroy(&sem_lista_estados[estado]);
@@ -496,18 +661,11 @@ void mover_de_lista_con_sem(void* elem, int estadoNuevo, int estadoAnterior) {
 	return;
 }
 
-char* get_nombre_estado(pcb_estado pcb_estado) {
-	if (pcb_estado >= ENUM_NEW) {
-		return nombres_estados[pcb_estado];
-	}
-	return "EL ESTADO NO ESTÁ REGISTRADO"; //TODO: Mejorar este mensaje
-}
-
 /*------------ ALGORITMO HRRN -----------------*/
 double rafaga_estimada(PCB* pcb) {
 	// TODO Usar timestamp.h para tomar el tiempo de ingreso y calcularlo para hrrn
 	double alfa = kernelConfig->HRRN_ALFA;
-	double ultima_rafaga = pcb->processor_burst;
+	double ultima_rafaga = pcb->estimacion_rafaga;
 	double rafaga = ultima_rafaga != 0 ? ((alfa * ultima_rafaga) + ((1 - alfa) * ultima_rafaga)) : kernelConfig->ESTIMACION_INICIAL;
 
 	return rafaga;
@@ -556,6 +714,16 @@ void inicializar_semaforos() {
 	sem_init(&sem_grado_multiprogamacion, 0, kernelConfig->GRADO_MAX_MULTIPROGRAMACION);
 	sem_init(&sem_cpu_disponible, 0, 1);
 	sem_init(&sem_proceso_a_ready, 0, 0);
+	/* TODO: JOAN Y JOACO
+	 * LOS CHICOS TENIAN ESTOS TAMBIEN Y ES PROBABLE QUE LOS NECESITEN
+	 *
+	    pthread_mutex_init(&mutexSocketMemoria, NULL);
+    	pthread_mutex_init(&mutexSocketFilesystem, NULL);
+    	sem_init(&semFRead, 0, 1);
+    	sem_init(&semFWrite, 0, 1);
+    	fRead = false;
+    	fWrite = false;
+	 */
 }
 
 //////////Funciones para enviar un pcb a cpu //////////////////////////////
@@ -581,7 +749,7 @@ void agregar_pcb_a_paquete_para_cpu(t_paquete* paquete, PCB* pcb) {
 	agregar_int_a_paquete(paquete, pcb->contador_instrucciones);
 	agregar_lista_a_paquete(paquete, pcb->lista_segmentos);
 	agregar_lista_a_paquete(paquete, pcb->lista_archivos_abiertos);
-	agregar_valor_a_paquete(paquete, &pcb->processor_burst, sizeof(double));
+	agregar_valor_a_paquete(paquete, &pcb->estimacion_rafaga, sizeof(double));
 	agregar_valor_a_paquete(paquete, &pcb->ready_timestamp, sizeof(double));
 }
 /*
@@ -687,7 +855,7 @@ void agregar_pcb_a_paquete(t_paquete* paquete, PCB* pcb) {
 	agregar_int_a_paquete(paquete, pcb->contador_instrucciones);
 	agregar_lista_a_paquete(paquete, pcb->lista_segmentos);
 	agregar_lista_a_paquete(paquete, pcb->lista_archivos_abiertos);
-	agregar_valor_a_paquete(paquete, &pcb->processor_burst, sizeof(double));
+	agregar_valor_a_paquete(paquete, &pcb->estimacion_rafaga, sizeof(double));
 	agregar_valor_a_paquete(paquete, &pcb->ready_timestamp, sizeof(double));
 }
 ////////////////////////////////////////

@@ -24,11 +24,12 @@ cpu_config_t* configCpu;
 
 extern registros_cpu* registrosCpu;
 
+void atender_kernel(int);
 void mostrar_pcb(PCB* );
 
 void cargar_config(t_config*);
 char** decode_instruccion(char*);
-void ejecutar_instruccion(char** , PCB* , int );
+void ejecutar_instruccion(char** , PCB* , codigo_operacion*);
 void ejecutar_proceso(PCB* pcb, int);
 void cargar_registros(PCB* pcb);
 char* fetch_instruccion(PCB* pcb);
@@ -40,7 +41,7 @@ void set_registro(char*, char*);
 void set_registros(PCB* pcb);
 void instruccion_set(char* registro,char* valor);
 PCB* recibir_pcb(int);
-void enviar_pcb_desalojado_a_kernel(PCB*, int);
+void enviar_pcb_desalojado_a_kernel(PCB*, int, codigo_operacion);
 void envio_pcb_a_kernel_con_codigo(int , PCB* , codigo_operacion );
 void agregar_pcb_a_paquete(t_paquete* , PCB* );
 
