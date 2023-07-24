@@ -33,6 +33,7 @@ bool crear_archivo(char *nombreArchivo) {
     }
 
     dictionary_put(dictionaryFcbs, nombreArchivo, (void*)nuevoFcb);
+    persistir_fcb(nuevoFcb);
     log_info(loggerFileSystem, "Archivo nuevo creado: %s", nombreArchivo);
     return nuevoFcb;
 }
@@ -81,7 +82,10 @@ bool leer_archivo(char* nombreArchivo, uint32_t puntero, uint32_t direccionFisic
     char* informacion = malloc(bytesQueFaltanPorLeer);
     char* buffer;
 
-    uint32_t posicionAbsoluta, espacioDisponible, bytesLeidos, bytesParaLeer = 0;
+    uint32_t posicionAbsoluta = 0;
+    uint32_t espacioDisponible = 0;
+    uint32_t bytesLeidos = 0;
+    uint32_t bytesParaLeer = 0;
     size_t rtaLectura;
 
 

@@ -33,7 +33,7 @@ t_config_file_system* cargar_config(t_config* config) {
 	configPuntero->PATH_BLOQUES = extraer_string_de_config(config, "PATH_BLOQUES", loggerFileSystem);
 	configPuntero->PATH_FCB = extraer_string_de_config(config, "PATH_FCB", loggerFileSystem);
 
-	configPuntero->RETARDO_ACCESO_BLOQUE = extraer_int_de_config(config, "RETARDO_ACCESO_BLOQUE", loggerFileSystem);
+	configPuntero->RETARDO_ACCESO_BLOQUE = extraer_int_de_config(config, "RETARDO_ACCESO_BLOQUE", loggerFileSystem) / 1000;
 	configPuntero->PUERTO_MEMORIA = extraer_int_de_config(config, "PUERTO_MEMORIA", loggerFileSystem);
 	configPuntero->PUERTO_ESCUCHA = extraer_int_de_config(config, "PUERTO_ESCUCHA", loggerFileSystem);
 
@@ -138,8 +138,7 @@ void abrir_fcbs(char* path_fcbs) {
             // Ruta completa del archivo es el nombre del archivo + el path hacia la ruta de los fcb
 			snprintf(rutaFcb, sizeof(rutaFcb), "%s/%s", path_fcbs, ent->d_name);
 			fcb_temp = cargar_fcb(rutaFcb);
-			nombreTemp = fcb_temp->nombre_archivo;
-			dictionary_put(dictionaryFcbs, nombreTemp, (void*)fcb_temp);
+			dictionary_put(dictionaryFcbs, fcb_temp->nombre_archivo, (void*)fcb_temp);
 		} else {
 			log_warning(loggerFileSystem, "FCB: EL ent->d_type (%d) no es %d", ent->d_type, DT_REG);
 		}
@@ -162,11 +161,11 @@ t_fcb* cargar_fcb(char *pathFcb) {
 }
 
 uint32_t redondear_hacia(uint32_t nuevoSize, codigo_redondear ABAJO_ARRIBA) {
-    uint32_t size = nuevoSize / SIZE_BLOQUE;
+    uint32_t cantidadBLoques = nuevoSize / SIZE_BLOQUE;
 
-    size = (nuevoSize%SIZE_BLOQUE == 0) ? size : size + ABAJO_ARRIBA;
+    cantidadBLoques = (nuevoSize%SIZE_BLOQUE == 0) ? cantidadBLoques : cantidadBLoques + ABAJO_ARRIBA;
 
-    log_debug(loggerFileSystem, "Bloques nuevos: %d, quedando con bloques asignados: %d.", nuevoSize, size);
+    log_debug(loggerFileSystem, "Bloques nuevos: %d, quedando con bloques asignados: %d.", nuevoSize, cantidadBLoques);
 
-    return size;
+    return cantidadBLoques;
 }

@@ -99,7 +99,7 @@ void asignar_puntero_directo(t_fcb* fcb) {
 
 void asignar_puntero_indirecto(t_fcb* fcb) {
     uint32_t bloquePunteros = bitmap_encontrar_bloque_libre();
-    fcb->cantidad_bloques_asignados = bloquePunteros;
+    fcb->puntero_indirecto = bloquePunteros;
     bitmap_marcar_bloque_ocupado(bloquePunteros);
     log_info(loggerFileSystem, "Se asigna el bloque <%u> como bloque de punteros.", bloquePunteros);
     return;
