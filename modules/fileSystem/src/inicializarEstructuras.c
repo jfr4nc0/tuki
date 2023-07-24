@@ -138,7 +138,6 @@ void abrir_fcbs(char* path_fcbs) {
             // Ruta completa del archivo es el nombre del archivo + el path hacia la ruta de los fcb
 			snprintf(rutaFcb, sizeof(rutaFcb), "%s/%s", path_fcbs, ent->d_name);
 			fcb_temp = cargar_fcb(rutaFcb);
-			// nombreTemp = fcb_temp->nombre_archivo; BORRAR
 			dictionary_put(dictionaryFcbs, fcb_temp->nombre_archivo, (void*)fcb_temp);
 		} else {
 			log_warning(loggerFileSystem, "FCB: EL ent->d_type (%d) no es %d", ent->d_type, DT_REG);

@@ -6,7 +6,6 @@ int main(int argc, char** argv) {
     t_config* config = iniciar_config(DEFAULT_CONFIG_PATH, loggerFileSystem);
     inicializar_estructuras(config);
 
-    truncar_archivo("ARCHIVO_EXISTENTE", 158);
     int conexionMemoria = armar_conexion(config, MEMORIA, loggerFileSystem);
     // Notifico a memoria que soy el módulo file system
     enviar_codigo_operacion(conexionMemoria, AUX_SOY_FILE_SYSTEM);
