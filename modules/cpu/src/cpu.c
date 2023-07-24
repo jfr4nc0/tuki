@@ -376,24 +376,24 @@ void instruccion_set(char* registro,char* valor) {
 	//sleep(configCpu->RETARDO_INSTRUCCION/1000);
 }
 
-void instruccion_set(char* registro,char* valor) {
+// void instruccion_set(char* registro,char* valor) {
 
-	int set_valor = atoi(valor);
+// 	int set_valor = atoi(valor);
 
-	void* registro_cpu = get_registro_cpu(registro, registrosCpu);
+// 	void* registro_cpu = get_registro_cpu(registro, registrosCpu);
 
-	if(registro_cpu!=-1){
-		registro_cpu = set_valor;
-	} else {
-		log_error(loggerCpu, "Registro de CPU no reconocido.");
-		hubo_interrupcion=true;
-		return;
-	}
+// 	if(registro_cpu!=-1){
+// 		registro_cpu = set_valor;
+// 	} else {
+// 		log_error(loggerCpu, "Registro de CPU no reconocido.");
+// 		hubo_interrupcion=true;
+// 		return;
+// 	}
 
-	usleep(configCpu->RETARDO_INSTRUCCION*1000); // De microsegundos a nanosegundos
-	free(set_valor);
-	free(registro_cpu);
-}
+// 	usleep(configCpu->RETARDO_INSTRUCCION*1000); // De microsegundos a nanosegundos
+// 	free(set_valor);
+// 	free(registro_cpu);
+// }
 
 void instruccion_mov_in(char* registro, char* dir_logica, PCB* pcb) {
 	/*
