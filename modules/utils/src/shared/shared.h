@@ -57,6 +57,11 @@ typedef enum {
     I_YIELD,
     I_EXIT,
     AUX_CREATE_PCB,
+	// Desalojos
+	DESALOJO_YIELD,
+	DESALOJO_EXIT,
+	I_DESCONOCIDA,
+	TERMINAR_EJECUCION,
     // Auxiliares
 	AUX_MENSAJE,
 	AUX_OK,
@@ -69,24 +74,25 @@ typedef enum {
 	AUX_SOY_KERNEL, // Notifica a memoria que el modulo que se conectó es KERNEL
 	AUX_SOY_FILE_SYSTEM // Notifica a memoria que el modulo que se conectó es FILE SYSTEM
 }codigo_operacion;
+
 typedef struct {
     // Registros de 4 bytes
-    int AX;
-    int BX;
-    int CX;
-    int DX;
+    char AX[4];
+    char BX[4];
+    char CX[4];
+    char DX[4];
 
     // Registros de 8 bytes
-    long EAX;
-    long EBX;
-    long ECX;
-    long EDX;
+    char EAX[8];
+    char EBX[8];
+    char ECX[8];
+    char EDX[8];
 
     // Registro de 16 bytes
-    long long RAX;
-    long long RBX;
-    long long RCX;
-    long long RDX;
+    char RAX[16];
+    char RBX[16];
+    char RCX[16];
+    char RDX[16];
 } registros_cpu;
 
 typedef struct {
@@ -124,7 +130,9 @@ double leer_double(char*, int*);
 char* leer_string(char* buffer, int* desp);
 t_list* leer_string_array(char* buffer, int* desp);
 char** leer_arreglo_string(char* , int* );
-
+char* leer_registro_4_bytes(char* , int* );
+char* leer_registro_8_bytes(char* , int* );
+char* leer_registro_16_bytes(char* , int* );
 
 /*----------------------------- FUNCIONES CLIENTE ----------------------------*/
 
@@ -147,5 +155,11 @@ t_list* recibir_paquete(int);
 int recibir_operacion(int);
 void* recibir_buffer(int*, int);
 void* leer_de_buffer(char*, int*, size_t);
+
+
+void intervalo_de_pausa(int );
+
+
+char** decode_instruccion(char*, t_log*);
 
 #endif

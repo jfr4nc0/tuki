@@ -7,32 +7,23 @@ int conexionCpuKernel;
 registros_cpu* registrosCpu;
 
 bool hubo_interrupcion = false;
-codigo_operacion ultimaOperacion;
 
 int main(int argc, char** argv) {
     loggerCpu = iniciar_logger(DEFAULT_LOG_PATH, ENUM_CPU);
     t_config* config = iniciar_config(DEFAULT_CONFIG_PATH, loggerCpu);
     cargar_config(config);
 
-    int servidorCPU = iniciar_servidor(config, loggerCpu);
-
-
     int conexionCpuMemoria = armar_conexion(config, MEMORIA, loggerCpu);
     enviar_codigo_operacion(conexionCpuMemoria, AUX_SOY_CPU);
+
+    int servidorCPU = iniciar_servidor(config, loggerCpu);
+    int clienteKernel = esperar_cliente(servidorCPU, loggerCpu);
 
     inicializar_registros();
 
 
 
-    while (1) {
-		int clienteKernel = esperar_cliente(servidorCPU, loggerCpu);
-	    //pthread_t hilo_ejecucion;
-	    pthread_t hilo_dispatcher;
-		//pthread_create(&hilo_ejecucion, NULL, (void *) procesar_instruccion, int servidorCPU); //  TODO: Avisar posibles errores o si el kernel se desconecto.
-		pthread_create(&hilo_dispatcher, NULL, (void *) procesar_instruccion, (void*) (intptr_t) clienteKernel);
-
-		pthread_join(hilo_dispatcher, NULL);
-    }
+    atender_kernel(clienteKernel);
 
     terminar_programa(conexionCpuKernel, loggerCpu, config);
 
@@ -43,6 +34,30 @@ int main(int argc, char** argv) {
     return 0;
 }
 
+void atender_kernel(int clienteKernel){
+	/*
+	while (1) {
+
+		//pthread_t hilo_ejecucion;
+		pthread_t hilo_dispatcher;
+		//pthread_create(&hilo_ejecucion, NULL, (void *) procesar_instruccion, int servidorCPU); //  TODO: Avisar posibles errores o si el kernel se desconecto.
+		pthread_create(&hilo_dispatcher, NULL, (void *) procesar_instruccion, (void*) (intptr_t) clienteKernel);
+
+		pthread_join(hilo_dispatcher, NULL);
+	}
+	*/
+	//int clienteKernel = (int) (intptr_t)clienteAceptado;
+
+		// Kernel no debería mandar dos pcbs simultaneamente a cpu, por las dudas tener en cuenta igual
+	PCB* pcb_a_ejecutar = recibir_pcb(clienteKernel);
+
+	ejecutar_proceso(pcb_a_ejecutar, clienteKernel);
+
+	    //cpu_pcb_destroy(pcb_a_ejecutar)
+
+	return;
+
+}
 void cargar_config(t_config* config) {
 	configCpu = malloc(sizeof(cpu_config_t));
 	configCpu->RETARDO_INSTRUCCION = extraer_int_de_config(config, "RETARDO_INSTRUCCION", loggerCpu);
@@ -54,18 +69,19 @@ void cargar_config(t_config* config) {
 
 void inicializar_registros() {
 	registrosCpu = malloc(sizeof(registros_cpu));
-	registrosCpu->AX = 0;
-	registrosCpu->BX = 0;
-	registrosCpu->CX = 0;
-	registrosCpu->DX = 0;
-	registrosCpu->EAX = 0;
-	registrosCpu->EBX = 0;
-	registrosCpu->ECX = 0;
-	registrosCpu->EDX = 0;
-	registrosCpu->RAX = 0;
-	registrosCpu->RBX = 0;
-	registrosCpu->RCX = 0;
-	registrosCpu->RDX = 0;
+	strcpy(registrosCpu->AX, "");
+    strcpy(registrosCpu->BX, "");
+    strcpy(registrosCpu->CX, "");
+    strcpy(registrosCpu->DX, "");
+    strcpy(registrosCpu->EAX, "");
+    strcpy(registrosCpu->EBX, "");
+    strcpy(registrosCpu->ECX, "");
+    strcpy(registrosCpu->EDX, "");
+    strcpy(registrosCpu->RAX, "");
+    strcpy(registrosCpu->RBX, "");
+    strcpy(registrosCpu->RCX, "");
+    strcpy(registrosCpu->RDX, "");
+
 }
 
 void procesar_instruccion(void * clienteAceptado) {
@@ -73,17 +89,28 @@ void procesar_instruccion(void * clienteAceptado) {
 
 	codigo_operacion codigoOperacion = recibir_operacion(clienteKernel);
 	if (codigoOperacion != OP_EXECUTE_PCB) {
-		log_error(kernelLogger, "No se recibió un codigo de operacion de tipo pcb. Codigo recibido %d", codigoOperacion);
+		log_error(loggerCpu, "No se recibió un codigo de operacion de tipo pcb. Codigo recibido %d", codigoOperacion);
 		abort();
 	}
 
 	PCB* pcb = recibir_pcb(clienteKernel);
+	log_trace(loggerCpu, "Registro AX: %s", pcb->registrosCpu->AX);
+	log_trace(loggerCpu, "Registro BX: %s", pcb->registrosCpu->BX);
+	log_trace(loggerCpu, "Registro CX: %s", pcb->registrosCpu->CX);
+	log_trace(loggerCpu, "Registro DX: %s", pcb->registrosCpu->DX);
+	log_trace(loggerCpu, "Registro EAX: %s", pcb->registrosCpu->EAX);
+	log_trace(loggerCpu, "Registro EBX: %s", pcb->registrosCpu->EBX);
+	log_trace(loggerCpu, "Registro ECX: %s", pcb->registrosCpu->ECX);
+	log_trace(loggerCpu, "Registro EDX: %s", pcb->registrosCpu->EDX);
+	log_trace(loggerCpu, "Registro RAX: %s", pcb->registrosCpu->RAX);
+	log_trace(loggerCpu, "Registro RBX: %s", pcb->registrosCpu->RBX);
+	log_trace(loggerCpu, "Registro RCX: %s", pcb->registrosCpu->RCX);
+	log_trace(loggerCpu, "Registro RDX: %s", pcb->registrosCpu->RDX);
 	ejecutar_proceso(pcb, clienteKernel);
-	free(pcb);
+	//free(pcb);
 
 	return;
 }
-
 
 PCB* recibir_pcb(int clienteAceptado) {
 	PCB* pcb = malloc(sizeof(PCB));
@@ -92,9 +119,25 @@ PCB* recibir_pcb(int clienteAceptado) {
 	int tamanio = 0;
 	int desplazamiento = 0;
 
+	recibir_operacion(clienteAceptado);
 	buffer = recibir_buffer(&tamanio, clienteAceptado);
 
+	pcb->registrosCpu = malloc(sizeof(registros_cpu));
+	strcpy(pcb->registrosCpu->AX, leer_registro_4_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->BX, leer_registro_4_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->CX, leer_registro_4_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->DX, leer_registro_4_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->EAX,  leer_registro_8_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->EBX,  leer_registro_8_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->ECX,  leer_registro_8_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->EDX,  leer_registro_8_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->RAX,  leer_registro_16_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->RBX,  leer_registro_16_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->RCX,  leer_registro_16_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->RDX,  leer_registro_16_bytes(buffer, &desplazamiento));
+
 	pcb->id_proceso = leer_int(buffer, &desplazamiento);
+
 	pcb->estado = leer_int(buffer, &desplazamiento);
 
 	pcb->lista_instrucciones = leer_string_array(buffer, &desplazamiento); // NO esta funcionando bien
@@ -115,21 +158,7 @@ PCB* recibir_pcb(int clienteAceptado) {
 		    free(archivo_abierto);
 	}
 
-	pcb->registrosCpu = malloc(sizeof(registros_cpu));
-	pcb->registrosCpu->AX = leer_int(buffer, &desplazamiento);
-	pcb->registrosCpu->BX = leer_int(buffer, &desplazamiento);
-	pcb->registrosCpu->CX = leer_int(buffer, &desplazamiento);
-	pcb->registrosCpu->DX = leer_int(buffer, &desplazamiento);
-	pcb->registrosCpu->EAX = leer_long(buffer, &desplazamiento);
-	pcb->registrosCpu->EBX = leer_long(buffer, &desplazamiento);
-	pcb->registrosCpu->ECX = leer_long(buffer, &desplazamiento);
-	pcb->registrosCpu->EDX = leer_long(buffer, &desplazamiento);
-	pcb->registrosCpu->RAX = leer_long_long(buffer, &desplazamiento);
-	pcb->registrosCpu->RBX = leer_long_long(buffer, &desplazamiento);
-	pcb->registrosCpu->RCX = leer_long_long(buffer, &desplazamiento);
-	pcb->registrosCpu->RDX = leer_long_long(buffer, &desplazamiento);
-
-	pcb->processor_burst = leer_double(buffer, &desplazamiento);
+	pcb->estimacion_rafaga = leer_double(buffer, &desplazamiento);
 	pcb->ready_timestamp = leer_double(buffer, &desplazamiento);
 
 	return pcb;
@@ -139,33 +168,27 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
 
 	cargar_registros(pcb);
 
+	// ¿Por que se le hace malloc?
 	char* instruccion = malloc(sizeof(char*));
 	char** instruccion_decodificada = malloc(sizeof(char*));
 
 	int cantidad_instrucciones = list_size(pcb->lista_instrucciones);
 	int posicion_actual = 0;
-
-    // Se tienen en cuenta las posibles causas de interrupciones al proceso
-    // 1. Termina el proceso (f_eop)
-    // 2. Se produce una interrupcion (f_interruption)
-    // 3. IO Exception (f_io)
-    // 4. Page Fault Exception (f_pagefault)
-    // 5. Segmentation Fault (f_segfault)
-    // Denotamos con f_<var> (f: Flag)
-
-	// while(f_eop!=1 && f_interruption!=1 && f_io!=1 && f_pagefault!=1 && f_segfault!=1) {
+	codigo_operacion ultimaOperacion = -1;
 
     while ((posicion_actual < cantidad_instrucciones) && !hubo_interrupcion) {
 	    instruccion = string_duplicate((char *)list_get(pcb->lista_instrucciones, pcb->contador_instrucciones));
-		instruccion_decodificada = decode_instruccion(instruccion);
+		instruccion_decodificada = decode_instruccion(instruccion, loggerCpu);
 
         log_info(loggerCpu, "Ejecutando instruccion: %s", instruccion_decodificada[0]);
-        ejecutar_instruccion(instruccion_decodificada, pcb);
+        ultimaOperacion = ejecutar_instruccion(instruccion_decodificada, pcb);
 
         // Evaluar si la instruccion genero una excepcion "f_pagefault"
         // Caso afirmativo => No se actualiza el program counter del pcb
-        pcb->contador_instrucciones++;
-		posicion_actual++;
+        if (!hubo_interrupcion) {
+			pcb->contador_instrucciones++;
+			posicion_actual++;
+        }
 
         log_info(loggerCpu, "PROGRAM COUNTER: %d", pcb->contador_instrucciones);
     }
@@ -181,63 +204,90 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
 		hubo_interrupcion = false;
 	}
 
-	devolver_pcb_kernel(pcb, clienteKernel, ultimaOperacion);
+	//mostrar_pcb(pcb);
+
+	enviar_pcb_desalojado_a_kernel(pcb, clienteKernel, ultimaOperacion);
 }
+
+void mostrar_pcb(PCB* pcb){
+	log_trace(loggerCpu, "PID: %d", pcb->id_proceso);
+	char* estado = nombres_estados[pcb->estado];
+	log_trace(loggerCpu, "ESTADO: %s", estado);
+	log_trace(loggerCpu, "INSTRUCCIONES A EJECUTAR: ");
+	list_iterate(pcb->lista_instrucciones, (void*) iterator);
+	log_trace(loggerCpu, "PROGRAM COUNTER: %d", pcb->contador_instrucciones);
+	log_trace(loggerCpu, "Registro AX: %s", pcb->registrosCpu->AX);
+	log_trace(loggerCpu, "Registro BX: %s", pcb->registrosCpu->BX);
+	log_trace(loggerCpu, "Registro CX: %s", pcb->registrosCpu->CX);
+	log_trace(loggerCpu, "Registro DX: %s", pcb->registrosCpu->DX);
+	log_trace(loggerCpu, "Registro EAX: %s", pcb->registrosCpu->EAX);
+	log_trace(loggerCpu, "Registro EBX: %s", pcb->registrosCpu->EBX);
+	log_trace(loggerCpu, "Registro ECX: %s", pcb->registrosCpu->ECX);
+	log_trace(loggerCpu, "Registro EDX: %s", pcb->registrosCpu->EDX);
+	log_trace(loggerCpu, "Registro RAX: %s", pcb->registrosCpu->RAX);
+	log_trace(loggerCpu, "Registro RBX: %s", pcb->registrosCpu->RBX);
+	log_trace(loggerCpu, "Registro RCX: %s", pcb->registrosCpu->RCX);
+	log_trace(loggerCpu, "Registro RDX: %s", pcb->registrosCpu->RDX);
+	log_trace(loggerCpu, "LISTA SEGMENTOS: ");
+	list_iterate(pcb->lista_segmentos, (void*) iterator);
+	log_trace(loggerCpu, "LISTA ARCHIVOS ABIERTOS: ");
+	list_iterate(pcb->lista_archivos_abiertos, (void*) iterator);
+	log_trace(loggerCpu, "ESTIMACION HHRN: %f", pcb->estimacion_rafaga);
+	log_trace(loggerCpu, "TIMESTAMP EN EL QUE EL PROCESO LLEGO A READY POR ULTIMA VEZ: %f", pcb->ready_timestamp);
+}
+void iterator(char* value) {
+    log_info(loggerCpu, "%s ", value);
+}
+
 
 void cargar_registros(PCB* pcb) {
-	registrosCpu->AX = pcb->registrosCpu->AX;
-	registrosCpu->BX = pcb->registrosCpu->BX;
-	registrosCpu->CX = pcb->registrosCpu->CX;
-	registrosCpu->DX = pcb->registrosCpu->DX;
-	registrosCpu->AX = pcb->registrosCpu->EAX;
-	registrosCpu->BX = pcb->registrosCpu->EBX;
-	registrosCpu->CX = pcb->registrosCpu->ECX;
-	registrosCpu->DX = pcb->registrosCpu->EDX;
-	registrosCpu->AX = pcb->registrosCpu->RAX;
-	registrosCpu->BX = pcb->registrosCpu->RBX;
-	registrosCpu->CX = pcb->registrosCpu->RCX;
-	registrosCpu->DX = pcb->registrosCpu->RDX;
-}
-
-char** decode_instruccion(char* linea_a_parsear) {
-	char** instruccion = string_split(linea_a_parsear, " ");
-	if(instruccion[0] == NULL) {
-	    log_info(loggerCpu, "Se ignora linea vacía.");
-	}
-	return instruccion;
+	strcpy(registrosCpu->AX, pcb->registrosCpu->AX);
+	strcpy(registrosCpu->BX, pcb->registrosCpu->BX);
+	strcpy(registrosCpu->CX, pcb->registrosCpu->CX);
+	strcpy(registrosCpu->DX, pcb->registrosCpu->DX);
+	strcpy(registrosCpu->EAX,  pcb->registrosCpu->EAX);
+	strcpy(registrosCpu->EBX,  pcb->registrosCpu->EBX);
+	strcpy(registrosCpu->ECX,  pcb->registrosCpu->ECX);
+	strcpy(registrosCpu->EDX,  pcb->registrosCpu->EDX);
+	strcpy(registrosCpu->RAX,  pcb->registrosCpu->RAX);
+	strcpy(registrosCpu->RBX,  pcb->registrosCpu->RBX);
+	strcpy(registrosCpu->RCX,  pcb->registrosCpu->RCX);
+	strcpy(registrosCpu->RDX,  pcb->registrosCpu->RDX);
 }
 
 void guardar_contexto_de_ejecucion(PCB* pcb) {
-	registrosCpu->AX = pcb->registrosCpu->AX;
-	registrosCpu->BX = pcb->registrosCpu->BX;
-	registrosCpu->CX = pcb->registrosCpu->CX;
-	registrosCpu->DX = pcb->registrosCpu->DX;
-	registrosCpu->EAX = pcb->registrosCpu->EAX;
-	registrosCpu->EBX = pcb->registrosCpu->EBX;
-	registrosCpu->ECX = pcb->registrosCpu->ECX;
-	registrosCpu->EDX = pcb->registrosCpu->EDX;
-	registrosCpu->RAX = pcb->registrosCpu->RAX;
-	registrosCpu->RBX = pcb->registrosCpu->RBX;
-	registrosCpu->RCX = pcb->registrosCpu->RCX;
-	registrosCpu->RDX = pcb->registrosCpu->RDX;
+	strcpy(pcb->registrosCpu->AX, registrosCpu->AX);
+    strcpy(pcb->registrosCpu->BX, registrosCpu->BX);
+    strcpy(pcb->registrosCpu->CX, registrosCpu->CX);
+    strcpy(pcb->registrosCpu->DX, registrosCpu->DX);
+    strcpy(pcb->registrosCpu->EAX,  registrosCpu->EAX);
+    strcpy(pcb->registrosCpu->EBX,  registrosCpu->EBX);
+    strcpy(pcb->registrosCpu->ECX,  registrosCpu->ECX);
+    strcpy(pcb->registrosCpu->EDX,  registrosCpu->EDX);
+    strcpy(pcb->registrosCpu->RAX,  registrosCpu->RAX);
+    strcpy(pcb->registrosCpu->RBX,  registrosCpu->RBX);
+    strcpy(pcb->registrosCpu->RCX,  registrosCpu->RCX);
+    strcpy(pcb->registrosCpu->RDX,  registrosCpu->RDX);
+
 }
 
-void ejecutar_instruccion(char** instruccion, PCB* pcb) {
+int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 
 	int operacion = keyFromString(instruccion[0]);
 
 	if (operacion == -1) {
 		log_warning(loggerCpu, "Desconocemos la instruccion %s", instruccion[0]);
 
-		return;
+		return -1;
 	}
-
-	ultimaOperacion = operacion;
 
 	switch(operacion) {
 		case I_SET:
 			// SET (Registro, Valor)
+			int retardo = configCpu->RETARDO_INSTRUCCION;
+			intervalo_de_pausa(retardo);
 			instruccion_set(instruccion[1],instruccion[2]);
+			//log_info(loggerCpu, "REGISTRO AX: %s", registrosCpu->AX);
 			break;
 		case I_MOV_IN:
 			// MOV_IN (Registro, Dirección Lógica)
@@ -254,6 +304,7 @@ void ejecutar_instruccion(char** instruccion, PCB* pcb) {
 		case I_F_OPEN:
 			// F_OPEN (Nombre Archivo)
 			instruccion_f_open(instruccion[1]);
+			hubo_interrupcion = true;
 			break;
 		case I_F_CLOSE:
 			// F_CLOSE (Nombre Archivo)
@@ -292,52 +343,140 @@ void ejecutar_instruccion(char** instruccion, PCB* pcb) {
 			instruccion_delete_segment(instruccion[1]);
 			break;
 		case I_YIELD:
-			instruccion_yield();
+			//enviar_pcb_desalojado_a_kernel(pcb, clienteKernel);
 			hubo_interrupcion = true;
 			break;
 		case I_EXIT:
-			instruccion_exit();
 			hubo_interrupcion = true;
-
 			break;
 	}
+	return operacion;
 }
 
 /************** INSTRUCCIONES ***************************/
 
 void instruccion_set(char* registro,char* valor) {
 
+	/*
 	int set_valor = atoi(valor);
+	if(set_valor == 0){
+		log_info(loggerCpu, "Hubo un error.");
+	}
+	*/
 
 	if (strcmp(registro, "AX") == 0) {
-		registrosCpu->AX = set_valor;
+		strcpy(registrosCpu->AX, valor);
 	} else if (strcmp(registro, "BX") == 0) {
-		registrosCpu->BX = set_valor;
+		strcpy(registrosCpu->BX, valor);
 	} else if (strcmp(registro, "CX") == 0) {
-		registrosCpu->CX = set_valor;
+		strcpy(registrosCpu->CX, valor);
 	} else if (strcmp(registro, "DX") == 0) {
-		registrosCpu->DX = set_valor;
+		strcpy(registrosCpu->DX, valor);
 	} else if (strcmp(registro, "EAX") == 0) {
-		registrosCpu->EAX = set_valor;
+		strcpy(registrosCpu->EAX, valor);
 	} else if (strcmp(registro, "EBX") == 0) {
-		registrosCpu->EBX = set_valor;
+		strcpy(registrosCpu->EBX, valor);
 	} else if (strcmp(registro, "ECX") == 0) {
-		registrosCpu->ECX = set_valor;
+		strcpy(registrosCpu->ECX, valor);
 	} else if (strcmp(registro, "EDX") == 0) {
-		registrosCpu->EDX = set_valor;
+		strcpy(registrosCpu->EDX, valor);
 	} else if (strcmp(registro, "RAX") == 0) {
-		registrosCpu->RAX = set_valor;
+		strcpy(registrosCpu->RAX, valor);
 	} else if (strcmp(registro, "RBX") == 0) {
-		registrosCpu->RBX = set_valor;
+		strcpy(registrosCpu->RBX, valor);
 	} else if (strcmp(registro, "RCX") == 0) {
-		registrosCpu->RCX = set_valor;
+		strcpy(registrosCpu->RCX, valor);
 	} else if (strcmp(registro, "RDX") == 0) {
-		registrosCpu->RDX = set_valor;
+		strcpy(registrosCpu->RDX, valor);
 	}
 
-	sleep(configCpu->RETARDO_INSTRUCCION/1000);
+	//sleep(configCpu->RETARDO_INSTRUCCION/1000);
 }
 
+void enviar_pcb_desalojado_a_kernel(PCB* pcb, int socket, codigo_operacion codigo){
+
+	envio_pcb_a_kernel_con_codigo(socket, pcb, codigo);
+}
+
+void envio_pcb_a_kernel_con_codigo(int conexion, PCB* pcb, codigo_operacion codigo) {
+	t_paquete* paquete = crear_paquete(codigo);
+	agregar_pcb_a_paquete(paquete, pcb);
+	enviar_paquete(paquete, conexion);
+	eliminar_paquete(paquete);
+}
+
+// Repetidas
+void agregar_pcb_a_paquete(t_paquete* paquete, PCB* pcb) {
+	agregar_int_a_paquete(paquete, pcb->id_proceso);
+	agregar_int_a_paquete(paquete, pcb->estado);
+
+	agregar_lista_a_paquete(paquete, pcb->lista_instrucciones);
+
+	agregar_int_a_paquete(paquete, pcb->contador_instrucciones);
+	agregar_lista_a_paquete(paquete, pcb->lista_segmentos);
+	agregar_lista_a_paquete(paquete, pcb->lista_archivos_abiertos);
+	agregar_registros_a_paquete_para_kernel(paquete, pcb->registrosCpu);
+	agregar_valor_a_paquete(paquete, &pcb->estimacion_rafaga, sizeof(double));
+	agregar_valor_a_paquete(paquete, &pcb->ready_timestamp, sizeof(double));
+}
+void agregar_int_a_paquete(t_paquete* paquete, int valor) {
+    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(int));
+    memcpy(paquete->buffer->stream + paquete->buffer->size, &valor, sizeof(int));
+    paquete->buffer->size += sizeof(int);
+}
+
+void agregar_lista_a_paquete(t_paquete* paquete, t_list* lista) {
+	int tamanio = list_size(lista);
+	agregar_int_a_paquete(paquete, tamanio);
+
+	for(int i = 0; i < tamanio; i++) {
+		void* elemento = list_get(lista, i);
+		char* palabra = (char*)elemento;
+		strtok(palabra, "$"); // Removemos el salto de linea
+		log_debug(loggerCpu, "Agregando instruccion: %s, tamanio %zu", palabra, strlen(palabra));
+		agregar_a_paquete(paquete, palabra, strlen(palabra));
+	}
+
+}
+
+void agregar_registros_a_paquete_para_kernel(t_paquete* paquete, registros_cpu* registrosCpu) {
+	 agregar_registro4bytes_a_paquete(paquete, registrosCpu->AX);
+	 agregar_registro4bytes_a_paquete(paquete, registrosCpu->BX);
+	 agregar_registro4bytes_a_paquete(paquete, registrosCpu->CX);
+	 agregar_registro4bytes_a_paquete(paquete, registrosCpu->DX);
+	 agregar_registro8bytes_a_paquete(paquete, registrosCpu->EAX);
+	 agregar_registro8bytes_a_paquete(paquete, registrosCpu->EBX);
+	 agregar_registro8bytes_a_paquete(paquete, registrosCpu->ECX);
+	 agregar_registro8bytes_a_paquete(paquete, registrosCpu->EDX);
+	 agregar_registro16bytes_a_paquete(paquete, registrosCpu->RAX);
+	 agregar_registro16bytes_a_paquete(paquete, registrosCpu->RBX);
+	 agregar_registro16bytes_a_paquete(paquete, registrosCpu->RCX);
+	 agregar_registro16bytes_a_paquete(paquete, registrosCpu->RDX);
+}
+
+void agregar_registro4bytes_a_paquete(t_paquete* paquete, char valor[4]) {
+    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(int));
+    memcpy(paquete->buffer->stream + paquete->buffer->size, (void*)valor, sizeof(int));
+    paquete->buffer->size += sizeof(int);
+}
+void agregar_registro8bytes_a_paquete(t_paquete* paquete, char valor[8]) {
+    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(long));
+    memcpy(paquete->buffer->stream + paquete->buffer->size, (void*)valor, sizeof(long));
+    paquete->buffer->size += sizeof(long);
+}
+void agregar_registro16bytes_a_paquete(t_paquete* paquete, char valor[16]) {
+    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(long)*2);
+    memcpy(paquete->buffer->stream + paquete->buffer->size, (void*)valor, sizeof(long)*2);
+    paquete->buffer->size += sizeof(long)*2;
+}
+
+
+void agregar_valor_a_paquete(t_paquete* paquete, void* valor, int tamanio) {
+    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + tamanio);
+    memcpy(paquete->buffer->stream + paquete->buffer->size, valor, tamanio);
+    paquete->buffer->size += tamanio;
+}
+//
 void instruccion_mov_in(char* registro,char* dir_logica) {
 
 }
@@ -375,9 +514,6 @@ void instruccion_create_segment(char* id_segmento, char* tamanio) {
 
 }
 void instruccion_delete_segment(char* id_segmento) {
-
-}
-void instruccion_yield() {
 
 }
 void instruccion_exit() {
