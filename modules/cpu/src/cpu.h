@@ -9,7 +9,7 @@
 #include <commons/string.h>
 #include <commons/config.h>
 #include <pthread.h>
-#include <kernel.h>
+#include <cpuInstrucciones.h>
 #include <shared/shared.h>
 
 typedef struct {
@@ -53,22 +53,6 @@ void agregar_pcb_a_paquete(t_paquete* , PCB* );
 #define DEFAULT_LOG_PATH      "logs/cpu.log"
 #define DEFAULT_CONFIG_PATH   "tuki-pruebas/prueba-base/cpu.config"
 
-/**************** INSTRUCCIONES ****************/
-void instruccion_mov_in(char* registro,char* dir_logica);
-void instruccion_mov_out(char* dir_logica,char* registro);
-void instruccion_io(char* tiempo);
-void instruccion_f_open(char* nombre_archivo);
-void instruccion_f_close(char* nombre_archivo);
-void instruccion_f_seek(char* nombre_archivo, char* posicion);
-void instruccion_f_read(char* nombre_archivo, char* dir_logica, char* cant_bytes);
-void instruccion_f_write(char* nombre_archivo, char* dir_logica, char* cant_bytes);
-void instruccion_f_truncate(char* nombre_archivo,char* tamanio);
-void instruccion_wait(char* recurso);
-void instruccion_signal(char* recurso);
-void instruccion_create_segment(char* id_segmento, char* tamanio);
-void instruccion_delete_segment(char* id_segmento);
-void instruccion_yield();
-void instruccion_exit();
 void devolver_pcb_kernel(PCB*, int, codigo_operacion);
 
 void agregar_registros_a_paquete_para_kernel(t_paquete* , registros_cpu* );

@@ -24,12 +24,6 @@ typedef struct {
     t_list* tablaDeSegmentos;
 } t_memoria;
 
-typedef struct {
-    void* direccionBase;
-    size_t size;
-    int id;
-} t_segmento;
-
 // Elemento de la tabla segmento
 typedef struct {
     t_segmento* segmento;

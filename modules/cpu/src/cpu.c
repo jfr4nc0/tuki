@@ -21,8 +21,6 @@ int main(int argc, char** argv) {
 
     inicializar_registros();
 
-
-
     atender_kernel(clienteKernel);
 
     terminar_programa(conexionCpuKernel, loggerCpu, config);
@@ -35,25 +33,10 @@ int main(int argc, char** argv) {
 }
 
 void atender_kernel(int clienteKernel){
-	/*
-	while (1) {
-
-		//pthread_t hilo_ejecucion;
-		pthread_t hilo_dispatcher;
-		//pthread_create(&hilo_ejecucion, NULL, (void *) procesar_instruccion, int servidorCPU); //  TODO: Avisar posibles errores o si el kernel se desconecto.
-		pthread_create(&hilo_dispatcher, NULL, (void *) procesar_instruccion, (void*) (intptr_t) clienteKernel);
-
-		pthread_join(hilo_dispatcher, NULL);
-	}
-	*/
-	//int clienteKernel = (int) (intptr_t)clienteAceptado;
-
-		// Kernel no debería mandar dos pcbs simultaneamente a cpu, por las dudas tener en cuenta igual
+	// Kernel no debería mandar dos pcbs simultaneamente a cpu, por las dudas tener en cuenta igual
 	PCB* pcb_a_ejecutar = recibir_pcb(clienteKernel);
 
 	ejecutar_proceso(pcb_a_ejecutar, clienteKernel);
-
-	    //cpu_pcb_destroy(pcb_a_ejecutar)
 
 	return;
 
@@ -172,6 +155,8 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
 	char* instruccion = malloc(sizeof(char*));
 	char** instruccion_decodificada = malloc(sizeof(char*));
 
+	t_list* data_instruccion; // Array para los parametros que necesite una instruccion
+
 	int cantidad_instrucciones = list_size(pcb->lista_instrucciones);
 	int posicion_actual = 0;
 	codigo_operacion ultimaOperacion = -1;
@@ -183,8 +168,6 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
         log_info(loggerCpu, "Ejecutando instruccion: %s", instruccion_decodificada[0]);
         ultimaOperacion = ejecutar_instruccion(instruccion_decodificada, pcb);
 
-        // Evaluar si la instruccion genero una excepcion "f_pagefault"
-        // Caso afirmativo => No se actualiza el program counter del pcb
         if (!hubo_interrupcion) {
 			pcb->contador_instrucciones++;
 			posicion_actual++;
@@ -291,11 +274,11 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 			break;
 		case I_MOV_IN:
 			// MOV_IN (Registro, Dirección Lógica)
-			instruccion_mov_in(instruccion[1],instruccion[2]);
+			instruccion_mov_in(instruccion[1],instruccion[2],pcb);
 			break;
 		case I_MOV_OUT:
 			// MOV_OUT (Dirección Lógica, Registro)
-			instruccion_mov_out(instruccion[1],instruccion[2]);
+			instruccion_mov_out(instruccion[1],instruccion[2],pcb);
 			break;
 		case I_IO:
 			// I/O (Tiempo)
@@ -391,6 +374,77 @@ void instruccion_set(char* registro,char* valor) {
 	}
 
 	//sleep(configCpu->RETARDO_INSTRUCCION/1000);
+}
+
+void instruccion_set(char* registro,char* valor) {
+
+	int set_valor = atoi(valor);
+
+	void* registro_cpu = get_registro_cpu(registro, registrosCpu);
+
+	if(registro_cpu!=-1){
+		registro_cpu = set_valor;
+	} else {
+		log_error(loggerCpu, "Registro de CPU no reconocido.");
+		hubo_interrupcion=true;
+		return;
+	}
+
+	usleep(configCpu->RETARDO_INSTRUCCION*1000); // De microsegundos a nanosegundos
+	free(set_valor);
+	free(registro_cpu);
+}
+
+void instruccion_mov_in(char* registro, char* dir_logica, PCB* pcb) {
+	/*
+	 * Lee el valor de memoria corresponfiente a la Direccion Logica y lo almacena en el registro
+	 */
+	t_segmento* segmento;
+	void* dir_fisica = get_dir_fisica(segmento, dir_logica, configCpu->TAM_MAX_SEGMENTO);
+	if(dir_fisica!=-1){
+		void* registro_cpu = get_registro_cpu(registro, registrosCpu);
+
+		if(registro_cpu!=-1){
+			registro_cpu = *&dir_fisica; // Valor en la direccion fisica
+			log_info(loggerCpu, "Se asigno el valor de memoria corresponfiente a la Direccion Logica %s y se almaceno en el registro %s", dir_logica, registro);
+		} else {
+			log_error(loggerCpu, "Registro de CPU no reconocido.");
+			hubo_interrupcion=true;
+		}
+		free(registro_cpu);
+	} else {
+		hubo_interrupcion=true;
+		log_error(loggerCpu, ERROR_SEGMENTATION_FAULT, pcb->id_proceso, segmento->id, segmento->direccionBase, segmento->size);
+	}
+	free(segmento);
+	free(dir_fisica);
+}
+
+void instruccion_mov_out(char* dir_logica,char* registro, PCB* pcb) {
+	/*
+	 * Lee el valor del Registro y lo escribe en la dirección física de memoria obtenida a partir de la Dirección Lógica.
+	 */
+	t_segmento* segmento;
+	void* dir_fisica = get_dir_fisica(segmento, dir_logica, configCpu->TAM_MAX_SEGMENTO);
+
+	if(dir_fisica!=-1){
+		void* registro_cpu = get_registro_cpu(registro, registrosCpu);
+
+		if(registro_cpu!=-1){
+			*&dir_fisica = registro_cpu;
+			log_info(loggerCpu, "Se leyo el valor del registro %s y se almaceno en la direccion fisica de memoria %s", registro, dir_logica);
+		} else {
+			log_error(loggerCpu, "Registro de CPU no reconocido.");
+			hubo_interrupcion=true;
+		}
+		free(registro_cpu);
+	} else {
+		hubo_interrupcion=true;
+		// flag_seg_fault=true;
+		log_error(loggerCpu, ERROR_SEGMENTATION_FAULT, pcb->id_proceso, segmento->id, segmento->direccionBase, segmento->size);
+	}
+	free(segmento);
+	free(dir_fisica);
 }
 
 void enviar_pcb_desalojado_a_kernel(PCB* pcb, int socket, codigo_operacion codigo){

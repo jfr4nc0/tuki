@@ -283,7 +283,6 @@ void *manejo_desalojo_pcb() {
 		timestamp fin_ejecucion_proceso;
 
 		set_timespec(&inicio_ejecucion_proceso);
-		log_error(kernelLogger, "ERROR ESTA ENVIANDO ALGO");
 		envio_pcb_a_cpu(conexionCPU, pcb_en_ejecucion, OP_EXECUTE_PCB);
 
 		codigo_operacion operacionRecibida = recibir_operacion(conexionCPU);
@@ -303,7 +302,6 @@ void *manejo_desalojo_pcb() {
 
 		 switch(operacionRecibida) {
 		 	 case I_YIELD: {
-		 		 log_error(kernelLogger, "SI FUNCIONA ME MUERO");
 		 		 break;
 		 	 }
 		 	 case I_F_OPEN: {

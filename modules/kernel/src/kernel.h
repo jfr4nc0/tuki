@@ -42,18 +42,6 @@ typedef struct {
 
 t_kernel_config* kernelConfig;
 
-typedef struct {
-	int id_proceso; // Identificador del proceso, unico en todo el sistema
-	pcb_estado estado;
-	t_list* lista_instrucciones; // Lista de instrucciones a ejecutar
-	int contador_instrucciones; // Numero de la proxima instruccion a ejecutar
-	registros_cpu* registrosCpu;
-	t_list* lista_segmentos;
-	t_list* lista_archivos_abiertos; // Contendrá la lista de archivos abiertos del proceso con la posición del puntero de cada uno de ellos.
-	double estimacion_rafaga; // Estimacion utilizada para planificar los procesos en el algoritmo HRRN, la misma tendra un valor inicial definido por archivo de config y sera recalculada bajo la formula de promedio ponderado
-	double ready_timestamp; // Timestamp en que el proceso llegó a ready por última vez (utilizado para el cálculo de tiempo de espera del algoritmo HRRN).
-}PCB;
-
 typedef struct{
     char* nombre;
     int instancias;
@@ -182,6 +170,6 @@ t_dictionary* diccionario_recursos;
 
 
 #define PATH_LOG_KERNEL             "logs/kernel.log"
-#define PATH_CONFIG_KERNEL          "tuki-pruebas/prueba-base/kernel.config"
+#define PATH_CONFIG_KERNEL          "../../tuki-pruebas/prueba-base/kernel.config"
 
 #endif
