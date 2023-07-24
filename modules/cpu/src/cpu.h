@@ -24,10 +24,12 @@ cpu_config_t* configCpu;
 
 extern registros_cpu* registrosCpu;
 
+void atender_kernel(int);
+void mostrar_pcb(PCB* );
 
 void cargar_config(t_config*);
 char** decode_instruccion(char*);
-void ejecutar_instruccion(char** instruccion, PCB* pcb);
+void ejecutar_instruccion(char** , PCB* , codigo_operacion*);
 void ejecutar_proceso(PCB* pcb, int);
 void cargar_registros(PCB* pcb);
 char* fetch_instruccion(PCB* pcb);
@@ -39,6 +41,9 @@ void set_registro(char*, char*);
 void set_registros(PCB* pcb);
 void instruccion_set(char* registro,char* valor);
 PCB* recibir_pcb(int);
+void enviar_pcb_desalojado_a_kernel(PCB*, int, codigo_operacion);
+void envio_pcb_a_kernel_con_codigo(int , PCB* , codigo_operacion );
+void agregar_pcb_a_paquete(t_paquete* , PCB* );
 
 // LOGS ////////////////////////
 #define INSTRUCCION_EJECUTADA        "PID: <PID> - Ejecutando: <INSTRUCCION> - <PARAMETROS>"
@@ -66,5 +71,12 @@ void instruccion_delete_segment(char* id_segmento);
 void instruccion_yield();
 void instruccion_exit();
 void devolver_pcb_kernel(PCB*, int, codigo_operacion);
+
+void agregar_registros_a_paquete_para_kernel(t_paquete* , registros_cpu* );
+void agregar_registro4bytes_a_paquete(t_paquete* , char[4] );
+void agregar_registro8bytes_a_paquete(t_paquete* , char[8] );
+void agregar_registro16bytes_a_paquete(t_paquete* , char[16] );
+
+
 
 #endif

@@ -42,6 +42,8 @@ int keyFromString(char *key) {
 
 /*-------------------- FUNCIONES GENERALES --------------------*/
 
+
+
 char** leer_arreglo_string(char* buffer, int* desplazamiento) {
 
 	int longitud = leer_int(buffer, desplazamiento);
@@ -253,6 +255,36 @@ int leer_int(char* buffer, int* desp) {
 	int respuesta;
 	memcpy(&respuesta, buffer + (*desp), sizeof(int));
 	(*desp)+=sizeof(int);
+
+	return respuesta;
+}
+
+char* leer_registro_4_bytes(char* buffer, int* desp){
+	int size = 4;
+
+	char* respuesta = malloc(size);
+	memcpy(respuesta, buffer+(*desp), size);
+	(*desp)+=size;
+
+	return respuesta;
+}
+
+char* leer_registro_8_bytes(char* buffer, int* desp){
+	int size = 8;
+
+	char* respuesta = malloc(size);
+	memcpy(respuesta, buffer+(*desp), size);
+	(*desp)+=size;
+
+	return respuesta;
+}
+
+char* leer_registro_16_bytes(char* buffer, int* desp){
+	int size = 16;
+
+	char* respuesta = malloc(size);
+	memcpy(respuesta, buffer+(*desp), size);
+	(*desp)+=size;
 
 	return respuesta;
 }
@@ -488,10 +520,10 @@ int esperar_cliente(int socket_servidor, t_log* logger) {
 // TODO: en vez de int debería devolver el tipo de dato de codigo_operacion
 int recibir_operacion(int clienteAceptado) {
     codigo_operacion cod_op;
-    if(recv(clienteAceptado, &cod_op, sizeof(int), MSG_WAITALL) > 0) {
+    if(recv(clienteAceptado, &cod_op, sizeof(codigo_operacion), MSG_WAITALL) > 0) {
         return cod_op;
     }else {
-        close(clienteAceptado);
+    	close(clienteAceptado);
         return -1;
     }
 }
@@ -525,4 +557,21 @@ t_list* recibir_paquete(int clienteAceptado) {
     }
     free(buffer);
     return valores;
+}
+
+
+/*----------------------- MANDAR A DORMIR -------------------*/
+
+void intervalo_de_pausa(int duracionEnMilisegundos) {
+    const uint32_t SECS_MILISECS = 1000;
+    const uint32_t MILISECS_NANOSECS = 1000000;
+    struct timespec timeSpec;
+
+    // Time in seconds and nano seconds calculation
+    timeSpec.tv_sec = duracionEnMilisegundos / SECS_MILISECS;
+    timeSpec.tv_nsec = (duracionEnMilisegundos % SECS_MILISECS) * MILISECS_NANOSECS;
+
+    nanosleep(&timeSpec, &timeSpec);
+
+    return;
 }
