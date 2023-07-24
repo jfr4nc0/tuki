@@ -16,6 +16,12 @@
 #define ACCESO_ESPACIO_USUARIO      "PID: %d - Acción: %s <LEER / ESCRIBIR> - Dirección física: <DIRECCIÓN_FÍSICA> - Tamaño: %zu<TAMAÑO> - Origen: %s <CPU / FS>"
 #define FIN_ACCESO_ESPACIO_USUARIO  "PID: %d - Acción: %s <LEER / ESCRIBIR> Finalizada"
 
+typedef enum {
+	FIRST_FIT,
+	BEST_FIT,
+	WORST_FIT
+}t_algoritmo;
+
 // Estructura para representar la memoria
 typedef struct {
     void* espacioUsuario; // Espacio de memoria
@@ -23,6 +29,7 @@ typedef struct {
     t_list* segmentos;
     t_list* huecosLibres;
     t_list* tablaDeSegmentos;
+    t_algoritmo algoritmo_asignacion;
 } t_memoria;
 
 typedef struct {
@@ -44,7 +51,7 @@ typedef struct {
 
 extern t_log* loggerMemoria;
 
-void inicializar_memoria(size_t sizeMemoriaTotal, size_t sizeSegmento0);
+void inicializar_memoria(size_t sizeMemoriaTotal, size_t sizeSegmento0, char* algoritmo);
 void liberar_memoria();
 void* calcular_direccion(void*, size_t);
 void* crear_segmento(int idProceso, size_t size);
