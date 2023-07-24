@@ -9,7 +9,7 @@ int main() {
     cargar_config_memoria(configInicial);
 
     int servidorMemoria = iniciar_servidor(configInicial, loggerMemoria);
-    inicializar_memoria(memoriaConfig->TAM_MEMORIA, memoriaConfig->TAM_SEGMENTO_0);
+    inicializar_memoria(memoriaConfig->TAM_MEMORIA, memoriaConfig->TAM_SEGMENTO_0,memoriaConfig->ALGORITMO_ASIGNACION);
 
 	testing_funciones();
 
@@ -140,10 +140,10 @@ void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion) 
 		}
 		case I_DELETE_SEGMENT:
 		{
-			// t_segmento* segmento = recibir_segmento_kernel();
-			// if(eliminar_segmento(pid, segmento->id)!=NULL){
-			// 	enviar_codigo_operacion(cliente, AUX_OK);
-			// } else {enviar_codigo_operacion(cliente, AUX_ERROR);}
+			t_segmento* segmento = recibir_segmento_kernel(listaRecibida);
+			if(eliminar_segmento(pid, segmento->id)!=NULL){
+				enviar_codigo_operacion(cliente, AUX_OK);
+			} else {enviar_codigo_operacion(cliente, AUX_ERROR);}
 
 			break;
 		}
