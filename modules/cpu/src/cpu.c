@@ -7,7 +7,6 @@ int conexionCpuKernel;
 registros_cpu* registrosCpu;
 
 bool hubo_interrupcion = false;
-codigo_operacion ultimaOperacion;
 
 int main(int argc, char** argv) {
     loggerCpu = iniciar_logger(DEFAULT_LOG_PATH, ENUM_CPU);
@@ -17,10 +16,11 @@ int main(int argc, char** argv) {
     int conexionCpuMemoria = armar_conexion(config, MEMORIA, loggerCpu);
     enviar_codigo_operacion(conexionCpuMemoria, AUX_SOY_CPU);
 
-    inicializar_registros();
-
     int servidorCPU = iniciar_servidor(config, loggerCpu);
     int clienteKernel = esperar_cliente(servidorCPU, loggerCpu);
+
+    inicializar_registros();
+
 
 
     atender_kernel(clienteKernel);
@@ -47,17 +47,15 @@ void atender_kernel(int clienteKernel){
 	}
 	*/
 	//int clienteKernel = (int) (intptr_t)clienteAceptado;
-	for (;;) {
 
 		// Kernel no debería mandar dos pcbs simultaneamente a cpu, por las dudas tener en cuenta igual
-		PCB* pcb_a_ejecutar = recibir_pcb(clienteKernel);
+	PCB* pcb_a_ejecutar = recibir_pcb(clienteKernel);
 
-		ejecutar_proceso(pcb_a_ejecutar, clienteKernel);
+	ejecutar_proceso(pcb_a_ejecutar, clienteKernel);
 
-	    //cpu_pcb_destroy(pcb_a_ejecutar);
-	   	}
+	    //cpu_pcb_destroy(pcb_a_ejecutar)
 
-	    return;
+	return;
 
 }
 void cargar_config(t_config* config) {
@@ -121,6 +119,7 @@ PCB* recibir_pcb(int clienteAceptado) {
 	int tamanio = 0;
 	int desplazamiento = 0;
 
+	recibir_operacion(clienteAceptado);
 	buffer = recibir_buffer(&tamanio, clienteAceptado);
 
 	pcb->registrosCpu = malloc(sizeof(registros_cpu));
@@ -175,19 +174,21 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
 
 	int cantidad_instrucciones = list_size(pcb->lista_instrucciones);
 	int posicion_actual = 0;
-	codigo_operacion codigo_desalojo;
+	codigo_operacion ultimaOperacion = -1;
 
     while ((posicion_actual < cantidad_instrucciones) && !hubo_interrupcion) {
 	    instruccion = string_duplicate((char *)list_get(pcb->lista_instrucciones, pcb->contador_instrucciones));
-		instruccion_decodificada = decode_instruccion(instruccion);
+		instruccion_decodificada = decode_instruccion(instruccion, loggerCpu);
 
         log_info(loggerCpu, "Ejecutando instruccion: %s", instruccion_decodificada[0]);
-        ejecutar_instruccion(instruccion_decodificada, pcb, &codigo_desalojo);
+        ultimaOperacion = ejecutar_instruccion(instruccion_decodificada, pcb);
 
         // Evaluar si la instruccion genero una excepcion "f_pagefault"
         // Caso afirmativo => No se actualiza el program counter del pcb
-        pcb->contador_instrucciones++;
-		posicion_actual++;
+        if (!hubo_interrupcion) {
+			pcb->contador_instrucciones++;
+			posicion_actual++;
+        }
 
         log_info(loggerCpu, "PROGRAM COUNTER: %d", pcb->contador_instrucciones);
     }
@@ -205,7 +206,7 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
 
 	//mostrar_pcb(pcb);
 
-	enviar_pcb_desalojado_a_kernel(pcb, clienteKernel,codigo_desalojo);
+	enviar_pcb_desalojado_a_kernel(pcb, clienteKernel, ultimaOperacion);
 }
 
 void mostrar_pcb(PCB* pcb){
@@ -254,14 +255,6 @@ void cargar_registros(PCB* pcb) {
 	strcpy(registrosCpu->RDX,  pcb->registrosCpu->RDX);
 }
 
-char** decode_instruccion(char* linea_a_parsear) {
-	char** instruccion = string_split(linea_a_parsear, " ");
-	if(instruccion[0] == NULL) {
-	    log_info(loggerCpu, "Se ignora linea vacía.");
-	}
-	return instruccion;
-}
-
 void guardar_contexto_de_ejecucion(PCB* pcb) {
 	strcpy(pcb->registrosCpu->AX, registrosCpu->AX);
     strcpy(pcb->registrosCpu->BX, registrosCpu->BX);
@@ -278,17 +271,15 @@ void guardar_contexto_de_ejecucion(PCB* pcb) {
 
 }
 
-void ejecutar_instruccion(char** instruccion, PCB* pcb, codigo_operacion *codigo_desalojo) {
+int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 
 	int operacion = keyFromString(instruccion[0]);
 
 	if (operacion == -1) {
 		log_warning(loggerCpu, "Desconocemos la instruccion %s", instruccion[0]);
 
-		return ;
+		return -1;
 	}
-
-	ultimaOperacion = operacion;
 
 	switch(operacion) {
 		case I_SET:
@@ -313,6 +304,7 @@ void ejecutar_instruccion(char** instruccion, PCB* pcb, codigo_operacion *codigo
 		case I_F_OPEN:
 			// F_OPEN (Nombre Archivo)
 			instruccion_f_open(instruccion[1]);
+			hubo_interrupcion = true;
 			break;
 		case I_F_CLOSE:
 			// F_CLOSE (Nombre Archivo)
@@ -352,15 +344,13 @@ void ejecutar_instruccion(char** instruccion, PCB* pcb, codigo_operacion *codigo
 			break;
 		case I_YIELD:
 			//enviar_pcb_desalojado_a_kernel(pcb, clienteKernel);
-			codigo_desalojo = DESALOJO_YIELD;
 			hubo_interrupcion = true;
 			break;
 		case I_EXIT:
-			codigo_desalojo = DESALOJO_EXIT;
 			hubo_interrupcion = true;
 			break;
 	}
-	return;
+	return operacion;
 }
 
 /************** INSTRUCCIONES ***************************/

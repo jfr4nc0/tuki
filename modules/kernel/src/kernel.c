@@ -12,12 +12,14 @@ void liberar_recursos_kernel() {
 int main(int argc, char** argv) {
 	kernelLogger = iniciar_logger(PATH_LOG_KERNEL, ENUM_KERNEL);
 	t_config* config = iniciar_config(PATH_CONFIG_KERNEL, kernelLogger);
+	conexionMemoria = armar_conexion(config, MEMORIA, kernelLogger);
+	conexionCPU = armar_conexion(config, CPU, kernelLogger);
+
     cargar_config_kernel(config, kernelLogger);
 
     log_debug(kernelLogger, "Vamos a usar el algoritmo %s", kernelConfig->ALGORITMO_PLANIFICACION);
 
-    conexionMemoria = armar_conexion(config, MEMORIA, kernelLogger);
-    conexionCPU = armar_conexion(config, CPU, kernelLogger);
+
     log_info(kernelLogger, "Conexion cpu inicial: %d", conexionCPU);
     conexionFileSystem = armar_conexion(config, FILE_SYSTEM, kernelLogger);
 
@@ -241,11 +243,9 @@ PCB* desencolar_primer_pcb(pcb_estado estado) {
 void _planificador_corto_plazo() {
 
 	// Desalojo de PCBs
-	/*
 	pthread_t manejo_desalojo;
 	pthread_create(&manejo_desalojo, NULL, manejo_desalojo_pcb, NULL);
 	pthread_detach(manejo_desalojo);
-*/
 
 	//Dispatcher
 	while(1) {
@@ -283,22 +283,47 @@ void *manejo_desalojo_pcb() {
 		timestamp fin_ejecucion_proceso;
 
 		set_timespec(&inicio_ejecucion_proceso);
+		log_error(kernelLogger, "ERROR ESTA ENVIANDO ALGO");
 		envio_pcb_a_cpu(conexionCPU, pcb_en_ejecucion, OP_EXECUTE_PCB);
-		codigo_operacion codigo = recibir_proceso_desajolado(pcb_en_ejecucion, conexionCPU);
+
+		codigo_operacion operacionRecibida = recibir_operacion(conexionCPU);
+		log_info(kernelLogger, "CODIGO DE OPERACION RECIBIDO: %d", operacionRecibida);
+
+		PCB* pcb_devuelto = recibir_proceso_desajolado(pcb_en_ejecucion);
 		set_timespec(&fin_ejecucion_proceso);
 
 		 // Actualizo el estimado en el pcb segun el real ejecutado
 		 double tiempo_en_cpu = obtener_diferencial_de_tiempo_en_milisegundos(&fin_ejecucion_proceso, &inicio_ejecucion_proceso);
-		 pcb_estimar_proxima_rafaga(pcb_en_ejecucion, tiempo_en_cpu);
+		 pcb_estimar_proxima_rafaga(pcb_devuelto, tiempo_en_cpu);
 
-		 switch(codigo){
-		 	 case DESALOJO_YIELD:
-		 	 {
+		 char* ultimaInstruccion = malloc(sizeof(char*));
+		 char** ultimaInstruccionDecodificada = malloc(sizeof(char*));
+		 ultimaInstruccion = string_duplicate((char *)list_get(pcb_devuelto->lista_instrucciones, pcb_devuelto->contador_instrucciones));
+		 ultimaInstruccionDecodificada = decode_instruccion(ultimaInstruccion, kernelLogger);
+
+		 switch(operacionRecibida) {
+		 	 case I_YIELD: {
 		 		 log_error(kernelLogger, "SI FUNCIONA ME MUERO");
+		 		 break;
+		 	 }
+		 	 case I_F_OPEN: {
+		 		char* nombreArchivo = ultimaInstruccionDecodificada[1];
+		 		strtok(nombreArchivo, "$");
+		 		size_t tamanioPalabra = strlen(nombreArchivo)-1;
+		 		log_error(kernelLogger, "El tamanio del nombre de archivo es %zu", tamanioPalabra);
+
+		 		enviar_operacion(conexionFileSystem, operacionRecibida, tamanioPalabra, nombreArchivo);
+		 		codigo_operacion operacionRecibida = recibir_operacion(conexionFileSystem);
+		 		if (operacionRecibida == AUX_OK) {
+		 			log_info(kernelLogger, "ABIERTO EL ARCHIVO");
+		 		} else {
+		 			log_error(kernelLogger, "NO SE PUDO ABRIR EL ARCHIVO");
+		 		}
+		 		break;
 		 	 }
 		 }
-
-
+		 free(ultimaInstruccion);
+		 free(ultimaInstruccionDecodificada);
 	}
 	return NULL;
 }
@@ -316,12 +341,10 @@ void pcb_estimar_proxima_rafaga(PCB *pcb_ejecutado, double tiempo_en_cpu){
     pcb_ejecutado->estimacion_rafaga = estimadoProxRafagaActualizado;
     return;
 }
-codigo_operacion recibir_proceso_desajolado(PCB* pcb_en_ejecucion, int socket_cpu) {
 
-	PCB* pcb_recibido;
-	codigo_operacion codigo;
+PCB* recibir_proceso_desajolado(PCB* pcb_en_ejecucion) {
 
-	pcb_recibido = recibir_pcb_de_cpu(socket_cpu, &codigo);
+	PCB* pcb_recibido = recibir_pcb_de_cpu();
 
 	int id_proceso_en_ejecucion = pcb_en_ejecucion->id_proceso;
 	int id_pcb_recibido = pcb_recibido->id_proceso;
@@ -331,21 +354,17 @@ codigo_operacion recibir_proceso_desajolado(PCB* pcb_en_ejecucion, int socket_cp
 	    exit(EXIT_FAILURE);
 	}
 
-
-	return codigo;
+	return pcb_recibido;
 }
 
-PCB* recibir_pcb_de_cpu(int clienteAceptado, codigo_operacion* codigo) {
+PCB* recibir_pcb_de_cpu() {
 	PCB* pcb = malloc(sizeof(PCB));
 
 	char* buffer;
 	int tamanio = 0;
 	int desplazamiento = 0;
 
-	codigo_operacion codigoOperacion = recibir_operacion(clienteAceptado);
-	log_info(kernelLogger, "CODIGO DE OPERACION RECIBIDO: %d", codigoOperacion);
-	*codigo = codigoOperacion;
-	buffer = recibir_buffer(&tamanio, clienteAceptado);
+	buffer = recibir_buffer(&tamanio, conexionCPU);
 
 	pcb->id_proceso = leer_int(buffer, &desplazamiento);
 

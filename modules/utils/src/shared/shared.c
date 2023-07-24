@@ -324,6 +324,14 @@ void eliminar_paquete(t_paquete* paquete) {
     free(paquete);
 }
 
+char** decode_instruccion(char* linea_a_parsear, t_log* logger) {
+	char** instruccion = string_split(linea_a_parsear, " ");
+	if(instruccion[0] == NULL) {
+	    log_info(logger, "Se ignora linea vacía.");
+	}
+	return instruccion;
+}
+
 int armar_conexion(t_config* config, char* modulo, t_log* logger) {
     char* ip = extraer_de_modulo_config(config, IP_CONFIG, modulo, logger);
     char* puerto = extraer_de_modulo_config(config, PUERTO_CONFIG, modulo, logger);
