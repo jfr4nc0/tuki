@@ -37,13 +37,31 @@ void iterator(char* value) {
 }
 
 void ejecutar_instrucciones_kernel(void* cliente) {
-    int clienteKernel = (int) (intptr_t) cliente;
-    int codigoDeOperacion = recibir_operacion(clienteKernel);
-    log_info(loggerFileSystem, "Recibida instruccion con codigo de operacion: %d, valores: ", codigoDeOperacion);
-    t_list* listaRecibida = recibir_paquete(clienteKernel);
-    list_iterate(listaRecibida, (void*) iterator);
+	int clienteKernel = (int) (intptr_t) cliente;
 
-    enviar_mensaje("Instrucción recibida", clienteKernel, loggerFileSystem);
+    codigo_operacion operacionRecibida = recibir_operacion(clienteKernel);
+    codigo_operacion codigoRespuesta = AUX_ERROR;
 
+
+    switch(operacionRecibida) {
+  		case I_F_OPEN:
+            char* nombreArchivo = obtener_mensaje_de_socket(clienteKernel);
+			log_info(loggerFileSystem, "Por leer archivo: %s", nombreArchivo);
+
+			if (existe_archivo(nombreArchivo)) {
+                enviar_codigo_operacion(clienteKernel, AUX_OK);
+			} else {
+                enviar_codigo_operacion(clienteKernel, AUX_ERROR);
+            }
+			break;
+    }
     return;
+}
+
+char* obtener_mensaje_de_socket(int cliente) {
+	char* buffer;
+	int tamanio = 0;
+	int desplazamiento = 0;
+	buffer = recibir_buffer(&tamanio, cliente);
+	return leer_string(buffer, &desplazamiento);
 }

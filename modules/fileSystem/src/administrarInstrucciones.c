@@ -2,6 +2,7 @@
 
 
 bool existe_archivo(char *nombreArchivo) {
+	strtok(nombreArchivo, "$");
     bool existeArchivo = dictionary_has_key(dictionaryFcbs, nombreArchivo);
 
     if (existeArchivo) {

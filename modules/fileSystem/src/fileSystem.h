@@ -26,5 +26,6 @@ t_list* listaFCB;
 void atender_kernel(int);
 void ejecutar_instrucciones_kernel(void*);
 void iterator(char* value);
+char* obtener_mensaje_de_socket(int cliente);
 
 #endif

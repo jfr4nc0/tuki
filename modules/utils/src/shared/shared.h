@@ -72,6 +72,7 @@ typedef enum {
 	AUX_SOY_KERNEL, // Notifica a memoria que el modulo que se conectó es KERNEL
 	AUX_SOY_FILE_SYSTEM // Notifica a memoria que el modulo que se conectó es FILE SYSTEM
 }codigo_operacion;
+
 typedef struct {
     // Registros de 4 bytes
     char AX[4];
@@ -155,5 +156,8 @@ void* leer_de_buffer(char*, int*, size_t);
 
 
 void intervalo_de_pausa(int );
+
+
+char** decode_instruccion(char*, t_log*);
 
 #endif

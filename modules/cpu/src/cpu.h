@@ -28,8 +28,7 @@ void atender_kernel(int);
 void mostrar_pcb(PCB* );
 
 void cargar_config(t_config*);
-char** decode_instruccion(char*);
-void ejecutar_instruccion(char** , PCB* , codigo_operacion*);
+int ejecutar_instruccion(char** , PCB*);
 void ejecutar_proceso(PCB* pcb, int);
 void cargar_registros(PCB* pcb);
 char* fetch_instruccion(PCB* pcb);

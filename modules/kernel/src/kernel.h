@@ -93,7 +93,7 @@ PCB* elegir_pcb_segun_fifo();
 PCB* elegir_pcb_segun_hrrn();
 void *manejo_desalojo_pcb();
 void recibir_proceso_desalojado(PCB*, int );
-PCB* recibir_pcb_de_cpu(int clienteAceptado, codigo_operacion* codigo);
+PCB* recibir_pcb_de_cpu();
 
 void crear_hilo_planificadores();
 void proximo_a_ejecutar();
@@ -131,7 +131,7 @@ void envio_pcb(int , PCB* , codigo_operacion );
 void envio_pcb_a_cpu(int , PCB* , codigo_operacion );
 void agregar_pcb_a_paquete_para_cpu(t_paquete* , PCB* );
 void agregar_registros_a_paquete_cpu(t_paquete* , registros_cpu* );
-codigo_operacion recibir_proceso_desajolado(PCB* pcb_en_ejecucion, int socket_cpu);
+PCB* recibir_proceso_desajolado(PCB* pcb_en_ejecucion);
 
 ////////////////////////////////////////////////////
 
