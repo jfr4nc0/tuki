@@ -102,6 +102,6 @@ int keyFromString(char *key);
 #define E__CONFIG_CREATE       "No se pudo crear config"
 #define E__PAQUETE_CREATE      "Error al crear paquete"
 #define E__MALLOC_ERROR        "Error al crear el malloc de tamaño %zu "
-
+#define E__CODIGO_INVALIDO     "Error codigo de operacion invalido"
 
 #endif

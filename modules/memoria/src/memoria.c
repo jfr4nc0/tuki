@@ -9,7 +9,9 @@ int main() {
     cargar_config_memoria(configInicial);
 
     int servidorMemoria = iniciar_servidor(configInicial, loggerMemoria);
-    inicializar_memoria(memoriaConfig->TAM_MEMORIA, memoriaConfig->TAM_SEGMENTO_0);
+    inicializar_memoria(memoriaConfig->TAM_MEMORIA, memoriaConfig->TAM_SEGMENTO_0,memoriaConfig->ALGORITMO_ASIGNACION);
+
+	testing_funciones();
 
     atender_conexiones(servidorMemoria);
 
@@ -18,6 +20,13 @@ int main() {
     liberar_memoria();
 
 	return 0;
+}
+
+void testing_funciones(){
+	codigo_operacion res;
+	// res = inicializar_proceso(1,128);
+	// res = crear_segmento_por_pid(1,100);
+	// res = crear_segmento_por_pid(1,80);
 }
 
 void atender_conexiones(int servidorMemoria) {
@@ -104,16 +113,57 @@ void ejecutar_instrucciones(int cliente, char* modulo) {
 void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion) {
     codigo_operacion codigoRespuesta = AUX_ERROR;
 
-    // Operacion crear PCB en memoria
-	if (codigoDeOperacion == AUX_CREATE_PCB) {
-		t_list* listaRecibida = recibir_paquete(cliente);
-		int idProceso = *(int*)list_get(listaRecibida, 0);
-	    codigoRespuesta = inicializar_proceso(idProceso, sizeof(int));
-	    t_list* obtenerSegmentosPorIdProceso = obtener_tabla_segmentos_por_proceso_id(idProceso);
+	t_list* listaRecibida = recibir_paquete(cliente);
+	int pid = *(int*)list_get(listaRecibida, 0);
 
-		if (codigoRespuesta == AUX_OK) {
-			return enviar_operacion(cliente, codigoRespuesta, sizeof(obtenerSegmentosPorIdProceso), obtenerSegmentosPorIdProceso);
+	switch(codigoDeOperacion){
+		case AUX_CREATE_PCB:
+		{
+			codigoRespuesta = inicializar_proceso(pid, sizeof(int));
+			t_list* obtenerSegmentosPorIdProceso = obtener_tabla_segmentos_por_proceso_id(pid);
+
+			if (codigoRespuesta == AUX_OK) {
+				log_info(loggerMemoria, CREACION_DE_PROCESO, pid);
+				enviar_operacion(cliente, codigoRespuesta, sizeof(obtenerSegmentosPorIdProceso), obtenerSegmentosPorIdProceso);
+			} else { enviar_codigo_operacion(cliente, codigoRespuesta); }
+			break;
 		}
-        return enviar_codigo_operacion(cliente, codigoRespuesta);
+		case I_CREATE_SEGMENT:
+		{
+			t_segmento* segmento = recibir_segmento_kernel(listaRecibida);
+			codigoRespuesta = crear_segmento_por_pid(pid, segmento);
+
+			if(codigoRespuesta == AUX_OK){
+				enviar_operacion(cliente,codigoRespuesta, sizeof(segmento->direccionBase), segmento->direccionBase);
+			} else { enviar_codigo_operacion(cliente, codigoRespuesta);}
+			break;
+		}
+		case I_DELETE_SEGMENT:
+		{
+			t_segmento* segmento = recibir_segmento_kernel(listaRecibida);
+			if(eliminar_segmento(pid, segmento->id)!=NULL){
+				enviar_codigo_operacion(cliente, AUX_OK);
+			} else {enviar_codigo_operacion(cliente, AUX_ERROR);}
+
+			break;
+		}
+		case AUX_SOLICITUD_COMPACTACION:
+		{
+			compactar_memoria();
+			// enviar_codigo_operacion(cliente, codigoRespuesta);
+			break;
+		}
+		case AUX_FINALIZAR_PROCESO:
+		{
+			finalizar_proceso(pid);
+			// enviar_codigo_operacion(cliente,codigoRespuesta);
+			break;
+		}
+		default:
+		{
+			log_error(loggerMemoria,E__CODIGO_INVALIDO);
+			enviar_codigo_operacion(cliente, AUX_ERROR);
+			break;
+		}
 	}
 }

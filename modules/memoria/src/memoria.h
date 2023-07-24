@@ -22,13 +22,12 @@ typedef struct {
 } t_memoria_config;
 
 #define DEFAULT_LOG_PATH            "logs/memoria.log"
-#define DEFAULT_CONFIG_PATH         "tuki-pruebas/prueba-base/memoria.config"
+#define DEFAULT_CONFIG_PATH         "../../tuki-pruebas/prueba-base/memoria.config"
 
 // LOGS ////////////////////////////////////
-#define CREACION_DE_PROCESO         "Creación de Proceso PID: <PID>"
-#define ELIMINACION_DE_PROCESO      "Eliminación de Proceso PID: <PID>"
-#define CREACION_DE_SEGMENTO        "PID: %s - Crear Segmento: %d - Base: %d - TAMAÑO: %d"
-#define RESULTADO_COMPACTACION      "Por cada segmento de cada proceso se deberá imprimir una línea con el siguiente formato:\n PID: <PID> - Segmento: < id SEGMENTO> - Base: <BASE> - Tamaño <TAMAÑO>"
+#define CREACION_DE_PROCESO         "Creación de Proceso PID: %d"
+#define ELIMINACION_DE_PROCESO      "Eliminación de Proceso PID: %d"
+#define RESULTADO_COMPACTACION      "Por cada segmento de cada proceso se deberá imprimir una línea con el siguiente formato:\n PID: %d - Segmento: %d - Base: %d - Tamaño %d"
 
 #define I__RECIBO_INSTRUCCION        "Me llegaron los siguientes valores para la operacion numero: %d desde %s"
 
@@ -43,5 +42,6 @@ void ejecutar_instrucciones(int, char*);
 void atender_conexiones(int);
 void administrar_cliente(int, int);
 void administrar_instrucciones(int cliente, codigo_operacion codigoOperacion);
+void testing_funciones();
 
 #endif

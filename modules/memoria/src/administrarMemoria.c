@@ -3,7 +3,7 @@
 int idSegmentoGlobal = 0;
 t_memoria* memoria;
 
-void inicializar_memoria(size_t sizeMemoriaTotal, size_t sizeSegmento0) {
+void inicializar_memoria(size_t sizeMemoriaTotal, size_t sizeSegmento0, char* algoritmo) {
 
     memoria = malloc(sizeof(t_memoria));
     memoria->espacioUsuario = malloc(sizeMemoriaTotal);
@@ -14,6 +14,8 @@ void inicializar_memoria(size_t sizeMemoriaTotal, size_t sizeSegmento0) {
     memoria->huecosLibres = malloc(sizeof(t_list));
     memoria->huecosLibres = list_create();
     memoria->sizeEspacioUsuario = sizeMemoriaTotal;
+    memoria->algoritmo_asignacion = algoritmo_seleccionado(algoritmo);
+
     t_segmento* segmento = malloc(sizeof(t_segmento));
 
     if (añadir_segmento(0, sizeSegmento0, memoria->espacioUsuario)) {
@@ -26,6 +28,15 @@ void inicializar_memoria(size_t sizeMemoriaTotal, size_t sizeSegmento0) {
     return;
 }
 
+t_algoritmo algoritmo_seleccionado(char* algoritmo){
+	t_algoritmo aux;
+	if(strcmp(algoritmo,"BEST")==0){aux=BEST_FIT;}
+	if(strcmp(algoritmo,"FIRST")==0){aux=FIRST_FIT;}
+	if(strcmp(algoritmo,"WORST")==0){aux=WORST_FIT;}
+
+	return aux;
+}
+
 void iteratorTabla(t_segmento_tabla* elemento) {
     log_debug(loggerMemoria, "Id proceso %d, segmento id %d, posicion %p, size %zu",
     		elemento->idProceso, elemento->segmento->id, elemento->segmento->direccionBase, elemento->segmento->size);
@@ -35,19 +46,29 @@ void iteratorSegmento(t_segmento* elemento) {
 	log_debug(loggerMemoria, "Segmento id %d, posicion %p, size %zu", elemento->id, elemento->direccionBase, elemento->size);
 }
 
-codigo_operacion inicializar_proceso(int idProceso, size_t pcbSize) {
-    void* respuesta = crear_segmento(idProceso, pcbSize);
-
+/*
+** Maneja el flujo de respuesta de la funcion crear_segmento
+*/
+codigo_operacion adapter_respuesta_segmento(int pid, t_segmento* segmento, void* respuesta){
     if (respuesta == (void*)-1) {
-		log_error(loggerMemoria, "Segmentation Fault (no hay memoria), para proceso %d, por peticion de tamaño: %zu", idProceso, pcbSize);
+		log_error(loggerMemoria, "Segmentation Fault (no hay memoria), para proceso %d, por peticion de tamaño: %zu", pid, segmento->size);
         return AUX_ERROR;
 	}else if(respuesta == NULL) {
-		log_warning(loggerMemoria, "Peticion de proceso %d, para tamaño %zu, solo se puede haciendo compactacion y usando los huecos libres", idProceso, pcbSize);
+		log_warning(loggerMemoria, "Peticion de proceso %d, para tamaño %zu, solo se puede haciendo compactacion y usando los huecos libres", pid, segmento->size);
         return AUX_SOLO_CON_COMPACTACION;
 	}else{
+        segmento->direccionBase = respuesta;
 		log_info(loggerMemoria, "Memoria usada: %p", respuesta);
         return AUX_OK;
     }
+}
+
+codigo_operacion inicializar_proceso(int pid, size_t pcbSize) {
+    t_segmento* segmento;
+    segmento->size = pcbSize;
+    void* respuesta = crear_segmento(pid, segmento->size);
+
+    return adapter_respuesta_segmento(pid,pcbSize,respuesta);
 }
 
 void finalizar_proceso(int idProceso) {
@@ -109,6 +130,12 @@ void compactar_memoria() {
     list_clean(memoria->huecosLibres);
 }
 
+codigo_operacion crear_segmento_por_pid(int pid, t_segmento* segmento){
+    void* respuesta = crear_segmento(pid, segmento->size);
+
+    return adapter_respuesta_segmento(pid,segmento,respuesta);
+}
+
 void* crear_segmento(int idProceso, size_t size) {
     // Verificar disponibilidad de espacio contiguo
     void* direccion_base = buscar_espacio_contiguo(size);
@@ -136,7 +163,8 @@ bool añadir_segmento(int idProceso, size_t size, void* direccion_base) {
 
     if (list_add(memoria->segmentos, segmento) >=0 &&
         guardarSegmentoEnTabla(segmento, idProceso) >=0) {
-    	log_info(loggerMemoria, "Segmento id %d, de tamaño %zu, creado por proceso %d", segmento->id, size, idProceso);
+    	// log_info(loggerMemoria, "Segmento id %d, de tamaño %zu, creado por proceso %d", segmento->id, size, idProceso);
+        log_info(loggerMemoria,CREACION_DE_SEGMENTO,idProceso,segmento->id,segmento->direccionBase,segmento->size);
         log_info(loggerMemoria, "Logueo tabla segmentos: ");
         list_iterate(memoria->tablaDeSegmentos, (void*) iteratorTabla);
         log_info(loggerMemoria, "Logueo lista segmentos: ");
@@ -233,6 +261,12 @@ bool comparar_segmentos_por_segmento_id(const t_segmento* segmento1, const t_seg
 bool comparar_tabla_segmentos_por_segmento_id(const t_segmento_tabla* tablaSegmento1, const t_segmento_tabla* tablaSegmento2) {
     return tablaSegmento1->segmento->id <= tablaSegmento2->segmento->id;
 }
+bool comparar_segmentos_por_mayor(const void* segmento1, const void* segmento2){
+    return segmento1 >= segmento2;
+}
+bool comparar_segmentos_por_menor(const void* segmento1, const void* segmento2){
+    return segmento1 <= segmento2;
+}
 
 bool filtrar_tabla_segmentos_por_proceso_id(const void* tablaElemento, void* idProceso) {
     int idProcesoCasteado = *((int*)idProceso);
@@ -257,6 +291,14 @@ t_list* obtener_tabla_segmentos_por_proceso_id(int procesoId) {
     return segmentos;
 }
 
+// TODO Implementar recibir el segmento enviado por el kernel
+t_segmento* recibir_segmento_kernel(t_list* pcbRecibido){
+    t_segmento* segmento;
+    
+
+    return segmento;
+}
+
 ////////////////////////////////////////////////
 
 void* calcular_direccion(void* posicionBase, size_t desplazamiento) {
@@ -277,14 +319,7 @@ size_t suma_size_huecos_disponibles(t_list* huecosLibres) {
     return sizeTotalHuecos;
 }
 
-/*
- * @param size_t size Tamaño pedido de memoria
- * Recorre memoria en busca de un espacio continuado libre con el tamaño dado
- * En caso de encontrarlo devuelve la posicion de memoria, sino devuelve NULL (segmentation fault)
- *
- * return void*
- */
-void* buscar_espacio_contiguo(size_t size) {
+void* obtener_base_segmento_first_fit(size_t size){
     void* direccionBase;
     void* proximaDireccion = NULL;
     t_segmento* proximoSegmento;
@@ -294,6 +329,7 @@ void* buscar_espacio_contiguo(size_t size) {
         proximoSegmento = ubicar_segmento_mas_cercano(memoria->tablaDeSegmentos, direccionBase);
 
         if (proximoSegmento == NULL) {
+            // Unico o ultimo espacio libre, comparar si tiene espacio suficiente
         	if ((uintptr_t)calcular_direccion(direccionBase, size) <=
         			(uintptr_t)calcular_direccion(memoria->espacioUsuario, memoria->sizeEspacioUsuario)) {
         		return direccionBase;
@@ -308,6 +344,74 @@ void* buscar_espacio_contiguo(size_t size) {
         // Para la siguiente iteración
         proximaDireccion = calcular_direccion(proximoSegmento->direccionBase, proximoSegmento->size);
     }
+}
+
+void* obtener_base_segmento_worst_fit(size_t size){
+    t_hueco_libre* huecoLibre;
+
+    /*
+    ** Comparar lista con el solicitado o espacio de hueco restante,
+    ** ahora se compara todos los segmentos (huecos libres) que encontro, habria que comparar con el tamaño del segmento solicitado
+    */
+    recalcular_huecos_libres();
+    list_sort(memoria->huecosLibres, (void*) comparar_segmentos_por_mayor );
+    
+    for (int i = 0; i < list_size(memoria->huecosLibres); i++){
+
+        huecoLibre = list_get(memoria->huecosLibres,i);
+        if ((uintptr_t)calcular_direccion(huecoLibre->direccionBase, huecoLibre->size) >=
+        (uintptr_t)calcular_direccion(huecoLibre->direccionBase,size)) {return huecoLibre->direccionBase;} // TODO Revisar el comparador
+        }
+        return NULL; 
+    }
+
+void* obtener_base_segmento_best_fit(size_t size){
+    t_hueco_libre* huecoLibre;
+
+    /*
+    ** Comparar lista con el solicitado o espacio de hueco restante,
+    ** ahora se compara todos los segmentos (huecos libres) que encontro, habria que comparar con el tamaño del segmento solicitado
+    */
+    recalcular_huecos_libres();
+    list_sort(memoria->huecosLibres, (void*) comparar_segmentos_por_menor );
+    
+    for (int i = 0; i < list_size(memoria->huecosLibres); i++){
+
+        huecoLibre = list_get(memoria->huecosLibres,i);
+        if ((uintptr_t)calcular_direccion(huecoLibre->direccionBase, huecoLibre->size) >=
+        (uintptr_t)calcular_direccion(huecoLibre->direccionBase,size)) {return huecoLibre->direccionBase;} // TODO Revisar el comparador
+        }
+        return NULL; 
+    }
+
+/*
+ * @param size_t size Tamaño pedido de memoria
+ * Recorre memoria en busca de un espacio continuado libre con el tamaño dado,
+ * aplicando uno de los algoritmos de asignacion de memoria
+ * 
+ * En caso de encontrarlo devuelve la posicion de memoria, sino devuelve NULL (segmentation fault)
+ *
+ * return void*
+ */
+void* buscar_espacio_contiguo(size_t size) {
+    void* direccionBase;
+    
+   switch (memoria->algoritmo_asignacion) {
+		case FIRST_FIT:
+			direccionBase = obtener_base_segmento_first_fit(size);
+			break;
+		case WORST_FIT:
+			direccionBase = obtener_base_segmento_worst_fit(size);
+			break;
+		case BEST_FIT:
+			direccionBase = obtener_base_segmento_best_fit(size);
+			break;
+		default:
+			direccionBase = NULL;
+            log_error(loggerMemoria,E__BAD_REQUEST);
+			break;
+	}
+    return direccionBase;
 }
 
 t_segmento* ubicar_segmento_mas_cercano(t_list* tablaSegmentos, void* direccion) {
