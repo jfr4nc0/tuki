@@ -319,11 +319,83 @@ void *manejo_desalojo_pcb() {
 		 		}
 		 		break;
 		 	 }
+		 	 case I_IO: {
+		 		char* tiempo_de_io_string = ultimaInstruccionDecodificada[1];
+		 		int tiempo_de_io = atoi(tiempo_de_io_string);
+		 		cambiar_estado_proceso_con_semaforos(pcb_en_ejecucion, ENUM_BLOCKED);
+		 		log_info(kernelLogger, "PID: <%u> - Bloqueado por: IO", pcb_en_ejecucion->id_proceso);
+		 		intervalo_de_pausa(tiempo_de_io*1000);
+		 		cambiar_estado_proceso_con_semaforos(pcb_en_ejecucion, ENUM_READY);
+		 		log_info(kernelLogger, "PID: <%d> - Ejecuta IO: <%d>", pcb_en_ejecucion->id_proceso, tiempo_de_io);
+		 		break;
+		 	 }
+		 	 case I_WAIT:{
+		 		 char* nombre_recurso = ultimaInstruccionDecodificada[1];
+		 		 instruccion_wait(pcb_en_ejecucion, nombre_recurso);
+		 		 free(nombre_recurso);
+		 		 break;
+		 	 }
+		 	 case I_SIGNAL:{
+		 		char* nombre_recurso = ultimaInstruccionDecodificada[1];
+		 		instruccion_signal(pcb_en_ejecucion, nombre_recurso);
+		 		free(nombre_recurso);
+		 		 break;
+		 	 }
 		 }
 		 free(ultimaInstruccion);
 		 free(ultimaInstruccionDecodificada);
 	}
 	return NULL;
+}
+
+void instruccion_wait(PCB *pcb_en_ejecucion, char *nombre_recurso){
+	log_error(kernelLogger, "llega a la linea 352");
+	if (!dictionary_has_key(diccionario_recursos, nombre_recurso)) {
+        log_info(kernelLogger, "ERROR - PID: <%u> - <%s> NO existe", pcb_en_ejecucion->id_proceso, nombre_recurso);
+        cambiar_estado_proceso_con_semaforos(pcb_en_ejecucion, ENUM_EXIT);
+        sem_post(&sem_cpu_disponible);
+    }
+    else{
+        t_recurso *recurso = dictionary_get(diccionario_recursos, nombre_recurso);
+        recurso->instancias--;
+        if (! (recurso->instancias >= 0)) { // Chequea si debe bloquear al proceso por falta de instancias
+        	sem_t semaforo_recurso = recurso->sem_recurso;
+        	sem_wait(&semaforo_recurso);
+        	list_add(recurso->procesos_bloqueados, pcb_en_ejecucion);
+        	sem_post(&semaforo_recurso);
+        	cambiar_estado_proceso_con_semaforos(pcb_en_ejecucion, ENUM_BLOCKED);
+            log_info(kernelLogger, "PID: <%u> - Bloqueado por: %s", pcb_en_ejecucion->id_proceso, nombre_recurso);
+            sem_post(&sem_cpu_disponible);
+        } else { // Si el proceso no se bloquea en el if anterior, puede usar el recurso
+        	cambiar_estado_proceso_con_semaforos(pcb_en_ejecucion, ENUM_EXECUTING);
+        }
+
+        log_info(kernelLogger, "PID: <%d> - Wait: <%s> - Instancias: <%d>", pcb_en_ejecucion->id_proceso, nombre_recurso, recurso->instancias);
+    }
+    return;
+}
+void instruccion_signal(PCB *pcb_en_ejecucion, char *nombre_recurso){
+
+	if (!dictionary_has_key(diccionario_recursos, nombre_recurso)) {
+	    log_info(kernelLogger, "ERROR - PID: <%u> - <%s> NO existe", pcb_en_ejecucion->id_proceso, nombre_recurso);
+	    cambiar_estado_proceso_con_semaforos(pcb_en_ejecucion, ENUM_EXIT);
+	    sem_post(&sem_cpu_disponible);
+	}
+	else{
+		t_recurso *recurso = dictionary_get(diccionario_recursos, nombre_recurso);
+		recurso->instancias++;
+		if((!list_is_empty(recurso->procesos_bloqueados)) && (recurso->instancias == 0)){
+		    // Desbloquea al primer proceso de la cola de bloqueados del recurso
+			sem_t semaforo_recurso = recurso->sem_recurso;
+			sem_wait(&semaforo_recurso);
+			PCB *pcb = list_remove(recurso->procesos_bloqueados, 0);
+			sem_post(&semaforo_recurso);
+			cambiar_estado_proceso_con_semaforos(pcb_en_ejecucion, ENUM_READY);
+		}
+		cambiar_estado_proceso_con_semaforos(pcb_en_ejecucion, ENUM_EXECUTING);
+		log_info(kernelLogger, "PID: <%d> - Signal: <%s> - Instancias: <%d>", pcb_en_ejecucion->id_proceso, nombre_recurso, recurso->instancias);
+	}
+	return;
 }
 
 double obtener_diferencial_de_tiempo_en_milisegundos(timestamp *end, timestamp *start) {
@@ -684,6 +756,7 @@ void crear_cola_recursos(char* nombre_recurso, int instancias) {
 
     recurso->nombre = nombre_recurso;
     recurso->instancias = instancias;
+    recurso->procesos_bloqueados = list_create();
 
     sem_t sem;
     sem_init(&sem, 1, 0);

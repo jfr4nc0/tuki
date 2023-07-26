@@ -1,3 +1,4 @@
+/*
 #include "cpuInstrucciones.h"
 
 int get_dir_fisica(t_segmento* segmento ,char* dir_logica, int segment_max){
@@ -5,7 +6,7 @@ int get_dir_fisica(t_segmento* segmento ,char* dir_logica, int segment_max){
 	 * 	Direccion Logica: [ Nro Segmento | direccionBase ]
 	 *	@return: La direccion fisica
 	 */
-	segmento->id = floor(atoi(dir_logica)/segment_max);
+/*	segmento->id = floor(atoi(dir_logica)/segment_max);
 	segmento->direccionBase = atoi(dir_logica)%segment_max;
 	segmento->size = segmento->id + segmento->direccionBase;
 
@@ -86,3 +87,4 @@ void instruccion_yield() {
 void instruccion_exit() {
 	// Esta instrucción representa la syscall de finalización del proceso. Se deberá devolver el Contexto de Ejecución actualizado al Kernel para su finalización.
 }
+ */

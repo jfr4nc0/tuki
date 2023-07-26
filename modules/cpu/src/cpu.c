@@ -192,37 +192,6 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
 	enviar_pcb_desalojado_a_kernel(pcb, clienteKernel, ultimaOperacion);
 }
 
-void mostrar_pcb(PCB* pcb){
-	log_trace(loggerCpu, "PID: %d", pcb->id_proceso);
-	char* estado = nombres_estados[pcb->estado];
-	log_trace(loggerCpu, "ESTADO: %s", estado);
-	log_trace(loggerCpu, "INSTRUCCIONES A EJECUTAR: ");
-	list_iterate(pcb->lista_instrucciones, (void*) iterator);
-	log_trace(loggerCpu, "PROGRAM COUNTER: %d", pcb->contador_instrucciones);
-	log_trace(loggerCpu, "Registro AX: %s", pcb->registrosCpu->AX);
-	log_trace(loggerCpu, "Registro BX: %s", pcb->registrosCpu->BX);
-	log_trace(loggerCpu, "Registro CX: %s", pcb->registrosCpu->CX);
-	log_trace(loggerCpu, "Registro DX: %s", pcb->registrosCpu->DX);
-	log_trace(loggerCpu, "Registro EAX: %s", pcb->registrosCpu->EAX);
-	log_trace(loggerCpu, "Registro EBX: %s", pcb->registrosCpu->EBX);
-	log_trace(loggerCpu, "Registro ECX: %s", pcb->registrosCpu->ECX);
-	log_trace(loggerCpu, "Registro EDX: %s", pcb->registrosCpu->EDX);
-	log_trace(loggerCpu, "Registro RAX: %s", pcb->registrosCpu->RAX);
-	log_trace(loggerCpu, "Registro RBX: %s", pcb->registrosCpu->RBX);
-	log_trace(loggerCpu, "Registro RCX: %s", pcb->registrosCpu->RCX);
-	log_trace(loggerCpu, "Registro RDX: %s", pcb->registrosCpu->RDX);
-	log_trace(loggerCpu, "LISTA SEGMENTOS: ");
-	list_iterate(pcb->lista_segmentos, (void*) iterator);
-	log_trace(loggerCpu, "LISTA ARCHIVOS ABIERTOS: ");
-	list_iterate(pcb->lista_archivos_abiertos, (void*) iterator);
-	log_trace(loggerCpu, "ESTIMACION HHRN: %f", pcb->estimacion_rafaga);
-	log_trace(loggerCpu, "TIMESTAMP EN EL QUE EL PROCESO LLEGO A READY POR ULTIMA VEZ: %f", pcb->ready_timestamp);
-}
-void iterator(char* value) {
-    log_info(loggerCpu, "%s ", value);
-}
-
-
 void cargar_registros(PCB* pcb) {
 	strcpy(registrosCpu->AX, pcb->registrosCpu->AX);
 	strcpy(registrosCpu->BX, pcb->registrosCpu->BX);
@@ -274,24 +243,23 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 			break;
 		case I_MOV_IN:
 			// MOV_IN (Registro, Dirección Lógica)
-			instruccion_mov_in(instruccion[1],instruccion[2],pcb);
+			//instruccion_mov_in(instruccion[1],instruccion[2],pcb);
 			break;
 		case I_MOV_OUT:
 			// MOV_OUT (Dirección Lógica, Registro)
-			instruccion_mov_out(instruccion[1],instruccion[2],pcb);
+			//instruccion_mov_out(instruccion[1],instruccion[2],pcb);
 			break;
 		case I_IO:
 			// I/O (Tiempo)
-			instruccion_io(instruccion[1]);
+			hubo_interrupcion = true;
 			break;
 		case I_F_OPEN:
 			// F_OPEN (Nombre Archivo)
-			instruccion_f_open(instruccion[1]);
 			hubo_interrupcion = true;
 			break;
 		case I_F_CLOSE:
 			// F_CLOSE (Nombre Archivo)
-			instruccion_f_close(instruccion[1]);
+			hubo_interrupcion = true;
 			break;
 		case I_F_SEEK:
 			// F_SEEK (Nombre Archivo, Posición)
@@ -311,11 +279,11 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 			break;
 		case I_WAIT:
 			// WAIT (Recurso)
-			instruccion_wait(instruccion[1]);
+			hubo_interrupcion = true;
 			break;
 		case I_SIGNAL:
 			// SIGNAL (Recurso)
-			instruccion_signal(instruccion[1]);
+			hubo_interrupcion = true;
 			break;
 		case I_CREATE_SEGMENT:
 			// CREATE_SEGMENT (Id del Segmento, Tamaño)
@@ -395,6 +363,48 @@ void instruccion_set(char* registro,char* valor) {
 // 	free(registro_cpu);
 // }
 
+int get_dir_fisica(t_segmento* segmento ,char* dir_logica, int segment_max){
+	/*	Esquema de memoria: Segmentacion
+	 * 	Direccion Logica: [ Nro Segmento | direccionBase ]
+	 *	@return: La direccion fisica
+	 */
+	segmento->id = floor(atoi(dir_logica)/segment_max);
+	segmento->direccionBase = atoi(dir_logica)%segment_max;
+	segmento->size = segmento->id + segmento->direccionBase;
+
+	if(segmento->size > segment_max){
+		return -1;
+	} else { return segmento->size; }
+}
+void* get_registro_cpu(char* registro, registros_cpu* registrosCpu){
+	if (strcmp(registro, "AX") == 0) {
+		return &(registrosCpu->AX);
+	} else if (strcmp(registro, "BX") == 0) {
+		return &(registrosCpu->BX);
+	} else if (strcmp(registro, "CX") == 0) {
+		return &(registrosCpu->CX);
+	} else if (strcmp(registro, "DX") == 0) {
+		return &(registrosCpu->DX);
+	} else if (strcmp(registro, "EAX") == 0) {
+		return &(registrosCpu->EAX);
+	} else if (strcmp(registro, "EBX") == 0) {
+		return &(registrosCpu->EBX);
+	} else if (strcmp(registro, "ECX") == 0) {
+		return &(registrosCpu->ECX);
+	} else if (strcmp(registro, "EDX") == 0) {
+		return &(registrosCpu->EDX);
+	} else if (strcmp(registro, "RAX") == 0) {
+		return &(registrosCpu->RAX);
+	} else if (strcmp(registro, "RBX") == 0) {
+		return &(registrosCpu->RBX);
+	} else if (strcmp(registro, "RCX") == 0) {
+		return &(registrosCpu->RCX);
+	} else if (strcmp(registro, "RDX") == 0) {
+		return &(registrosCpu->RDX);
+	} else {
+		return;
+	}
+}
 void instruccion_mov_in(char* registro, char* dir_logica, PCB* pcb) {
 	/*
 	 * Lee el valor de memoria corresponfiente a la Direccion Logica y lo almacena en el registro
@@ -530,22 +540,6 @@ void agregar_valor_a_paquete(t_paquete* paquete, void* valor, int tamanio) {
     memcpy(paquete->buffer->stream + paquete->buffer->size, valor, tamanio);
     paquete->buffer->size += tamanio;
 }
-//
-void instruccion_mov_in(char* registro,char* dir_logica) {
-
-}
-void instruccion_mov_out(char* dir_logica,char* registro) {
-
-}
-void instruccion_io(char* tiempo) {
-
-}
-void instruccion_f_open(char* nombre_archivo) {
-
-}
-void instruccion_f_close(char* nombre_archivo) {
-
-}
 void instruccion_f_seek(char* nombre_archivo, char* posicion) {
 
 }
@@ -556,12 +550,6 @@ void instruccion_f_write(char* nombre_archivo, char* dir_logica, char* cant_byte
 
 }
 void instruccion_f_truncate(char* nombre_archivo,char* tamanio) {
-
-}
-void instruccion_wait(char* recurso) {
-
-}
-void instruccion_signal(char* recurso) {
 
 }
 void instruccion_create_segment(char* id_segmento, char* tamanio) {

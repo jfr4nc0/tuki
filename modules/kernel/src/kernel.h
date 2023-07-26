@@ -15,6 +15,7 @@ t_log* kernelLogger;
 
 
 /*----------------- STRUCTS ------------------*/
+/*
 typedef enum {
     ENUM_NEW,
     ENUM_READY,
@@ -22,7 +23,7 @@ typedef enum {
     ENUM_BLOCKED,
     ENUM_EXIT,
 }pcb_estado;
-
+*/
 typedef struct {
 	char* IP_MEMORIA;
 	char* PUERTO_MEMORIA;
@@ -45,7 +46,7 @@ t_kernel_config* kernelConfig;
 typedef struct{
     char* nombre;
     int instancias;
-    // t_list* lista_procesos;
+    t_list* procesos_bloqueados;
     sem_t sem_recurso;
 }t_recurso;
 
@@ -170,6 +171,6 @@ t_dictionary* diccionario_recursos;
 
 
 #define PATH_LOG_KERNEL             "logs/kernel.log"
-#define PATH_CONFIG_KERNEL          "../../tuki-pruebas/prueba-base/kernel.config"
+#define PATH_CONFIG_KERNEL          "/home/utnso/eclipse-workspace/tp-2023-1c-KernelPanic/tuki-pruebas/prueba-base/kernel.config"
 
 #endif
