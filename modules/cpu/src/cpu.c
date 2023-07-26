@@ -218,6 +218,7 @@ void mostrar_pcb(PCB* pcb){
 	log_trace(loggerCpu, "ESTIMACION HHRN: %f", pcb->estimacion_rafaga);
 	log_trace(loggerCpu, "TIMESTAMP EN EL QUE EL PROCESO LLEGO A READY POR ULTIMA VEZ: %f", pcb->ready_timestamp);
 }
+
 void iterator(char* value) {
     log_info(loggerCpu, "%s ", value);
 }
@@ -274,11 +275,11 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 			break;
 		case I_MOV_IN:
 			// MOV_IN (Registro, Dirección Lógica)
-			instruccion_mov_in(instruccion[1],instruccion[2],pcb);
+			// instruccion_mov_in(instruccion[1],instruccion[2],pcb);
 			break;
 		case I_MOV_OUT:
 			// MOV_OUT (Dirección Lógica, Registro)
-			instruccion_mov_out(instruccion[1],instruccion[2],pcb);
+			// instruccion_mov_out(instruccion[1],instruccion[2],pcb);
 			break;
 		case I_IO:
 			// I/O (Tiempo)
@@ -398,7 +399,7 @@ void instruccion_set(char* registro,char* valor) {
 void instruccion_mov_in(char* registro, char* dir_logica, PCB* pcb) {
 	/*
 	 * Lee el valor de memoria corresponfiente a la Direccion Logica y lo almacena en el registro
-	 */
+
 	t_segmento* segmento;
 	void* dir_fisica = get_dir_fisica(segmento, dir_logica, configCpu->TAM_MAX_SEGMENTO);
 	if(dir_fisica!=-1){
@@ -418,12 +419,12 @@ void instruccion_mov_in(char* registro, char* dir_logica, PCB* pcb) {
 	}
 	free(segmento);
 	free(dir_fisica);
+	*/
 }
 
-void instruccion_mov_out(char* dir_logica,char* registro, PCB* pcb) {
+void instruccion_mov_out(char* dir_logica, char* registro, PCB* pcb) {
 	/*
 	 * Lee el valor del Registro y lo escribe en la dirección física de memoria obtenida a partir de la Dirección Lógica.
-	 */
 	t_segmento* segmento;
 	void* dir_fisica = get_dir_fisica(segmento, dir_logica, configCpu->TAM_MAX_SEGMENTO);
 
@@ -445,6 +446,7 @@ void instruccion_mov_out(char* dir_logica,char* registro, PCB* pcb) {
 	}
 	free(segmento);
 	free(dir_fisica);
+	*/
 }
 
 void enviar_pcb_desalojado_a_kernel(PCB* pcb, int socket, codigo_operacion codigo){
@@ -531,12 +533,6 @@ void agregar_valor_a_paquete(t_paquete* paquete, void* valor, int tamanio) {
     paquete->buffer->size += tamanio;
 }
 //
-void instruccion_mov_in(char* registro,char* dir_logica) {
-
-}
-void instruccion_mov_out(char* dir_logica,char* registro) {
-
-}
 void instruccion_io(char* tiempo) {
 
 }

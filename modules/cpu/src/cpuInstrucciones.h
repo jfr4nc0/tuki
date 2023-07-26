@@ -1,6 +1,6 @@
-#ifndef UTILS_H
-#define UTILS_H
-
+#ifndef CPU_INSTRUCCIONES_H
+#define CPU_INSTRUCCIONES_H
+/*
 #include <shared/shared.h>
 
 typedef struct {
@@ -30,6 +30,6 @@ void instruccion_create_segment(char* id_segmento, char* tamanio);
 void instruccion_delete_segment(char* id_segmento);
 void instruccion_yield();
 void instruccion_exit();
-
+*/
 
 #endif

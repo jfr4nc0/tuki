@@ -126,7 +126,7 @@ void enviar_proceso_a_ready() {
 void iterator(char* value) {
     log_info(kernelLogger, "%s ", value);
 }
-//TODO: REVISAR, NO LLEGUE
+
 void recibir_de_consola(void *clienteAceptado) {
 
 	log_info(kernelLogger, "Inicializando paquete.");

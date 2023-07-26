@@ -73,5 +73,6 @@ void iteratorTabla(t_segmento_tabla* elemento);
 
 void iteratorSegmento(t_segmento* elemento);
 t_list* obtener_tabla_segmentos_por_proceso_id(int procesoId);
+t_algoritmo algoritmo_seleccionado(char* algoritmo);
 
 #endif

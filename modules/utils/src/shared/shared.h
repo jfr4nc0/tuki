@@ -43,6 +43,26 @@ typedef enum {
     ENUM_EXIT,
 }pcb_estado;
 
+typedef struct {
+    // Registros de 4 bytes
+    char AX[4];
+    char BX[4];
+    char CX[4];
+    char DX[4];
+
+    // Registros de 8 bytes
+    char EAX[8];
+    char EBX[8];
+    char ECX[8];
+    char EDX[8];
+
+    // Registro de 16 bytes
+    char RAX[16];
+    char RBX[16];
+    char RCX[16];
+    char RDX[16];
+} registros_cpu;
+
 /*--------------------------------- Estructuras --------------------------------*/
 
 typedef struct {
@@ -94,26 +114,6 @@ typedef enum {
 	AUX_SOY_KERNEL, // Notifica a memoria que el modulo que se conectó es KERNEL
 	AUX_SOY_FILE_SYSTEM // Notifica a memoria que el modulo que se conectó es FILE SYSTEM
 }codigo_operacion;
-
-typedef struct {
-    // Registros de 4 bytes
-    char AX[4];
-    char BX[4];
-    char CX[4];
-    char DX[4];
-
-    // Registros de 8 bytes
-    char EAX[8];
-    char EBX[8];
-    char ECX[8];
-    char EDX[8];
-
-    // Registro de 16 bytes
-    char RAX[16];
-    char RBX[16];
-    char RCX[16];
-    char RDX[16];
-} registros_cpu;
 
 typedef struct {
     int size;

@@ -1,10 +1,11 @@
 #include "cpuInstrucciones.h"
-
+/*
 int get_dir_fisica(t_segmento* segmento ,char* dir_logica, int segment_max){
 	/*	Esquema de memoria: Segmentacion
 	 * 	Direccion Logica: [ Nro Segmento | direccionBase ]
 	 *	@return: La direccion fisica
 	 */
+	/*
 	segmento->id = floor(atoi(dir_logica)/segment_max);
 	segmento->direccionBase = atoi(dir_logica)%segment_max;
 	segmento->size = segmento->id + segmento->direccionBase;
@@ -48,7 +49,8 @@ void cargar_data_instruccion(PCB* pcb, t_list* data_instruccion, char** instrucc
 	for(int i=0; i<=cant ;i++){
 		list_add_in_index(data_instruccion,i,instruccion[i]);
 	}
-	pcb->data_instruccion = data_instruccion;
+	// SI SE VA A AGREGAR, AGREGAR TAMBIÈN AL PCB
+	// pcb->data_instruccion = data_instruccion;
 }
 
 void instruccion_io(char* tiempo) { // TODO: @Francisca
@@ -86,3 +88,4 @@ void instruccion_yield() {
 void instruccion_exit() {
 	// Esta instrucción representa la syscall de finalización del proceso. Se deberá devolver el Contexto de Ejecución actualizado al Kernel para su finalización.
 }
+*/

@@ -13,16 +13,6 @@ int contadorProcesoId = 1; // El 0 se lo dejamos al segmento0
 
 t_log* kernelLogger;
 
-
-/*----------------- STRUCTS ------------------*/
-typedef enum {
-    ENUM_NEW,
-    ENUM_READY,
-    ENUM_EXECUTING,
-    ENUM_BLOCKED,
-    ENUM_EXIT,
-}pcb_estado;
-
 typedef struct {
 	char* IP_MEMORIA;
 	char* PUERTO_MEMORIA;
