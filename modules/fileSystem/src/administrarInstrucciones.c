@@ -60,7 +60,6 @@ bool truncar_archivo(char* nombreArchivo, uint32_t tamanioNuevo) {
     }
 
     actualizar_tamanio_bloques(fcb, tamanioNuevo);
-
     log_info(loggerFileSystem, "Completado Truncado de Archivo: <%s>", nombreArchivo);
     return true;
 }

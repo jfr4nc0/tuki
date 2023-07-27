@@ -1,6 +1,9 @@
 #ifndef KERNEL_H_
 #define KERNEL_H_
 
+#include <commons/collections/dictionary.h>
+#include <stdint.h>
+
 #include <shared/shared.h>
 
 /*------------------ VARIABLES GLOBALES --------------*/
@@ -110,12 +113,19 @@ void envio_pcb_a_cpu(int , PCB* , codigo_operacion );
 void agregar_pcb_a_paquete_para_cpu(t_paquete* , PCB* );
 void agregar_registros_a_paquete_cpu(t_paquete* , registros_cpu* );
 PCB* recibir_proceso_desajolado(PCB* pcb_en_ejecucion);
+// t_semaforo_recurso* diccionario_semaforos_recursos_get_semaforo_recurso(tablaArchivosAbiertos, nombreArchivo);
 
 ////////////////////////////////////////////////////
 
 int obtener_recursos(int);
 
 void cambiar_estado_proceso_sin_semaforos(PCB* pcb, pcb_estado estadoNuevo);
+t_archivo_abierto* encontrar_archivo_abierto(t_list* listaArchivosAbiertos, char* nombreArchivo);
+
+int encontrar_index_archivo_abierto(t_list* listaArchivosAbiertos, char* nombreArchivo);
+void agregar_lista_archivos_a_paquete(t_paquete* paquete, t_list* lista);
+
+t_list* archivosAbiertosGlobal;
 
 /*----------------- SEMAFOROS / HILOS ------------------*/
 sem_t sem_proceso_a_ready_inicializar;
@@ -132,6 +142,8 @@ pthread_t thread_cpu;
 t_list* lista_estados[CANTIDAD_ESTADOS];
 sem_t sem_lista_estados[CANTIDAD_ESTADOS];
 pthread_mutex_t* mutex_lista_estados[CANTIDAD_ESTADOS];
+
+pthread_mutex_t* mutexTablaAchivosAbiertos;
 
 t_dictionary* diccionario_recursos;
 

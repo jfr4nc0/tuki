@@ -259,34 +259,24 @@ int leer_int(char* buffer, int* desp) {
 	return respuesta;
 }
 
-char* leer_registro_4_bytes(char* buffer, int* desp){
-	int size = 4;
-
+char* leer_texto(char* buffer, int* desp, int size) {
 	char* respuesta = malloc(size);
 	memcpy(respuesta, buffer+(*desp), size);
 	(*desp)+=size;
 
 	return respuesta;
+}
+
+char* leer_registro_4_bytes(char* buffer, int* desp){
+    return leer_texto(buffer, desp, 4);
 }
 
 char* leer_registro_8_bytes(char* buffer, int* desp){
-	int size = 8;
-
-	char* respuesta = malloc(size);
-	memcpy(respuesta, buffer+(*desp), size);
-	(*desp)+=size;
-
-	return respuesta;
+	return leer_texto(buffer, desp, 8);
 }
 
 char* leer_registro_16_bytes(char* buffer, int* desp){
-	int size = 16;
-
-	char* respuesta = malloc(size);
-	memcpy(respuesta, buffer+(*desp), size);
-	(*desp)+=size;
-
-	return respuesta;
+	return leer_texto(buffer, desp, 16);
 }
 
 char* leer_string(char* buffer, int* desp) {

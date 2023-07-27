@@ -123,19 +123,19 @@ PCB* recibir_pcb(int clienteAceptado) {
 
 	pcb->estado = leer_int(buffer, &desplazamiento);
 
-	pcb->lista_instrucciones = leer_string_array(buffer, &desplazamiento); // NO esta funcionando bien
+	pcb->lista_instrucciones = leer_string_array(buffer, &desplazamiento);
 
 	pcb->contador_instrucciones = leer_int(buffer, &desplazamiento);
 
-	pcb->lista_segmentos = leer_string_array(buffer, &desplazamiento); //TODO: Modificar cuando se mergee memoria
+	pcb->lista_segmentos = leer_string_array(buffer, &desplazamiento);
 
 	pcb->lista_archivos_abiertos = list_create();
 	int cantidad_de_archivos = leer_int(buffer, &desplazamiento);
 	for (int i = 0; i < cantidad_de_archivos; i++) {
-			archivo_abierto_t* archivo_abierto = malloc(sizeof(archivo_abierto_t));
+			t_archivo_abierto* archivo_abierto = malloc(sizeof(t_archivo_abierto));
 
-		    archivo_abierto->id = leer_int(buffer, &desplazamiento);
-		    archivo_abierto->posicion_puntero = leer_int(buffer, &desplazamiento);
+		    archivo_abierto->nombreArchivo = leer_string(buffer, &desplazamiento);
+		    archivo_abierto->puntero = leer_int(buffer, &desplazamiento);
 
 		    list_add(pcb->lista_archivos_abiertos, archivo_abierto);
 		    free(archivo_abierto);

@@ -27,7 +27,6 @@ void atender_kernel(int servidorFileSystem) {
         pthread_create(&thread_kernel, NULL, (void*)ejecutar_instrucciones_kernel, (void*) (intptr_t) clienteAceptado);
         pthread_join(thread_kernel, NULL);
 
-
         liberar_conexion(clienteAceptado);
     }
 }
@@ -44,24 +43,47 @@ void ejecutar_instrucciones_kernel(void* cliente) {
 
 
     switch(operacionRecibida) {
-  		case I_F_OPEN:
+  		case I_F_OPEN: {
             char* nombreArchivo = obtener_mensaje_de_socket(clienteKernel);
 			log_info(loggerFileSystem, "Por leer archivo: %s", nombreArchivo);
 
-			if (existe_archivo(nombreArchivo)) {
-                enviar_codigo_operacion(clienteKernel, AUX_OK);
-			} else {
-                enviar_codigo_operacion(clienteKernel, AUX_ERROR);
-            }
+            devolver_instruccion_generico(existe_archivo(nombreArchivo), clienteKernel);
+            free(nombreArchivo);
 			break;
+        }
+        case I_TRUNCATE: {
+            t_archivo_abierto* archivo = obtener_archivo_completo_de_socket(clienteKernel);
+            // archivo->puntero en este caso es la cantidad a truncar
+            devolver_instruccion_generico(truncar_archivo(archivo->nombreArchivo, archivo->puntero), clienteKernel);
+            free(archivo);
+            break;
+        }
     }
     return;
 }
 
+void devolver_instruccion_generico(bool funciono, int cliente) {
+    codigo_operacion codigoRespuesta = funciono ? AUX_OK : AUX_ERROR;
+
+    return enviar_codigo_operacion(cliente, codigoRespuesta);
+}
 char* obtener_mensaje_de_socket(int cliente) {
 	char* buffer;
 	int tamanio = 0;
 	int desplazamiento = 0;
 	buffer = recibir_buffer(&tamanio, cliente);
 	return leer_string(buffer, &desplazamiento);
+}
+
+t_archivo_abierto* obtener_archivo_completo_de_socket(int cliente) {
+	char* buffer;
+	int tamanio = 0;
+	int desplazamiento = 0;
+	buffer = recibir_buffer(&tamanio, cliente);
+
+ 	int size = sizeof(t_archivo_abierto*);
+    t_archivo_abierto* archivo = malloc(size);
+	memcpy(archivo, buffer, size);
+
+	return archivo;
 }

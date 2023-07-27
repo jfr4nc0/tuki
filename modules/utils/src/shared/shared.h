@@ -102,6 +102,8 @@ typedef enum {
 	DESALOJO_EXIT,
 	I_DESCONOCIDA,
 	TERMINAR_EJECUCION,
+    // Kernel
+    KERNEL_CREAR_ARCHIVO,
     // Auxiliares
 	AUX_MENSAJE,
 	AUX_OK,
@@ -126,15 +128,15 @@ typedef struct {
 }t_paquete;
 
 typedef struct {
-    int  id; // File descriptor
-    int posicion_puntero;
-} archivo_abierto_t;
-
-typedef struct {
     void* direccionBase;
     size_t size;
     int id;
 } t_segmento;
+
+typedef struct {
+    char* nombreArchivo;
+    uint32_t puntero;
+}t_archivo_abierto;
 /*--------------------------------- FUNCIONES GENERALES --------------------------------*/
 
 char* cantidad_strings_a_mostrar(int);
@@ -180,6 +182,7 @@ t_list* recibir_paquete(int);
 int recibir_operacion(int);
 void* recibir_buffer(int*, int);
 void* leer_de_buffer(char*, int*, size_t);
+char* leer_texto(char* buffer, int* desp, int size);
 
 
 void intervalo_de_pausa(int );

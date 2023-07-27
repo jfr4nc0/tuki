@@ -27,5 +27,7 @@ void atender_kernel(int);
 void ejecutar_instrucciones_kernel(void*);
 void iterator(char* value);
 char* obtener_mensaje_de_socket(int cliente);
+t_archivo_abierto* obtener_archivo_completo_de_socket(int cliente);
+void devolver_instruccion_generico(bool funciono, int cliente);
 
 #endif
