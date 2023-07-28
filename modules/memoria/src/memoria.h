@@ -22,7 +22,7 @@ typedef struct {
 } t_memoria_config;
 
 #define DEFAULT_LOG_PATH            "logs/memoria.log"
-#define DEFAULT_CONFIG_PATH         "../../tuki-pruebas/prueba-base/memoria.config"
+#define DEFAULT_CONFIG_PATH         "tuki-pruebas/prueba-base/memoria.config"
 
 // LOGS ////////////////////////////////////
 #define CREACION_DE_PROCESO         "Creación de Proceso PID: %d"
@@ -41,7 +41,8 @@ void iterator(char*);
 void ejecutar_instrucciones(int, char*);
 void atender_conexiones(int);
 void administrar_cliente(int, int);
-void administrar_instrucciones(int cliente, codigo_operacion codigoOperacion);
+void administrar_instrucciones(int , codigo_operacion , char*);
 void testing_funciones();
+void enviar_confirmacion(int , codigo_operacion );
 
 #endif

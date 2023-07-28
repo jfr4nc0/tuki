@@ -161,7 +161,7 @@ void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion, 
 		}
 		case AUX_FINALIZAR_PROCESO:
 		{
-			finalizar_proceso(pid);
+			// finalizar_proceso(pid); TODO
 			// enviar_codigo_operacion(cliente,codigoRespuesta);
 			break;
 		}
@@ -178,7 +178,7 @@ void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion, 
 
 			leer_espacio_usuario((void*) direccionFisica, (size_t) tamanio_a_leer, memoriaConfig->RETARDO_MEMORIA);
 			log_info(loggerMemoria, LOG_ESCRIBIR_LEER, id_proceso, "LEER", direccionFisica, tamanio_a_leer, modulo);
-			enviar_operacion(cliente, AUX_OK);
+			enviar_confirmacion(cliente, AUX_OK);
 
 			break;
 		}
@@ -196,7 +196,7 @@ void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion, 
 
 			escribir_espacio_usuario((void*) direccionFisica, (size_t) tamanio_a_leer, (void*)bytes_a_escribir, memoriaConfig->RETARDO_MEMORIA);
 			log_info(loggerMemoria, LOG_ESCRIBIR_LEER, id_proceso, "ESCRIBIR", direccionFisica, tamanio_a_leer, modulo);
-			enviar_operacion(cliente, AUX_OK);
+			enviar_confirmacion(cliente, AUX_OK);
 
 			break;
 		}
@@ -206,5 +206,13 @@ void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion, 
 			enviar_codigo_operacion(cliente, AUX_ERROR);
 			break;
 		}
+	}
+}
+
+void enviar_confirmacion(int conexion, codigo_operacion codOperacion) {
+	if (conexion > 0) {
+		t_paquete* paquete = crear_paquete(codOperacion);
+		enviar_paquete(paquete, conexion);
+		free(paquete);
 	}
 }

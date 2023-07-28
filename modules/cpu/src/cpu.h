@@ -101,6 +101,11 @@ void agregar_registro4bytes_a_paquete(t_paquete* , char[4] );
 void agregar_registro8bytes_a_paquete(t_paquete* , char[8] );
 void agregar_registro16bytes_a_paquete(t_paquete* , char[16] );
 
+void agregar_valor_a_paquete(t_paquete* , void* , int );
+void agregar_int_a_paquete(t_paquete* , int );
+void agregar_lista_a_paquete(t_paquete* , t_list* );
+char* agregarCaracterNulo(void* , uint32_t );
+int get_int_registro(char* );
 
 
 #endif

@@ -14,7 +14,7 @@ int main(int argc, char** argv) {
 	t_config* config = iniciar_config(PATH_CONFIG_KERNEL, kernelLogger);
 	conexionMemoria = armar_conexion(config, MEMORIA, kernelLogger);
 	conexionCPU = armar_conexion(config, CPU, kernelLogger);
-
+	log_error(kernelLogger, "------");
     cargar_config_kernel(config, kernelLogger);
 
     log_debug(kernelLogger, "Vamos a usar el algoritmo %s", kernelConfig->ALGORITMO_PLANIFICACION);

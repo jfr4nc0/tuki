@@ -68,6 +68,7 @@ void compactar_memoria();
 int guardarSegmentoEnTabla(t_segmento* segmento, int idProceso);
 codigo_operacion crear_segmento_por_pid(int pid, t_segmento* segmento);
 t_segmento* recibir_segmento_kernel(t_list* pcbRecibido);
+t_algoritmo algoritmo_seleccionado(char* );
 
 void iteratorTabla(t_segmento_tabla* elemento);
 
