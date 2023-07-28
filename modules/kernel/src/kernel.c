@@ -294,9 +294,6 @@ void *manejo_desalojo_pcb() {
          double tiempo_en_cpu = obtener_diferencial_de_tiempo_en_milisegundos(&fin_ejecucion_proceso, &inicio_ejecucion_proceso);
          pcb_estimar_proxima_rafaga(pcb_en_ejecucion, tiempo_en_cpu);
 
-         // Por ahora
-         sem_post(&sem_cpu_disponible);
-
          char* ultimaInstruccion = malloc(sizeof(char*));
          char** ultimaInstruccionDecodificada = malloc(sizeof(char*));
          ultimaInstruccion = string_duplicate((char *)list_get(pcb_en_ejecucion->lista_instrucciones, pcb_en_ejecucion->contador_instrucciones));
@@ -307,7 +304,6 @@ void *manejo_desalojo_pcb() {
                 break;
             }
             case I_F_OPEN: {
-                bool estaEnReady = true;
                 char* nombreArchivo = ultimaInstruccionDecodificada[1];
                 strtok(nombreArchivo, "$");
 
@@ -335,11 +331,13 @@ void *manejo_desalojo_pcb() {
 
                 enviar_operacion(conexionFileSystem, operacionRecibida, tamanioPalabra, nombreArchivo);
                 codigo_operacion operacionDelFileSystem = recibir_operacion(conexionFileSystem);
+                int ceroBasura = recibir_operacion(conexionFileSystem);
 
                 if (operacionDelFileSystem != AUX_OK) {
                     // Si no existe lo creo
                     enviar_operacion(conexionFileSystem, KERNEL_CREAR_ARCHIVO, tamanioPalabra, nombreArchivo);
-                    operacionDelFileSystem = recibir_operacion(conexionFileSystem);
+                    recibir_operacion(conexionFileSystem);
+                    recibir_operacion(conexionFileSystem); // Por 0 basura
                 }
 
                 // abrir archivo globalmente
@@ -359,6 +357,7 @@ void *manejo_desalojo_pcb() {
                 cambiar_estado_proceso_con_semaforos(pcb_en_ejecucion, ENUM_READY);
 
                 sem_post(&sem_proceso_a_ready_terminado);
+                sem_post(&sem_cpu_disponible);
                 break;
             }
 
@@ -384,6 +383,7 @@ void *manejo_desalojo_pcb() {
                 }
 
                 sem_post(&sem_proceso_a_executing);
+                sem_post(&sem_cpu_disponible);
                 break;
             }
 
@@ -846,7 +846,7 @@ void mover_de_lista_con_sem(void* elem, int estadoNuevo, int estadoAnterior) {
     pcb->estado = estadoNuevo;
     if (pcb->estado == ENUM_READY) {
     	// TODO: FALLA
-         set_timespec((timestamp*)(time_t)pcb->ready_timestamp);
+         // set_timespec((timestamp*)(time_t)pcb->ready_timestamp);
     }
     list_remove_element(lista_estados[estadoAnterior], elem);
     list_add(lista_estados[estadoNuevo], elem);
