@@ -253,6 +253,7 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 
 
 			if((tamanioALeer + offset) <= tamanioSegmento){
+
 				t_parametros_lectura* parametros_a_enviar;
 
 				parametros_a_enviar->id_proceso = pcb->id_proceso;
@@ -261,6 +262,7 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 
 				enviar_operacion(conexionMemoria, I_MOV_IN, sizeof(t_parametros_lectura), parametros_a_enviar);
 				char *valor = recibir_valor_a_escribir(conexionMemoria);
+				log_acceso_a_memoria(pcb->id_proceso, "LEER", numeroSegmento, dirFisica, valor,sizeof(valor));
 			    instruccion_set(registro_, valor);
 			    free(valor);
 			    free(parametros_a_enviar);
