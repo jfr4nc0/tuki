@@ -10,6 +10,11 @@ void liberar_recursos_kernel() {
 
 
 int main(int argc, char** argv) {
+	/*
+    timestamp * valorTime = (timestamp *)(time_t)5;
+	double valor = 5;
+	set_timespec(valorTime);
+	*/
     kernelLogger = iniciar_logger(PATH_LOG_KERNEL, ENUM_KERNEL);
     t_config* config = iniciar_config(PATH_CONFIG_KERNEL, kernelLogger);
     conexionMemoria = armar_conexion(config, MEMORIA, kernelLogger);
@@ -325,16 +330,16 @@ void *manejo_desalojo_pcb() {
                     continue;
                 }
 
-                size_t tamanioPalabra = strlen(nombreArchivo)-1;
-                log_error(kernelLogger, "El tamanio del nombre de archivo es %zu", tamanioPalabra);
+                size_t tamanioPalabra = strlen(nombreArchivo);
+//                log_error(kernelLogger, "El tamanio del nombre de archivo es %zu", tamanioPalabra);
 
                 enviar_operacion(conexionFileSystem, operacionRecibida, tamanioPalabra, nombreArchivo);
-                codigo_operacion operacionRecibida = recibir_operacion(conexionFileSystem);
+                codigo_operacion operacionDelFileSystem = recibir_operacion(conexionFileSystem);
 
-                if (operacionRecibida != AUX_OK) {
+                if (operacionDelFileSystem != AUX_OK) {
                     // Si no existe lo creo
                     enviar_operacion(conexionFileSystem, KERNEL_CREAR_ARCHIVO, tamanioPalabra, nombreArchivo);
-                    recibir_operacion(conexionFileSystem);
+                    operacionDelFileSystem = recibir_operacion(conexionFileSystem);
                 }
 
                 // abrir archivo globalmente
@@ -840,7 +845,8 @@ void mover_de_lista_con_sem(void* elem, int estadoNuevo, int estadoAnterior) {
     PCB* pcb = elem;
     pcb->estado = estadoNuevo;
     if (pcb->estado == ENUM_READY) {
-        set_timespec((timestamp*)(time_t)pcb->ready_timestamp);
+    	// TODO: FALLA
+         set_timespec((timestamp*)(time_t)pcb->ready_timestamp);
     }
     list_remove_element(lista_estados[estadoAnterior], elem);
     list_add(lista_estados[estadoNuevo], elem);

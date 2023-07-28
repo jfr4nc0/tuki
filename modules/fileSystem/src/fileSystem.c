@@ -40,50 +40,58 @@ void iterator(char* value) {
 void ejecutar_instrucciones_kernel(void* cliente) {
 	int clienteKernel = (int) (intptr_t) cliente;
 
+	while(1) {
     codigo_operacion operacionRecibida = recibir_operacion(clienteKernel);
     codigo_operacion codigoRespuesta = AUX_ERROR;
 
+		switch(operacionRecibida) {
+			case KERNEL_CREAR_ARCHIVO: {
+				char* nombreArchivo = obtener_mensaje_de_socket(clienteKernel);
+				log_info(loggerFileSystem, "Por crear archivo: %s", nombreArchivo);
+				devolver_instruccion_generico(crear_archivo(nombreArchivo), clienteKernel);
+				break;
+			}
+			case I_F_OPEN: {
+				char* nombreArchivo = obtener_mensaje_de_socket(clienteKernel);
+				log_info(loggerFileSystem, "Por leer archivo: %s", nombreArchivo);
 
-    switch(operacionRecibida) {
-  		case I_F_OPEN: {
-            char* nombreArchivo = obtener_mensaje_de_socket(clienteKernel);
-			log_info(loggerFileSystem, "Por leer archivo: %s", nombreArchivo);
+				devolver_instruccion_generico(existe_archivo(nombreArchivo), clienteKernel);
+				free(nombreArchivo);
+				break;
+			}
+			case I_TRUNCATE: {
+				// pthread_mutex_lock(&m_instruccion);
+				t_archivo_abierto* archivo = obtener_archivo_completo_de_socket(clienteKernel);
+				// archivo->puntero en este caso es la cantidad a truncar
+				devolver_instruccion_generico(truncar_archivo(archivo->nombreArchivo, archivo->puntero), clienteKernel);
+				free(archivo);
+				// pthread_mutex_unlock(&m_instruccion);
+				break;
+			}
+			case I_F_READ: {
+				// pthread_mutex_lock(&m_instruccion);
+				char *nombreArchivo = NULL;
+				uint32_t direccionFisica, cantidadBytes, puntero, pidProceso;
+				recibir_buffer_lectura_archivo(clienteKernel, &nombreArchivo, &puntero, &direccionFisica, &cantidadBytes, &pidProceso);
+				devolver_instruccion_generico(leer_archivo(nombreArchivo, puntero, direccionFisica, cantidadBytes, pidProceso), clienteKernel);
+				free(nombreArchivo);
+				// pthread_mutex_unlock(&m_instruccion);
+				break;
+			}
+			case I_F_WRITE: {
+				// pthread_mutex_lock(&m_instruccion);
+				char *nombreArchivo = NULL;
+				uint32_t direccionFisica, cantidadBytes, puntero, pidProceso;
+				recibir_buffer_escritura_archivo(clienteKernel, &nombreArchivo, &puntero, &direccionFisica, &cantidadBytes, &pidProceso);
+				solicitar_informacion_memoria(direccionFisica, cantidadBytes, pidProceso);
+				char* informacionAEscribir = (char*)recibir_buffer_informacion_memoria(cantidadBytes);
+				devolver_instruccion_generico(escribir_archivo(informacionAEscribir, nombreArchivo, puntero, cantidadBytes), clienteKernel);
 
-            devolver_instruccion_generico(existe_archivo(nombreArchivo), clienteKernel);
-            free(nombreArchivo);
-			break;
-        }
-        case I_TRUNCATE: {
-            pthread_mutex_lock(&m_instruccion);
-            t_archivo_abierto* archivo = obtener_archivo_completo_de_socket(clienteKernel);
-            // archivo->puntero en este caso es la cantidad a truncar
-            devolver_instruccion_generico(truncar_archivo(archivo->nombreArchivo, archivo->puntero), clienteKernel);
-            free(archivo);
-            pthread_mutex_unlock(&m_instruccion);
-            break;
-        }
-        case I_F_READ: {
-            pthread_mutex_lock(&m_instruccion);
-            char *nombreArchivo = NULL;
-            uint32_t direccionFisica, cantidadBytes, puntero, pidProceso;
-            recibir_buffer_lectura_archivo(clienteKernel, &nombreArchivo, &puntero, &direccionFisica, &cantidadBytes, &pidProceso);
-            devolver_instruccion_generico(leer_archivo(nombreArchivo, puntero, direccionFisica, cantidadBytes, pidProceso), clienteKernel);
-            free(nombreArchivo);
-            pthread_mutex_unlock(&m_instruccion);
-            break;
-        }
-        case I_F_WRITE: {
-            pthread_mutex_lock(&m_instruccion);
-            char *nombreArchivo = NULL;
-            uint32_t direccionFisica, cantidadBytes, puntero, pidProceso;
-            recibir_buffer_escritura_archivo(clienteKernel, &nombreArchivo, &puntero, &direccionFisica, &cantidadBytes, &pidProceso);
-            solicitar_informacion_memoria(direccionFisica, cantidadBytes, pidProceso);
-            char* informacionAEscribir = (char*)recibir_buffer_informacion_memoria(cantidadBytes);
-            devolver_instruccion_generico(escribir_archivo(informacionAEscribir, nombreArchivo, puntero, cantidadBytes), clienteKernel);
-
-            free(nombreArchivo);
-            pthread_mutex_unlock(&m_instruccion);
-        }
+				free(nombreArchivo);
+				// pthread_mutex_unlock(&m_instruccion);
+				break;
+			}
+    	}
     }
     return;
 }

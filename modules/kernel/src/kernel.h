@@ -3,6 +3,10 @@
 
 #include <commons/collections/dictionary.h>
 #include <stdint.h>
+#include <time.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <sys/time.h>
 
 #include <shared/shared.h>
 
