@@ -6,6 +6,8 @@ int main(int argc, char** argv) {
     t_config* config = iniciar_config(DEFAULT_CONFIG_PATH, loggerFileSystem);
     inicializar_estructuras(config);
 
+    pthread_mutex_init(m_instruccion, NULL);
+
     conexionMemoria = armar_conexion(config, MEMORIA, loggerFileSystem);
     // Notifico a memoria que soy el módulo file system
     enviar_codigo_operacion(conexionMemoria, AUX_SOY_FILE_SYSTEM);
@@ -52,26 +54,35 @@ void ejecutar_instrucciones_kernel(void* cliente) {
 			break;
         }
         case I_TRUNCATE: {
+            pthread_mutex_lock(m_instruccion);
             t_archivo_abierto* archivo = obtener_archivo_completo_de_socket(clienteKernel);
             // archivo->puntero en este caso es la cantidad a truncar
             devolver_instruccion_generico(truncar_archivo(archivo->nombreArchivo, archivo->puntero), clienteKernel);
             free(archivo);
+            pthread_mutex_unlock(m_instruccion);
             break;
         }
         case I_F_READ: {
+            pthread_mutex_lock(m_instruccion);
             char *nombreArchivo = NULL;
             uint32_t direccionFisica, cantidadBytes, puntero, pidProceso;
             recibir_buffer_lectura_archivo(clienteKernel, &nombreArchivo, &puntero, &direccionFisica, &cantidadBytes, &pidProceso);
-            leer_archivo(nombreArchivo, puntero, direccionFisica, cantidadBytes, pidProceso);
+            devolver_instruccion_generico(leer_archivo(nombreArchivo, puntero, direccionFisica, cantidadBytes, pidProceso), clienteKernel);
             free(nombreArchivo);
+            pthread_mutex_unlock(m_instruccion);
             break;
         }
         case I_F_WRITE: {
+            pthread_mutex_lock(m_instruccion);
             char *nombreArchivo = NULL;
             uint32_t direccionFisica, cantidadBytes, puntero, pidProceso;
             recibir_buffer_escritura_archivo(clienteKernel, &nombreArchivo, &puntero, &direccionFisica, &cantidadBytes, &pidProceso);
             solicitar_informacion_memoria(direccionFisica, cantidadBytes, pidProceso);
+            char* informacionAEscribir = (char*)recibir_buffer_informacion_memoria(cantidadBytes);
+            devolver_instruccion_generico(escribir_archivo(informacionAEscribir, nombreArchivo, puntero, cantidadBytes), clienteKernel);
+
             free(nombreArchivo);
+            pthread_mutex_unlock(m_instruccion);
         }
     }
     return;
@@ -105,9 +116,8 @@ t_archivo_abierto* obtener_archivo_completo_de_socket(int cliente) {
 
 void recibir_buffer_lectura_archivo(int clienteKernel, char **nombreArchivo, uint32_t *puntero,
 uint32_t *direccionFisica, uint32_t *cantidadBytes, uint32_t *pid) {
-
-    t_buffer *bufferLectura = buffer_create();
-    stream_recv_buffer(clienteKernel, bufferLectura);
+    int tamanio = 0;
+    t_buffer *bufferLectura = recibir_buffer(&tamanio, clienteKernel);
 
     char *nombreArchivoLectura = buffer_unpack_string(bufferLectura);
     *nombreArchivo = strdup(nombreArchivoLectura);
@@ -134,10 +144,25 @@ uint32_t *direccionFisica, uint32_t *cantidadBytes, uint32_t *pid) {
     return;
 }
 
+// Recibir información de Memoria para escribir en los bloques.
+void* recibir_buffer_informacion_memoria(uint32_t cantidadBytes) {
+    int tamanio = 0;
+    recibir_operacion(conexionMemoria);
+    void* informacionRecibida = malloc(cantidadBytes);
+
+    t_buffer *bufferInformacion = recibir_buffer(&tamanio, conexionMemoria);
+    buffer_unpack(bufferInformacion, informacionRecibida, cantidadBytes);
+
+    free(bufferInformacion->stream);
+    free(bufferInformacion);
+    return informacionRecibida;
+}
+
+
 void recibir_buffer_escritura_archivo(int clienteKernel, char **nombreArchivo, uint32_t *puntero, uint32_t *direccionFisica, uint32_t *cantidadBytes, uint32_t* pid)
 {
-    t_buffer *bufferLectura = buffer_create();
-    stream_recv_buffer(clienteKernel, bufferLectura);
+    int tamanio = 0;
+    t_buffer *bufferLectura = recibir_buffer(&tamanio, clienteKernel);
 
     char *nombreArchivoLectura = buffer_unpack_string(bufferLectura);
     *nombreArchivo = strdup(nombreArchivoLectura);

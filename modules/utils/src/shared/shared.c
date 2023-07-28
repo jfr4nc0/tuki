@@ -422,25 +422,6 @@ void agregar_a_paquete(t_paquete* paquete, void* valor, size_t tamanio) {
     paquete->buffer->size += tamanio + sizeof(int);
 }
 
-
-void stream_recv_buffer(int fromSocket, t_buffer *destBuffer) {
-    // Recibo el size del buffer
-    ssize_t msgBytes = recv(fromSocket, &(destBuffer->size), sizeof(destBuffer->size), 0);
-
-    // Chequeo que el size del buffer se haya recibido correctamente
-    if (msgBytes == -1) {
-        printf("\e[0;31mstream_recv_buffer: Error en la recepción del buffer [%s]\e[0m\n", strerror(errno));
-    }
-    else if (destBuffer->size > 0) {
-        // Recibo el stream del buffer
-        destBuffer->stream = malloc(destBuffer->size);
-        recv(fromSocket, destBuffer->stream, destBuffer->size, 0);
-    }
-
-    return;
-}
-
-
 void buffer_pack_string(t_buffer *self, char *stringToAdd)
 {
     uint32_t length = strlen(stringToAdd) + 1;

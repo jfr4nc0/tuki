@@ -176,7 +176,6 @@ static void *__stream_create(uint8_t header, t_buffer *buffer);
 void stream_send_buffer(int toSocket, uint8_t header, t_buffer *buffer);
 char *buffer_unpack_string(t_buffer *self);
 void buffer_pack_string(t_buffer *self, char *stringToAdd);
-void stream_recv_buffer(int fromSocket, t_buffer *destBuffer);
 
 /*----------------------------- FUNCIONES CLIENTE ----------------------------*/
 
