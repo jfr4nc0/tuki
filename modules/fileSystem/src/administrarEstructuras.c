@@ -42,7 +42,7 @@ void asignar_bloques_archivo_vacio(t_fcb *fcb,uint32_t tamanioNuevo) {
         asignar_puntero_directo(fcb);
         asignar_puntero_indirecto(fcb);
 
-        log_info(loggerFileSystem, LOG_BLOQUE_PUNTERO, fcb->nombre_archivo, fcb->puntero_indirecto);
+        log_info(loggerFileSystem, LOG_ACCESO_BLOQUE, fcb->nombre_archivo, fcb->puntero_indirecto);
         sleep(configFileSystem->RETARDO_ACCESO_BLOQUE);
 
         asignar_bloques(fcb, cantidadPunteros);
@@ -59,7 +59,7 @@ void asignar_bloques_archivo_con_informacion(t_fcb *fcb, uint32_t tamanioNuevo)
         asignar_puntero_indirecto(fcb);
     }
 
-    log_info(loggerFileSystem, LOG_BLOQUE_PUNTERO, fcb->nombre_archivo, fcb->puntero_indirecto);
+    log_info(loggerFileSystem, LOG_ACCESO_BLOQUE, fcb->nombre_archivo, fcb->puntero_indirecto);
     sleep(configFileSystem->RETARDO_ACCESO_BLOQUE);
 
     asignar_bloques(fcb, cantidadBloques);

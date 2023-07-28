@@ -45,6 +45,8 @@ void agregar_pcb_a_paquete(t_paquete* , PCB* );
 void iterator(char* value);
 void agregar_valor_a_paquete(t_paquete* paquete, void* valor, int tamanio);
 
+pthread_mutex_t m_recibir_pcb;
+
 // LOGS ////////////////////////
 #define INSTRUCCION_EJECUTADA        "PID: <PID> - Ejecutando: <INSTRUCCION> - <PARAMETROS>"
 #define ACCESO_MEMORIA               "PID: <PID> - Acción: <LEER / ESCRIBIR> - Segmento: <NUMERO SEGMENTO> - Dirección Física: <DIRECCION FISICA> - Valor: <VALOR LEIDO / ESCRITO>"

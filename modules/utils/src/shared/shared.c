@@ -259,34 +259,24 @@ int leer_int(char* buffer, int* desp) {
 	return respuesta;
 }
 
-char* leer_registro_4_bytes(char* buffer, int* desp){
-	int size = 4;
-
+char* leer_texto(char* buffer, int* desp, int size) {
 	char* respuesta = malloc(size);
 	memcpy(respuesta, buffer+(*desp), size);
 	(*desp)+=size;
 
 	return respuesta;
+}
+
+char* leer_registro_4_bytes(char* buffer, int* desp){
+    return leer_texto(buffer, desp, 4);
 }
 
 char* leer_registro_8_bytes(char* buffer, int* desp){
-	int size = 8;
-
-	char* respuesta = malloc(size);
-	memcpy(respuesta, buffer+(*desp), size);
-	(*desp)+=size;
-
-	return respuesta;
+	return leer_texto(buffer, desp, 8);
 }
 
 char* leer_registro_16_bytes(char* buffer, int* desp){
-	int size = 16;
-
-	char* respuesta = malloc(size);
-	memcpy(respuesta, buffer+(*desp), size);
-	(*desp)+=size;
-
-	return respuesta;
+	return leer_texto(buffer, desp, 16);
 }
 
 char* leer_string(char* buffer, int* desp) {
@@ -430,6 +420,109 @@ void agregar_a_paquete(t_paquete* paquete, void* valor, size_t tamanio) {
     memcpy(paquete->buffer->stream + paquete->buffer->size + sizeof(int), valor, tamanio);
 
     paquete->buffer->size += tamanio + sizeof(int);
+}
+
+void buffer_pack_string(t_buffer *self, char *stringToAdd)
+{
+    uint32_t length = strlen(stringToAdd) + 1;
+
+    // Empaqueto el tamanio del string
+    buffer_pack(self, &length, sizeof(length));
+    self->stream = realloc(self->stream, self->size + length);
+    // Empaqueto el string
+    memcpy(self->stream + self->size, stringToAdd, length);
+    self->size += length;
+
+    return;
+}
+
+char *buffer_unpack_string(t_buffer *self)
+{
+    char *str;
+    uint32_t length;
+
+    // Desempaqueto el tamanio del string y luego el string
+    buffer_unpack(self, &length, sizeof(length));
+    str = malloc(length);
+    buffer_unpack(self, str, length);
+
+    return str;
+}
+
+void buffer_pack(t_buffer* self, void* streamToAdd, int size) {
+    // Reservo memoria para alojar el nuevo stream, copio  y actualizo la informacion necesaria
+    self->stream = realloc (self->stream, self->size + size);
+    memcpy(self->stream + self->size, streamToAdd, size);
+    self->size += size;
+
+    return;
+}
+
+
+t_buffer *buffer_create(void) {
+    // Creo y seteo las variables del buffer
+    t_buffer *self = malloc(sizeof(*self));
+    self->size = 0;
+    self->stream = NULL;
+
+    return self;
+}
+
+t_buffer *buffer_unpack(t_buffer *self, void *dest, int size) {
+    // Chequeo que me hayan pasado un buffer correctamente
+    if (self->stream == NULL || self->size == 0) {
+        puts("\e[0;31mbuffer_unpack: Error en el desempaquetado del buffer\e[0m");
+        exit(-1);
+    }
+
+    // Desempaqueto la informacion y actualizo el tamano del buffer
+    memcpy(dest, self->stream, size);
+    self->size -= size;
+
+    // Copio la proxima informacion a desempaquetar al puntero stream
+    // Y reduzco la nueva memoria reservada al nuevo tamanio
+    memmove(self->stream, self->stream + size, self->size);
+    self->stream = realloc(self->stream, self->size);
+
+    return self;
+}
+
+static void *__stream_create(uint8_t header, t_buffer *buffer)
+{
+    void *streamToSend = malloc(sizeof(header) + sizeof(buffer->size) + buffer->size);
+
+    // Creamos el stream
+    int offset = 0;
+    memcpy(streamToSend + offset, &header, sizeof(header));
+    offset += sizeof(header);
+    memcpy(streamToSend + offset, &(buffer->size), sizeof(buffer->size));
+    offset += sizeof(buffer->size);
+    memcpy(streamToSend + offset, buffer->stream, buffer->size);
+
+    return streamToSend;
+}
+
+void stream_send_buffer(int toSocket, uint8_t header, t_buffer *buffer) {
+    void *stream = __stream_create(header, buffer);
+    __stream_send(toSocket, stream, buffer->size);
+    free(stream);
+
+    return;
+}
+
+static void __stream_send(int toSocket, void *streamToSend, uint32_t bufferSize) {
+    // Variables creadas para el sizeof
+    uint8_t header = 0;
+    uint32_t size = 0;
+
+    ssize_t bytesSent = send(toSocket, streamToSend, sizeof(header) + sizeof(size) + bufferSize, 0);
+
+    // Chequeo que se haya enviado bien el stream
+    if (bytesSent == -1) {
+        printf("\e[0;31m__stream_send: Error en el envío del buffer [%s]\e[0m\n", strerror(errno));
+    }
+
+    return;
 }
 
 void enviar_paquete(t_paquete* paquete, int clienteAceptado) {

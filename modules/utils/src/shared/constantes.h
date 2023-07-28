@@ -25,7 +25,7 @@ int keyFromString(char *key);
 
 /*------------------------------ CONFIGURACIONES ------------------------------*/
 
-#define PATH_DEFAULT_CONEXION_KERNEL                "tuki-pruebas/prueba-base/kernel_conexion.config"
+#define PATH_DEFAULT_CONEXION_KERNEL                "tuki-pruebas/prueba-base/consola.config"
 
 #define MOSTRAR_OCULTAR_MENSAJES_LOG_CONSOLA        1
 #define MOSTRAR_OCULTAR_MENSAJES_LOG_CPU            1

@@ -60,7 +60,6 @@ bool truncar_archivo(char* nombreArchivo, uint32_t tamanioNuevo) {
     }
 
     actualizar_tamanio_bloques(fcb, tamanioNuevo);
-
     log_info(loggerFileSystem, "Completado Truncado de Archivo: <%s>", nombreArchivo);
     return true;
 }
@@ -143,6 +142,75 @@ bool leer_archivo(char* nombreArchivo, uint32_t puntero, uint32_t direccionFisic
 }
 
 
+bool escribir_archivo(char* informacionAEscribir, char *nombreArchivo, uint32_t puntero, uint32_t cantidadBytesAEscribir) {
+    bool primeraVez = true;
+    uint32_t bloqueActual, bloqueRelativo, nuevoBloque, espacioDisponible, posicion;
+    uint32_t bytesPorEscribir = cantidadBytesAEscribir;
+    uint32_t bytesEscritos = 0;
+    t_fcb* fcbArchivo = dictionary_get(dictionaryFcbs, nombreArchivo);
+
+    bloqueActual = obtener_bloque_absoluto(fcbArchivo, puntero);
+    bloqueRelativo = obtener_bloque_relativo(fcbArchivo, puntero);
+    posicion = obtener_posicion_absoluta(fcbArchivo, puntero);
+    espacioDisponible = SIZE_BLOQUE - obtener_posicion_en_bloque(puntero);
+
+    if (cantidadBytesAEscribir <= espacioDisponible)
+    {
+        sleep(configFileSystem->RETARDO_ACCESO_BLOQUE);
+
+        escribir_en_bloque(posicion, cantidadBytesAEscribir, informacionAEscribir);
+        return true;
+    }
+
+    char *buffer = malloc(SIZE_BLOQUE);
+
+    /* Si se tienen que escribir más bytes de los que hay disponibles hay que escribir una parte en este bloque
+    y el resto en los bloques siguientes */
+    while (bytesEscritos < cantidadBytesAEscribir) {
+        if (primeraVez && bloqueRelativo != 0) {
+            log_info(loggerFileSystem, LOG_ACCESO_BLOQUE, nombreArchivo, 1, fcbArchivo->puntero_indirecto);
+            sleep(configFileSystem->RETARDO_ACCESO_BLOQUE);
+            primeraVez = false;
+        }
+
+        if (espacioDisponible == 0) {
+            bloqueActual = buscar_siguiente_bloque(bloqueActual, fcbArchivo);
+            posicion = bloqueActual * SIZE_BLOQUE;
+            bloqueRelativo = obtener_bloque_relativo(fcbArchivo, puntero);
+            espacioDisponible = SIZE_BLOQUE;
+        }
+
+        // A partir de acá
+
+        if (bytesPorEscribir > espacioDisponible || bytesPorEscribir >= SIZE_BLOQUE)
+        {
+            memcpy(buffer,informacionAEscribir+bytesEscritos,espacioDisponible);
+
+            sleep(configFileSystem->RETARDO_ACCESO_BLOQUE);
+            log_info(loggerFileSystem, LOG_ACCESO_BLOQUE, nombreArchivo, bloqueRelativo, bloqueActual);
+
+            escribir_en_bloque(posicion, espacioDisponible, buffer);
+            bytesEscritos += espacioDisponible;
+            bytesPorEscribir -= espacioDisponible;
+            puntero += espacioDisponible;
+        }
+        else if (bytesPorEscribir <= SIZE_BLOQUE)
+        {
+            memcpy(buffer,informacionAEscribir+bytesEscritos,bytesPorEscribir);
+
+            sleep(configFileSystem->RETARDO_ACCESO_BLOQUE);
+            log_info(loggerFileSystem, LOG_ACCESO_BLOQUE, nombreArchivo, bloqueRelativo, bloqueActual);
+
+            escribir_en_bloque(posicion, bytesPorEscribir, buffer);
+            bytesEscritos += bytesPorEscribir;
+            puntero = puntero + bytesPorEscribir;
+        }
+        espacioDisponible = 0;
+    }
+    free(buffer);
+    return true;
+}
+
 /*
 Se deberá solicitar a la Memoria la información que se encuentra a partir de la dirección física y
 escribirlo en los bloques correspondientes del archivo a partir del puntero recibido.
@@ -172,4 +240,41 @@ uint32_t obtener_posicion_en_bloque(uint32_t punteroFseek) {
 // Funcion que sirve para saber desde donde empezar a leer/escribir.
 uint32_t obtener_posicion_absoluta(t_fcb* fcb, uint32_t punteroFseek) {
     return (obtener_bloque_absoluto(fcb, punteroFseek) * SIZE_BLOQUE) + obtener_posicion_en_bloque(punteroFseek);
+}
+
+void escribir_en_bloque(uint32_t posicion, uint32_t cantidadBytesAEscribir, char *informacionAEscribir) {
+    FILE* archivoDeBloques = fopen(configFileSystem->PATH_BLOQUES, "r+b");
+    if (archivoDeBloques == NULL) {
+        log_error(loggerFileSystem, "No se pudo abrir el archivo.");
+    }
+    fseek(archivoDeBloques, posicion, SEEK_SET);
+    fwrite(informacionAEscribir, sizeof(char), cantidadBytesAEscribir, archivoDeBloques);
+    fclose(archivoDeBloques);
+}
+
+uint32_t buscar_siguiente_bloque(uint32_t bloqueActual, t_fcb *fcbArchivo) {
+    uint32_t siguienteBloque;
+    sleep(configFileSystem->RETARDO_ACCESO_BLOQUE);
+    log_info(loggerFileSystem, LOG_ACCESO_BLOQUE, fcbArchivo->nombre_archivo, 1, fcbArchivo->puntero_indirecto);
+
+    if (bloqueActual == fcbArchivo->puntero_directo) {
+        return archivo_de_bloques_leer_n_puntero_de_bloque_de_punteros(fcbArchivo->puntero_indirecto, 0);
+    }
+
+    uint32_t desplazamiento = (fcbArchivo->puntero_indirecto * SIZE_BLOQUE);
+    FILE* archivoDeBloques = fopen(configFileSystem->PATH_BLOQUES, "r+b");
+    if (archivoDeBloques == NULL) {
+        log_error(loggerFileSystem, "No se pudo abrir el archivo.");
+    }
+
+    fseek(archivoDeBloques,desplazamiento,SEEK_SET);
+
+    while (fread(&siguienteBloque,sizeof(uint32_t),1,archivoDeBloques)) {
+        if (siguienteBloque == bloqueActual) {
+            fread(&siguienteBloque,sizeof(uint32_t),1,archivoDeBloques);
+            fclose(archivoDeBloques);
+            return siguienteBloque;
+        }
+    }
+    return 0;
 }

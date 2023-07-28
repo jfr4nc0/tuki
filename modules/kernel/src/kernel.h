@@ -1,6 +1,13 @@
 #ifndef KERNEL_H_
 #define KERNEL_H_
 
+#include <commons/collections/dictionary.h>
+#include <stdint.h>
+#include <time.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <sys/time.h>
+
 #include <shared/shared.h>
 
 /*------------------ VARIABLES GLOBALES --------------*/
@@ -32,14 +39,38 @@ typedef struct {
 
 t_kernel_config* kernelConfig;
 
-typedef struct{
+typedef struct {
     char* nombre;
     int instancias;
     // t_list* lista_procesos;
     sem_t sem_recurso;
 }t_recurso;
 
+
+typedef struct ParametrosHiloIO {
+    uint32_t idProceso;
+    char *nombreArchivo;
+    uint32_t punteroArchivo;
+    uint32_t direccionFisica;
+    uint32_t cantidadBytes;
+    uint32_t pidProceso;
+} t_parametros_hilo_IO;
+
+
+typedef struct {
+    t_nombre_estado nombreEstado;
+    t_list* listaProcesos;
+    sem_t* semaforoEstado;
+    pthread_mutex_t* mutexEstado;
+} t_estado;
+typedef struct {
+    int instancias;
+    t_estado* estadoRecurso;
+}t_semaforo_recurso;
+
 typedef struct timespec timestamp;
+
+pthread_mutex_t permiso_compactacion;
 
 /*----------------- FUNCIONES ------------------*/
 
@@ -110,12 +141,23 @@ void envio_pcb_a_cpu(int , PCB* , codigo_operacion );
 void agregar_pcb_a_paquete_para_cpu(t_paquete* , PCB* );
 void agregar_registros_a_paquete_cpu(t_paquete* , registros_cpu* );
 PCB* recibir_proceso_desajolado(PCB* pcb_en_ejecucion);
+// t_semaforo_recurso* diccionario_semaforos_recursos_get_semaforo_recurso(tablaArchivosAbiertos, nombreArchivo);
+
+t_estado* crear_archivo_estado(t_nombre_estado nombreEstado);
 
 ////////////////////////////////////////////////////
 
 int obtener_recursos(int);
+void enviar_f_read_write(PCB* pcb, char**, codigo_operacion);
 
 void cambiar_estado_proceso_sin_semaforos(PCB* pcb, pcb_estado estadoNuevo);
+t_archivo_abierto* encontrar_archivo_abierto(t_list* listaArchivosAbiertos, char* nombreArchivo);
+
+int encontrar_index_archivo_abierto(t_list* listaArchivosAbiertos, char* nombreArchivo);
+void agregar_lista_archivos_a_paquete(t_paquete* paquete, t_list* lista);
+t_semaforo_recurso* inicializar_archivo_estado(t_nombre_estado nombreEstado);
+
+t_list* archivosAbiertosGlobal;
 
 /*----------------- SEMAFOROS / HILOS ------------------*/
 sem_t sem_proceso_a_ready_inicializar;
@@ -133,7 +175,10 @@ t_list* lista_estados[CANTIDAD_ESTADOS];
 sem_t sem_lista_estados[CANTIDAD_ESTADOS];
 pthread_mutex_t* mutex_lista_estados[CANTIDAD_ESTADOS];
 
+pthread_mutex_t* mutexTablaAchivosAbiertos;
+
 t_dictionary* diccionario_recursos;
+t_dictionary* tablaArchivosAbiertos;
 
 
 /*-------------------- LOGS OBLIGATORIOS ------------------*/
@@ -160,6 +205,6 @@ t_dictionary* diccionario_recursos;
 
 
 #define PATH_LOG_KERNEL             "logs/kernel.log"
-#define PATH_CONFIG_KERNEL          "../../tuki-pruebas/prueba-base/kernel.config"
+#define PATH_CONFIG_KERNEL          "tuki-pruebas/prueba-base/kernel.config"
 
 #endif
