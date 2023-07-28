@@ -47,7 +47,10 @@ int main(int argc, char** argv) {
 void inicializar_estructuras(){
     archivosAbiertosGlobal = list_create();
     inicializar_listas_estados();
-
+/*
+    inicializar_archivo_estado(ENUM_FREE);
+    inicializar_archivo_estado(ENUM_BLOCK);
+*/
     inicializar_semaforos();
     crear_hilo_planificadores();
 
@@ -296,61 +299,97 @@ void *manejo_desalojo_pcb() {
                 break;
             }
             case I_F_OPEN: {
+                bool estaEnReady = true;
                 char* nombreArchivo = ultimaInstruccionDecodificada[1];
                 strtok(nombreArchivo, "$");
-                t_archivo_abierto* archivoAbiertoGlobal = encontrar_archivo_abierto(archivosAbiertosGlobal, nombreArchivo);
-                t_recurso* semaforoArchivo = (t_recurso *) dictionary_get(diccionario_recursos, nombreArchivo);
 
-                if (archivoAbiertoGlobal == NULL) {
-                    // Me fijo si el archivo ya existe
-                    size_t tamanioPalabra = strlen(nombreArchivo)-1;
-                    log_error(kernelLogger, "El tamanio del nombre de archivo es %zu", tamanioPalabra);
+                t_semaforo_recurso* semaforoArchivo = (t_semaforo_recurso*) dictionary_get(tablaArchivosAbiertos, nombreArchivo);
+                t_estado* estado = semaforoArchivo == NULL ? NULL : semaforoArchivo->estadoRecurso;
 
-                    enviar_operacion(conexionFileSystem, operacionRecibida, tamanioPalabra, nombreArchivo);
-                    codigo_operacion operacionRecibida = recibir_operacion(conexionFileSystem);
+                if (semaforoArchivo != NULL) {
+                    // Esta abierto y siendo usado, hay que bloquearlo
+                    pthread_mutex_lock(estado->mutexEstado);
 
-                    if (operacionRecibida != AUX_OK) {
-                        // Si no existe lo creo
-                        enviar_operacion(conexionFileSystem, KERNEL_CREAR_ARCHIVO, tamanioPalabra, nombreArchivo);
+                    list_add(estado->listaProcesos, pcb_en_ejecucion);
 
-                        recibir_operacion(conexionFileSystem);
-                        archivoAbiertoGlobal->puntero = 0;
-                        archivoAbiertoGlobal->nombreArchivo = nombreArchivo;
-                        list_add(archivosAbiertosGlobal, archivoAbiertoGlobal);
-                    }
-                }
-
-                t_archivo_abierto* archivoAbiertoProceso = encontrar_archivo_abierto(pcb_en_ejecucion->lista_archivos_abiertos, nombreArchivo);
-
-                if (archivoAbiertoProceso == NULL) {
-                    archivoAbiertoProceso->nombreArchivo = nombreArchivo;
-                    archivoAbiertoProceso->puntero = 0;
-                    list_add(pcb_en_ejecucion->lista_archivos_abiertos, archivoAbiertoProceso);
                     cambiar_estado_proceso_con_semaforos(pcb_en_ejecucion, ENUM_BLOCKED);
+
+                    pthread_mutex_unlock(estado->mutexEstado);
+                    semaforoArchivo->instancias--;
+                    sem_post(estado->semaforoEstado);
+                    sem_post(&sem_proceso_a_ready_terminado);
+                    continue;
                 }
+
+                size_t tamanioPalabra = strlen(nombreArchivo)-1;
+                log_error(kernelLogger, "El tamanio del nombre de archivo es %zu", tamanioPalabra);
+
+                enviar_operacion(conexionFileSystem, operacionRecibida, tamanioPalabra, nombreArchivo);
+                codigo_operacion operacionRecibida = recibir_operacion(conexionFileSystem);
+
+                if (operacionRecibida != AUX_OK) {
+                    // Si no existe lo creo
+                    enviar_operacion(conexionFileSystem, KERNEL_CREAR_ARCHIVO, tamanioPalabra, nombreArchivo);
+                    recibir_operacion(conexionFileSystem);
+                }
+
+                // abrir archivo globalmente
+                semaforoArchivo->instancias = 0;
+                semaforoArchivo->estadoRecurso = crear_archivo_estado(ENUM_ARCHIVO_BLOCK);
+                dictionary_put(tablaArchivosAbiertos, nombreArchivo, semaforoArchivo);
+
+                t_archivo_abierto* archivoAbierto = malloc(sizeof(t_archivo_abierto));
+                archivoAbierto->nombreArchivo = nombreArchivo;
+                archivoAbierto->puntero = 0;
+
+                // abrir archivo proceso
+                list_add(pcb_en_ejecucion->lista_archivos_abiertos, archivoAbierto);
+
+
+                cambiar_estado_proceso_con_semaforos(pcb_en_ejecucion, ENUM_READY);
+
                 break;
             }
 
             case I_F_CLOSE: {
                 char* nombreArchivo = ultimaInstruccionDecodificada[1];
                 strtok(nombreArchivo, "$");
-                t_archivo_abierto* archivoAbierto = encontrar_archivo_abierto(archivosAbiertosGlobal, nombreArchivo);
-                list_remove_element(pcb_en_ejecucion->lista_archivos_abiertos, list_remove_element);
-                // Donde
+                list_remove_element(pcb_en_ejecucion->lista_archivos_abiertos, nombreArchivo);
+
+                t_semaforo_recurso* semaforoArchivo = (t_semaforo_recurso*) dictionary_get(tablaArchivosAbiertos, nombreArchivo);
+                t_estado* estado = semaforoArchivo->estadoRecurso;
+
+                pthread_mutex_lock(estado->mutexEstado);
+                bool debeDesbloquearAlgunProceso = !list_is_empty(estado->listaProcesos);
+                PCB* pcb = list_remove(estado->listaProcesos, 0);
+                if (debeDesbloquearAlgunProceso) {
+                    sem_wait(estado->semaforoEstado);
+                    pthread_mutex_lock(estado->mutexEstado);
+                    cambiar_estado_proceso_con_semaforos(pcb, ENUM_READY);
+                    pthread_mutex_unlock(estado->mutexEstado);
+                } else {
+                    // Ya no quedan procesos que usen el archivo
+                    dictionary_remove(tablaArchivosAbiertos, nombreArchivo);
+                }
+
+                sem_post(&sem_proceso_a_executing);
                 break;
             }
 
             case I_TRUNCATE: {
                 char* nombreArchivo = ultimaInstruccionDecodificada[1];
                 strtok(nombreArchivo, "$");
+                cambiar_estado_proceso_con_semaforos(pcb_en_ejecucion, ENUM_BLOCKED);
 
                 t_archivo_abierto* archivo;
                 archivo->nombreArchivo = nombreArchivo;
                 archivo->puntero = (uint32_t)(uintptr_t)ultimaInstruccionDecodificada[2];
-                cambiar_estado_proceso_con_semaforos(pcb_en_ejecucion, ENUM_BLOCKED);
+                // cambiar_estado_proceso_con_semaforos(pcb_en_ejecucion, ENUM_BLOCKED);
                 enviar_operacion(conexionFileSystem, operacionRecibida, sizeof(t_archivo_abierto), archivo);
                 recibir_operacion(conexionFileSystem);
 
+                cambiar_estado_proceso_con_semaforos(pcb_en_ejecucion, ENUM_READY);
+                sem_post(&sem_proceso_a_ready_terminado);
                 break;
             }
 
@@ -358,13 +397,15 @@ void *manejo_desalojo_pcb() {
                 char* nombreArchivo = ultimaInstruccionDecodificada[1];
                 uint32_t puntero = (uint32_t)(uintptr_t)ultimaInstruccionDecodificada[2];
                 strtok(nombreArchivo, "$");
-                int index = encontrar_index_archivo_abierto(archivosAbiertosGlobal, nombreArchivo);
-                t_archivo_abierto* archivoAbierto = list_get(pcb_en_ejecucion->lista_archivos_abiertos, index);
+                t_archivo_abierto* archivoAbierto = encontrar_archivo_abierto(pcb_en_ejecucion->lista_archivos_abiertos, nombreArchivo);
                 archivoAbierto->puntero = puntero;
+                sem_post(&sem_proceso_a_executing);
 
                 break;
             }
             case I_F_READ: {
+                cambiar_estado_proceso_con_semaforos(pcb_en_ejecucion, ENUM_BLOCKED);
+                enviar_f_read_write(pcb_en_ejecucion, ultimaInstruccionDecodificada, operacionRecibida);
                 break;
             }
             case I_F_WRITE: {
@@ -378,9 +419,63 @@ void *manejo_desalojo_pcb() {
     }
 }
 
+void enviar_f_read_write(PCB* pcb, char** instruccion, codigo_operacion codigoOperacion) {
+    pthread_mutex_lock(permiso_compactacion);
+    char* nombreArchivo = instruccion[1];
+    strtok(nombreArchivo, "$");
+    uint32_t direccion = (uint32_t)(uintptr_t)instruccion[2];
+    uint32_t cantidadBytes = (uint32_t)(uintptr_t)instruccion[3];
+    t_parametros_hilo_IO* parametrosHilos;
+    uint32_t punteroArchivo = (uint32_t)(intptr_t)(void*)encontrar_archivo_abierto(pcb->lista_archivos_abiertos, nombreArchivo);
+
+    parametrosHilos->nombreArchivo = nombreArchivo;
+    parametrosHilos->punteroArchivo = punteroArchivo;
+    parametrosHilos->idProceso = pcb->id_proceso;
+    parametrosHilos->cantidadBytes = cantidadBytes;
+    parametrosHilos->direccionFisica = direccion;
+
+    enviar_operacion(conexionFileSystem, codigoOperacion, sizeof(t_parametros_hilo_IO), parametrosHilos);
+    recibir_operacion(conexionFileSystem);
+    pthread_mutex_unlock(permiso_compactacion);
+}
+
+t_estado* crear_archivo_estado(t_nombre_estado nombreEstado) {
+    t_estado* estado = malloc(sizeof(t_estado));
+
+    // Creo y seteo el nombre estado y la lista para guardar procesos
+    estado->nombreEstado = nombreEstado;
+    estado->listaProcesos = list_create();
+
+    // Creo y seteo el semaforo estado
+    sem_t *semaforoEstado = malloc(sizeof(*semaforoEstado));
+    sem_init(semaforoEstado, 0, 0);
+    estado->semaforoEstado = semaforoEstado;
+
+    // Creo y seteo el mutex del estado
+    pthread_mutex_t *mutexEstado = malloc(sizeof(*(mutexEstado)));
+    pthread_mutex_init(mutexEstado, NULL);
+    estado->mutexEstado = mutexEstado;
+
+    return estado;
+}
+
+
+int list_get_index(t_list *list, bool (*cutting_condition)(void *temp, void *target), void* target)
+{
+    // Linear search algorithm to find an item with a given condition
+    for (int i = 0; i < list_size(list); i++) {
+        void *temp = list_get(list, i);
+
+        if (cutting_condition(temp, target)) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
 t_archivo_abierto* encontrar_archivo_abierto(t_list* listaArchivosAbiertos, char* nombreArchivo) {
     int cantidadArchivos = list_size(listaArchivosAbiertos);
-    bool seEliminoSegmento = false;
 
     for (int i = 0; i < cantidadArchivos; i++) {
         t_archivo_abierto* archivoAbierto = list_get(listaArchivosAbiertos, i);
@@ -395,7 +490,6 @@ t_archivo_abierto* encontrar_archivo_abierto(t_list* listaArchivosAbiertos, char
 
 int encontrar_index_archivo_abierto(t_list* listaArchivosAbiertos, char* nombreArchivo) {
     int cantidadArchivos = list_size(listaArchivosAbiertos);
-    bool seEliminoSegmento = false;
 
     for (int i = 0; i < cantidadArchivos; i++) {
         t_archivo_abierto* archivoAbierto = list_get(listaArchivosAbiertos, i);
@@ -407,6 +501,7 @@ int encontrar_index_archivo_abierto(t_list* listaArchivosAbiertos, char* nombreA
     return -1;
 
 }
+
 
 /*
 t_dictionary* crear_diccionario_semaforos_recursos(char **recursos, char **instanciasRecursos)
@@ -738,6 +833,9 @@ void mover_de_lista_con_sem(void* elem, int estadoNuevo, int estadoAnterior) {
     sem_wait(&sem_lista_estados[estadoAnterior]);
     PCB* pcb = elem;
     pcb->estado = estadoNuevo;
+    if (pcb->estado == ENUM_READY) {
+        set_timespec((timestamp*)(time_t)pcb->ready_timestamp);
+    }
     list_remove_element(lista_estados[estadoAnterior], elem);
     list_add(lista_estados[estadoNuevo], elem);
 
@@ -771,6 +869,7 @@ static bool criterio_hrrn(PCB* pcb_A, PCB* pcb_B) {
 }
 
 void inicializar_diccionario_recursos() {
+    t_dictionary* tablaArchivosAbiertos = dictionary_create();
     diccionario_recursos = dictionary_create();
 
     int indice = 0;
@@ -802,7 +901,7 @@ void inicializar_semaforos() {
     sem_init(&sem_proceso_a_ready_inicializar, 0, 0);
     sem_init(&sem_proceso_a_ready_terminado, 0, 0);
     sem_init(&sem_proceso_a_executing, 0, 0);
-
+    pthread_mutex_init(permiso_compactacion,NULL);
     // pthread_mutex_init(mutexTablaAchivosAbiertos, NULL);
     /* TODO: JOAN Y JOACO
      * LOS CHICOS TENIAN ESTOS TAMBIEN Y ES PROBABLE QUE LOS NECESITEN

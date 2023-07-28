@@ -43,6 +43,11 @@ typedef enum {
     ENUM_EXIT,
 }pcb_estado;
 
+typedef enum {
+    ENUM_ARCHIVO_FREE,
+    ENUM_ARCHIVO_BLOCK,
+}t_nombre_estado;
+
 typedef struct {
     // Registros de 4 bytes
     char AX[4];
