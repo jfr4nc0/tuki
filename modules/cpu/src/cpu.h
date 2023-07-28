@@ -40,18 +40,18 @@ enum registro {
 
 typedef enum registro t_registro;
 
-typedef struct ParametrosHiloIO {
+typedef struct ParametrosLectura {
     int id_proceso;
 	uint32_t direccionFisica;
 	uint32_t tamanio;
 } t_parametros_lectura;
 
-typedef struct ParametrosHiloIO {
+typedef struct ParametrosEScritura {
     int id_proceso;
 	uint32_t direccionFisica;
 	uint32_t tamanio;
 	char* bytes_a_enviar;
-} t_parametros_escritura
+} t_parametros_escritura;
 
 extern registros_cpu* registrosCpu;
 
@@ -71,6 +71,14 @@ void set_registro(char*, char*);
 void set_registros(PCB* pcb);
 void instruccion_set(char* registro,char* valor);
 char* recibir_valor_a_escribir(int clienteAceptado);
+uint32_t obtener_tamanio_segun_registro(char* registro);
+char* obtener_valor_registro(char* registro, registros_cpu *registrosCPU);
+char *registros_cpu_get_valor_registro(char* registro, int tamanioRegistro);
+void log_acceso_a_memoria(uint32_t pid, char* modo, uint32_t idSegmento, uint32_t dirFisica, void* valor, uint32_t tamanio);
+void loggear_segmentation_fault(uint32_t pid, uint32_t numSegmento, uint32_t offset, uint32_t tamanio);
+uint32_t obtener_direccion_fisica(PCB *pcb,uint32_t dirLogica, uint32_t *numeroSegmento, uint32_t *offset, uint32_t *tamanioSegmento);
+uint32_t obtener_base_segmento(PCB *pcb, uint32_t numeroSegmento,  uint32_t *tamanio);
+
 PCB* recibir_pcb(int);
 void enviar_pcb_desalojado_a_kernel(PCB*, int, codigo_operacion);
 void envio_pcb_a_kernel_con_codigo(int , PCB* , codigo_operacion );

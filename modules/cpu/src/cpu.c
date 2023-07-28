@@ -241,7 +241,7 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 			instruccion_set(instruccion[1],instruccion[2]);
 			//log_info(loggerCpu, "REGISTRO AX: %s", registrosCpu->AX);
 			break;
-		case I_MOV_IN:
+		case I_MOV_IN:{
 			// MOV_IN (Registro, Dirección Lógica)
 			//instruccion_mov_in(instruccion[1],instruccion[2],pcb);
 			uint32_t numeroSegmento, offset, tamanioSegmento;
@@ -249,7 +249,7 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 			strcpy(registro_, instruccion[1]);
 			uint32_t dirLogica = instruccion[2];
 			uint32_t dirFisica = obtener_direccion_fisica(pcb, dirLogica, &numeroSegmento, &offset, &tamanioSegmento);
-			uint32_t tamanioALeer = obtener_tamanio_segun_registro(registro);
+			uint32_t tamanioALeer = obtener_tamanio_segun_registro(registro_);
 
 
 			if((tamanioALeer + offset) <= tamanioSegmento){
@@ -260,18 +260,20 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 				parametros_a_enviar->direccionFisica = dirFisica;
 				parametros_a_enviar->tamanio = tamanioALeer;
 
-				enviar_operacion(conexionMemoria, I_MOV_IN, sizeof(t_parametros_lectura), parametros_a_enviar);
-				char *valor = recibir_valor_a_escribir(conexionMemoria);
+				enviar_operacion(conexionCpuMemoria, I_MOV_IN, sizeof(t_parametros_lectura), parametros_a_enviar);
+				char *valor = recibir_valor_a_escribir(conexionCpuMemoria);
 				log_acceso_a_memoria(pcb->id_proceso, "LEER", numeroSegmento, dirFisica, valor,sizeof(valor));
 			    instruccion_set(registro_, valor);
 			    free(valor);
 			    free(parametros_a_enviar);
 			}else {
-				//TODO: EL MOTIVO DE DESALOJO ES SEGMENTATION FAULT
+				//TODO: EL MOTIVO DE DESALOJO A ENVIAR A KERNEL ES SEGMENTATION FAULT
+				loggear_segmentation_fault(pcb->id_proceso, numeroSegmento, offset, tamanioSegmento);
 				hubo_interrupcion = true;
 			}
 			break;
-		case I_MOV_OUT:
+		}
+		case I_MOV_OUT:{
 			// MOV_OUT (Dirección Lógica, Registro)
 			//instruccion_mov_out(instruccion[1],instruccion[2],pcb);
 			uint32_t numeroSegmento, offset, tamanioSegmento;
@@ -292,11 +294,11 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 				parametros_a_enviar->id_proceso = pcb->id_proceso;
 				parametros_a_enviar->direccionFisica = dirFisica;
 				parametros_a_enviar->tamanio = tamanioALeer;
-				strcpy(parametros_a_enviar->bytes_a_enviar, (char*)bytesAEnviar, sizeof(bytesAEnviar));
+				strcpy((parametros_a_enviar->bytes_a_enviar), ((char*)bytesAEnviar));
 
-				enviar_operacion(conexionMemoria, I_MOV_OUT, sizeof(t_parametros_escritura), parametros_a_enviar);
+				enviar_operacion(conexionCpuMemoria, I_MOV_OUT, sizeof(t_parametros_escritura), parametros_a_enviar);
 
-				if(recibir_operacion(conexionMemoria) != AUX_OK){
+				if(recibir_operacion(conexionCpuMemoria) != AUX_OK){
 					log_error(loggerCpu, "No se pudo recibir la confirmacion de escritura");
 					exit(EXIT_FAILURE);
 				}
@@ -305,10 +307,12 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 				free(valorRegistro);
 				free(parametros_a_enviar);
 			} else{
-				//TODO: EL MOTIVO DE DESALOJO ES SEGMENTATION FAULT
+				//TODO: EL MOTIVO DE DESALOJO A ENVIAR A KERNEL ES SEGMENTATION FAULT
+				loggear_segmentation_fault(pcb->id_proceso, numeroSegmento, offset, tamanioSegmento);
 				hubo_interrupcion = true;
 			}
 			break;
+		}
 		case I_IO:
 			// I/O (Tiempo)
 			hubo_interrupcion = true;
@@ -413,7 +417,9 @@ char* recibir_valor_a_escribir(int clienteAceptado){
 uint32_t obtener_tamanio_segun_registro(char* registro){
     uint32_t tamanio = 0;
 
-    switch(registro){
+    int registro_int = get_int_registro(registro);
+
+    switch(registro_int){
         case REGISTRO_AX:
         case REGISTRO_BX:
         case REGISTRO_CX:
@@ -441,7 +447,10 @@ uint32_t obtener_tamanio_segun_registro(char* registro){
 
 char* obtener_valor_registro(char* registro, registros_cpu *registrosCPU){
 		char* valor;
-	    switch(registro){
+
+		int registro_int = get_int_registro(registro);
+
+		switch(registro_int){
 	        case REGISTRO_AX:
 	        valor = registros_cpu_get_valor_registro(registrosCpu->AX,4);
 	        break;
@@ -484,6 +493,35 @@ char* obtener_valor_registro(char* registro, registros_cpu *registrosCPU){
 	    }
 
 	    return valor;
+}
+
+int get_int_registro(char* registro){
+	if (strcmp(registro, "AX") == 0) {
+		return REGISTRO_AX;
+	} else if (strcmp(registro, "BX") == 0) {
+		return REGISTRO_BX;
+	} else if (strcmp(registro, "CX") == 0) {
+		return REGISTRO_CX;
+	} else if (strcmp(registro, "DX") == 0) {
+		return REGISTRO_DX;
+	} else if (strcmp(registro, "EAX") == 0) {
+		return REGISTRO_EAX;
+	} else if (strcmp(registro, "EBX") == 0) {
+		return REGISTRO_EBX;
+	} else if (strcmp(registro, "ECX") == 0) {
+		return REGISTRO_ECX;
+	} else if (strcmp(registro, "EDX") == 0) {
+		return REGISTRO_EDX;
+	} else if (strcmp(registro, "RAX") == 0) {
+		return REGISTRO_RAX;
+	} else if (strcmp(registro, "RBX") == 0) {
+		return REGISTRO_RBX;
+	} else if (strcmp(registro, "RCX") == 0) {
+		return REGISTRO_RCX;
+	} else if (strcmp(registro, "RDX") == 0) {
+		return REGISTRO_RDX;
+	} else {
+		return;
 	}
 }
 
@@ -502,11 +540,14 @@ char *registros_cpu_get_valor_registro(char* registro, int tamanioRegistro){
     return registroString;
 }
 
-void log_acceso_a_memoria(uint32_t pid, char* modo, uint32_t idSegmento, uint32_t dirFisica, void* valor, uint32_t tamanio)
-{
+void log_acceso_a_memoria(uint32_t pid, char* modo, uint32_t idSegmento, uint32_t dirFisica, void* valor, uint32_t tamanio){
     char* valorPrinteable = agregarCaracterNulo(valor, tamanio);
-    log_info(cpuLogger, "PID: <%d> - Acción: <%s> - Segmento: <%d> - Dirección Física: <%d> - Valor: <%s>", pid, modo, idSegmento, dirFisica, valorPrinteable);
+    log_info(loggerCpu, "PID: <%d> - Acción: <%s> - Segmento: <%d> - Dirección Física: <%d> - Valor: <%s>", pid, modo, idSegmento, dirFisica, valorPrinteable);
     free(valorPrinteable);
+    return;
+}
+void loggear_segmentation_fault(uint32_t pid, uint32_t numSegmento, uint32_t offset, uint32_t tamanio){
+    log_info(loggerCpu, "PID: <%u> - Error SEG_FAULT- Segmento: <%u> - Offset: <%u> - Tamaño: <%u>", pid, numSegmento, offset, tamanio);
     return;
 }
 
