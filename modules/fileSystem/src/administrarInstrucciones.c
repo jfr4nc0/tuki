@@ -50,6 +50,7 @@ t_fcb *crear_fcb_inicial(char *nombreArchivo) {
 }
 
 bool truncar_archivo(char* nombreArchivo, uint32_t tamanioNuevo) {
+	strtok(nombreArchivo, "$");
     log_info(loggerFileSystem, TRUNCATE_ARCHIVO, nombreArchivo, tamanioNuevo);
 
     t_fcb* fcb = dictionary_get(dictionaryFcbs, nombreArchivo);

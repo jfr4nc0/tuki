@@ -390,16 +390,17 @@ void *manejo_desalojo_pcb() {
             }
 
             case I_TRUNCATE: {
-                char* nombreArchivo = ultimaInstruccionDecodificada[1];
-                strtok(nombreArchivo, "$");
                 cambiar_estado_proceso_con_semaforos(pcb_en_ejecucion, ENUM_BLOCKED);
 
-                t_archivo_abierto* archivo;
-                archivo->nombreArchivo = nombreArchivo;
-                archivo->puntero = (uint32_t)(uintptr_t)ultimaInstruccionDecodificada[2];
-                // cambiar_estado_proceso_con_semaforos(pcb_en_ejecucion, ENUM_BLOCKED);
-                enviar_operacion(conexionFileSystem, operacionRecibida, sizeof(t_archivo_abierto), archivo);
-                recibir_operacion(conexionFileSystem);
+                t_paquete* paquete = crear_paquete(operacionRecibida);
+                agregar_a_paquete(paquete, (void*)ultimaInstruccionDecodificada[1], strlen(ultimaInstruccionDecodificada[1]));
+                agregar_a_paquete(paquete, (void*)ultimaInstruccionDecodificada[2], strlen(ultimaInstruccionDecodificada[2]));
+
+                enviar_paquete(paquete, conexionFileSystem);
+                log_info(kernelLogger, "ENVIO TRUNCATE de archivo: %s, tamanio: %s", ultimaInstruccionDecodificada[1], ultimaInstruccionDecodificada[2]);
+                eliminar_paquete(paquete);
+                codigo_operacion cod1 = recibir_operacion(conexionFileSystem);
+                codigo_operacion cod2 = recibir_operacion(conexionFileSystem);
 
                 cambiar_estado_proceso_con_semaforos(pcb_en_ejecucion, ENUM_READY);
                 sem_post(&sem_proceso_a_ready_terminado);
