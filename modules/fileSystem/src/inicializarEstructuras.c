@@ -28,7 +28,8 @@ void inicializar_estructuras(t_config* config) {
 t_config_file_system* cargar_config(t_config* config) {
     t_config_file_system* configPuntero = malloc(sizeof(t_config_file_system));
    	configPuntero->IP_MEMORIA = extraer_string_de_config(config, "IP_MEMORIA", loggerFileSystem);
-	configPuntero->PATH_SUPERBLOQUE = extraer_string_de_config(config, "PATH_SUPERBLOQUE", loggerFileSystem);
+	// configPuntero->PATH_SUPERBLOQUE = extraer_string_de_config(config, "PATH_SUPERBLOQUE", loggerFileSystem);
+    configPuntero->PATH_SUPERBLOQUE = "./tuki-pruebas/prueba-filesystem/superbloque.dat";
 	configPuntero->PATH_BITMAP = extraer_string_de_config(config, "PATH_BITMAP", loggerFileSystem);
 	configPuntero->PATH_BLOQUES = extraer_string_de_config(config, "PATH_BLOQUES", loggerFileSystem);
 	configPuntero->PATH_FCB = extraer_string_de_config(config, "PATH_FCB", loggerFileSystem);

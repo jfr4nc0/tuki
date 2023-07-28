@@ -22,6 +22,7 @@
 #include <semaphore.h>
 #include <time.h>
 #include <math.h>
+#include <errno.h>
 
 // Internas
 #include "constantes.h"
@@ -42,6 +43,11 @@ typedef enum {
     ENUM_BLOCKED,
     ENUM_EXIT,
 }pcb_estado;
+
+typedef enum {
+    ENUM_ARCHIVO_FREE,
+    ENUM_ARCHIVO_BLOCK,
+}t_nombre_estado;
 
 /*--------------------------------- Estructuras --------------------------------*/
 
@@ -104,6 +110,9 @@ typedef enum {
 	I_DESCONOCIDA,
 	EXIT__SUCCESS,
 	EXIT_SEGMENTATION_FAULT,
+	TERMINAR_EJECUCION,
+    // Kernel
+    KERNEL_CREAR_ARCHIVO,
     // Auxiliares
 	AUX_MENSAJE,
 	AUX_OK,
@@ -128,15 +137,20 @@ typedef struct {
 }t_paquete;
 
 typedef struct {
-    int  id; // File descriptor
-    int posicion_puntero;
-} archivo_abierto_t;
-
-typedef struct {
     void* direccionBase;
     size_t size;
     int id;
 } t_segmento;
+
+typedef struct {
+    char* nombreArchivo;
+    uint32_t puntero;
+}t_archivo_abierto;
+
+typedef struct {
+    char* nombreArchivo;
+    uint32_t puntero;
+}t_enviar_archivo_abierto;
 /*--------------------------------- FUNCIONES GENERALES --------------------------------*/
 
 char* cantidad_strings_a_mostrar(int);
@@ -161,6 +175,17 @@ char* leer_registro_4_bytes(char* , int* );
 char* leer_registro_8_bytes(char* , int* );
 char* leer_registro_16_bytes(char* , int* );
 
+/*--------- BUFFERS ------------*/
+void buffer_pack(t_buffer* self, void* streamToAdd, int size);
+static void __stream_send(int toSocket, void *streamToSend, uint32_t bufferSize);
+t_buffer *buffer_unpack(t_buffer *self, void *dest, int size);
+t_buffer *buffer_create(void);
+static void *__stream_create(uint8_t header, t_buffer *buffer);
+void stream_send_buffer(int toSocket, uint8_t header, t_buffer *buffer);
+char *buffer_unpack_string(t_buffer *self);
+void buffer_pack_string(t_buffer *self, char *stringToAdd);
+uint32_t leer_uint32(char* buffer, int* desp);
+
 /*----------------------------- FUNCIONES CLIENTE ----------------------------*/
 
 int crear_conexion(char*, char*, char*, t_log*);
@@ -182,6 +207,7 @@ t_list* recibir_paquete(int);
 int recibir_operacion(int);
 void* recibir_buffer(int*, int);
 void* leer_de_buffer(char*, int*, size_t);
+char* leer_texto(char* buffer, int* desp, int size);
 
 
 void intervalo_de_pausa(int );

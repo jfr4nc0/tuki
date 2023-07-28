@@ -9,7 +9,6 @@
 #include <commons/string.h>
 #include <commons/config.h>
 #include <pthread.h>
-#include <cpuInstrucciones.h>
 #include <shared/shared.h>
 
 typedef struct {
@@ -83,7 +82,14 @@ PCB* recibir_pcb(int);
 void enviar_pcb_desalojado_a_kernel(PCB*, int, codigo_operacion);
 void envio_pcb_a_kernel_con_codigo(int , PCB* , codigo_operacion );
 void agregar_pcb_a_paquete(t_paquete* , PCB* );
+
 void* get_registro_cpu(char* registro, registros_cpu* registrosCpu);
+
+void iterator(char* value);
+void agregar_valor_a_paquete(t_paquete* paquete, void* valor, int tamanio);
+
+pthread_mutex_t m_recibir_pcb;
+
 
 // LOGS ////////////////////////
 #define INSTRUCCION_EJECUTADA        "PID: <PID> - Ejecutando: <INSTRUCCION> - <PARAMETROS>"

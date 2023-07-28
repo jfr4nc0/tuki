@@ -11,7 +11,7 @@ int main() {
     int servidorMemoria = iniciar_servidor(configInicial, loggerMemoria);
     inicializar_memoria(memoriaConfig->TAM_MEMORIA, memoriaConfig->TAM_SEGMENTO_0,memoriaConfig->ALGORITMO_ASIGNACION);
 
-	testing_funciones();
+//	testing_funciones();
 
     atender_conexiones(servidorMemoria);
 
@@ -31,34 +31,36 @@ void testing_funciones(){
 
 void atender_conexiones(int servidorMemoria) {
     while (1){
-		int clienteAceptado = esperar_cliente(servidorMemoria, loggerMemoria);
-        // Recibo una primera operación para saber que módulo se conectó
-        int modulo = recibir_operacion(clienteAceptado);
-        // No se almacena ya que se ignora, pero necesito llamarlo para liberar el mensaje
-        recibir_paquete(clienteAceptado);
+    	int clienteAceptado = esperar_cliente(servidorMemoria, loggerMemoria);
 
-        administrar_cliente(clienteAceptado, modulo);
+		pthread_t hilo_administrar_cliente;
+		pthread_create(&hilo_administrar_cliente, NULL, (void*) administrar_cliente, (void*) (intptr_t) clienteAceptado);
+		pthread_detach(hilo_administrar_cliente);
     }
-    return;
 }
 
-void administrar_cliente(int clienteAceptado, int modulo) {
+void administrar_cliente(void* clienteAceptado) {
         pthread_t thread_cpu;
         pthread_t thread_kernel;
         pthread_t thread_file_system;
 
-        // TODO: ver la posibilidad de hacerlo generico pasandole un parametro mas a ejecutar_instrucciones que diga que módulo es
+    	// Recibo una primera operación para saber que módulo se conectó
+		int modulo = recibir_operacion((int)(intptr_t)clienteAceptado);
+
+		// No se almacena ya que se ignora, pero necesito llamarlo para liberar el mensaje
+		recibir_paquete((int)(intptr_t)clienteAceptado);
+
         switch(modulo) {
             case AUX_SOY_CPU:
-                pthread_create(&thread_cpu, NULL, (void*) ejecutar_cpu_pedido, (void*) (intptr_t) clienteAceptado);
+                pthread_create(&thread_cpu, NULL, (void*) ejecutar_cpu_pedido, clienteAceptado);
                 pthread_join(thread_cpu, NULL);
             break;
             case AUX_SOY_KERNEL:
-    		    pthread_create(&thread_kernel, NULL, (void*)ejecutar_kernel_pedido, (void*) (intptr_t) clienteAceptado);
+    		    pthread_create(&thread_kernel, NULL, (void*)ejecutar_kernel_pedido, clienteAceptado);
     		    pthread_join(thread_kernel, NULL);
             break;
             case AUX_SOY_FILE_SYSTEM:
-    		    pthread_create(&thread_file_system, NULL, (void*)ejecutar_file_system_pedido, (void*) (intptr_t) clienteAceptado);
+    		    pthread_create(&thread_file_system, NULL, (void*)ejecutar_file_system_pedido, clienteAceptado);
     		    pthread_join(thread_file_system, NULL);
             break;
         }

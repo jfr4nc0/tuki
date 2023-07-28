@@ -40,8 +40,9 @@ void ejecutar_kernel_pedido(void *);
 void iterator(char*);
 void ejecutar_instrucciones(int, char*);
 void atender_conexiones(int);
-void administrar_cliente(int, int);
+
 void administrar_instrucciones(int , codigo_operacion , char*);
+void administrar_cliente(void*);
 void testing_funciones();
 void enviar_confirmacion(int , codigo_operacion );
 
