@@ -125,7 +125,7 @@ PCB* recibir_proceso_desajolado(PCB* pcb_en_ejecucion);
 ////////////////////////////////////////////////////
 
 int obtener_recursos(int);
-
+void terminar_proceso(PCB* , codigo_operacion);
 void cambiar_estado_proceso_sin_semaforos(PCB* pcb, pcb_estado estadoNuevo);
 
 /*----------------- SEMAFOROS / HILOS ------------------*/

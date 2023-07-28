@@ -14,7 +14,7 @@ int main(int argc, char** argv) {
 	t_config* config = iniciar_config(PATH_CONFIG_KERNEL, kernelLogger);
 	conexionMemoria = armar_conexion(config, MEMORIA, kernelLogger);
 	conexionCPU = armar_conexion(config, CPU, kernelLogger);
-	log_error(kernelLogger, "------");
+
     cargar_config_kernel(config, kernelLogger);
 
     log_debug(kernelLogger, "Vamos a usar el algoritmo %s", kernelConfig->ALGORITMO_PLANIFICACION);
@@ -304,6 +304,14 @@ void *manejo_desalojo_pcb() {
 		 	 case I_YIELD: {
 		 		 break;
 		 	 }
+		 	 case I_EXIT: {
+		 		 terminar_proceso(pcb_en_ejecucion, EXIT__SUCCESS);
+		 		 break;
+		 	 }
+		 	 case SEGMENTATION_FAULT:{
+		 		 terminar_proceso(pcb_en_ejecucion, EXIT_SEGMENTATION_FAULT);
+		 		 break;
+		 	 }
 		 	 case I_F_OPEN: {
 		 		char* nombreArchivo = ultimaInstruccionDecodificada[1];
 		 		strtok(nombreArchivo, "$");
@@ -341,8 +349,16 @@ void *manejo_desalojo_pcb() {
 		 		free(nombre_recurso);
 		 		 break;
 		 	 }
-		 	 case SEGMENTATION_FAULT:{ //TODO
+		 	 case I_CREATE_SEGMENT:{
 
+		 		 break;
+		 	 }
+		 	 case I_DELETE_SEGMENT:{
+		 		uint32_t id_segmento;
+
+		 		//TODO: FALTA INSTRUCCION
+
+		 		log_info(kernelLogger, "PID: <%d> - Eliminar Segmento - Id Segmento: <%d>",pcb_en_ejecucion->id_proceso, id_segmento);
 		 		 break;
 		 	 }
 		 }
@@ -570,6 +586,30 @@ PCB* elegir_pcb_segun_hrrn(){
 	return pcb;
 }
 
+void terminar_proceso(PCB* pcb_para_finalizar, codigo_operacion motivo_finalizacion){
+    switch (pcb_para_finalizar->estado){
+        case ENUM_NEW:
+            cambiar_estado_proceso_con_semaforos(pcb_para_finalizar, ENUM_EXIT);
+            break;
+
+        case ENUM_EXECUTING:
+        	cambiar_estado_proceso_con_semaforos(pcb_para_finalizar, ENUM_EXIT);
+            break;
+
+        case ENUM_BLOCKED:
+        	cambiar_estado_proceso_con_semaforos(pcb_para_finalizar, ENUM_EXIT);
+            break;
+
+        default:
+            //error
+            break;
+    }
+
+    log_info(kernelLogger, "Finaliza el proceso con PID <%d> - Motivo: <%s>", pcb_para_finalizar->id_proceso, motivo_finalizacion);
+}
+
+
+
 void mostrar_pcb(PCB* pcb){
 	log_trace(kernelLogger, "PID: %d", pcb->id_proceso);
 	char* estado = nombres_estados[pcb->estado];
@@ -637,7 +677,7 @@ PCB* nuevo_proceso(t_list* listaInstrucciones, int clienteAceptado) {
 	//pcb->hrrn_alfa = kernelConfig->HRRN_ALFA;
 
 	agregar_a_lista_con_sem(pcb, ENUM_NEW);
-	log_info(kernelLogger, "Se crea el proceso %d en NEW", pcb->id_proceso);
+	log_info(kernelLogger, "Se crea el proceso <%d> en NEW", pcb->id_proceso);
 
 	sem_post(&sem_proceso_a_ready_inicializar); // Le envio señal al otro hilo para que cree la estructura y lo mueva a READY cuando pueda
 
