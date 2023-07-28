@@ -42,6 +42,7 @@ typedef struct {
     sem_t sem_recurso;
 }t_recurso;
 
+
 typedef struct ParametrosHiloIO {
     uint32_t idProceso;
     char *nombreArchivo;
@@ -138,7 +139,7 @@ void agregar_registros_a_paquete_cpu(t_paquete* , registros_cpu* );
 PCB* recibir_proceso_desajolado(PCB* pcb_en_ejecucion);
 // t_semaforo_recurso* diccionario_semaforos_recursos_get_semaforo_recurso(tablaArchivosAbiertos, nombreArchivo);
 
-t_archivo_estado* crear_archivo_estado(t_nombre_estado nombreEstado);
+t_estado* crear_archivo_estado(t_nombre_estado nombreEstado);
 
 ////////////////////////////////////////////////////
 

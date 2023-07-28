@@ -20,7 +20,7 @@
 #define ACCESO_BLOQUE            "Acceso Bloque - Archivo: <%s> - Bloque Archivo: <%u> - Bloque File System <%u>"
 #define APERTURA_ARCHIVO         "Abrir Archivo: <NOMBRE_ARCHIVO>"
 #define CREAR_ARCHIVO            "Crear Archivo: <NOMBRE_ARCHIVO>"
-#define ESCRITURA_ARCHIVO        "Escribir Archivo: <NOMBRE_ARCHIVO> - Puntero: <PUNTERO ARCHIVO> - Memoria: <DIRECCION MEMORIA> - Tamaño: <TAMAÑO>"
+#define ESCRIBIR_ARCHIVO         "Escribir Archivo: <%s> - Puntero: <%u> - Memoria: <%u> - Tamaño: <%u>"
 #define TRUNCATE_ARCHIVO         "Truncar Archivo: %s - Tamaño: <%u>"
 /////////
 

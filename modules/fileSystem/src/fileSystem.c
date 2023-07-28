@@ -6,7 +6,7 @@ int main(int argc, char** argv) {
     t_config* config = iniciar_config(DEFAULT_CONFIG_PATH, loggerFileSystem);
     inicializar_estructuras(config);
 
-    int conexionMemoria = armar_conexion(config, MEMORIA, loggerFileSystem);
+    conexionMemoria = armar_conexion(config, MEMORIA, loggerFileSystem);
     // Notifico a memoria que soy el módulo file system
     enviar_codigo_operacion(conexionMemoria, AUX_SOY_FILE_SYSTEM);
 
@@ -58,6 +58,21 @@ void ejecutar_instrucciones_kernel(void* cliente) {
             free(archivo);
             break;
         }
+        case I_F_READ: {
+            char *nombreArchivo = NULL;
+            uint32_t direccionFisica, cantidadBytes, puntero, pidProceso;
+            recibir_buffer_lectura_archivo(clienteKernel, &nombreArchivo, &puntero, &direccionFisica, &cantidadBytes, &pidProceso);
+            leer_archivo(nombreArchivo, puntero, direccionFisica, cantidadBytes, pidProceso);
+            free(nombreArchivo);
+            break;
+        }
+        case I_F_WRITE: {
+            char *nombreArchivo = NULL;
+            uint32_t direccionFisica, cantidadBytes, puntero, pidProceso;
+            recibir_buffer_escritura_archivo(clienteKernel, &nombreArchivo, &puntero, &direccionFisica, &cantidadBytes, &pidProceso);
+            solicitar_informacion_memoria(direccionFisica, cantidadBytes, pidProceso);
+            free(nombreArchivo);
+        }
     }
     return;
 }
@@ -86,4 +101,77 @@ t_archivo_abierto* obtener_archivo_completo_de_socket(int cliente) {
 	memcpy(archivo, buffer, size);
 
 	return archivo;
+}
+
+void recibir_buffer_lectura_archivo(int clienteKernel, char **nombreArchivo, uint32_t *puntero,
+uint32_t *direccionFisica, uint32_t *cantidadBytes, uint32_t *pid) {
+
+    t_buffer *bufferLectura = buffer_create();
+    stream_recv_buffer(clienteKernel, bufferLectura);
+
+    char *nombreArchivoLectura = buffer_unpack_string(bufferLectura);
+    *nombreArchivo = strdup(nombreArchivoLectura);
+    free(nombreArchivoLectura);
+
+    uint32_t punteroBuffer;
+    buffer_unpack(bufferLectura, &punteroBuffer, sizeof(punteroBuffer));
+    *puntero = punteroBuffer;
+
+    uint32_t direccion;
+    buffer_unpack(bufferLectura, &direccion, sizeof(direccion));
+    *direccionFisica = direccion;
+
+    uint32_t bytes;
+    buffer_unpack(bufferLectura, &bytes, sizeof(bytes));
+    *cantidadBytes = bytes;
+
+    uint32_t pidProceso;
+    buffer_unpack(bufferLectura, &pidProceso, sizeof(pidProceso));
+    *pid = pidProceso;
+
+    free(bufferLectura->stream);
+    free(bufferLectura);
+    return;
+}
+
+void recibir_buffer_escritura_archivo(int clienteKernel, char **nombreArchivo, uint32_t *puntero, uint32_t *direccionFisica, uint32_t *cantidadBytes, uint32_t* pid)
+{
+    t_buffer *bufferLectura = buffer_create();
+    stream_recv_buffer(clienteKernel, bufferLectura);
+
+    char *nombreArchivoLectura = buffer_unpack_string(bufferLectura);
+    *nombreArchivo = strdup(nombreArchivoLectura);
+    free(nombreArchivoLectura);
+
+    uint32_t punteroBuffer;
+    buffer_unpack(bufferLectura, &punteroBuffer, sizeof(punteroBuffer));
+    *puntero = punteroBuffer;
+
+    uint32_t direccion;
+    buffer_unpack(bufferLectura, &direccion, sizeof(direccion));
+    *direccionFisica = direccion;
+
+    uint32_t bytes;
+    buffer_unpack(bufferLectura, &bytes, sizeof(bytes));
+    *cantidadBytes = bytes;
+
+    uint32_t pidProceso;
+    buffer_unpack(bufferLectura, &pidProceso, sizeof(pidProceso));
+    *pid = pidProceso;
+
+    free(bufferLectura->stream);
+    free(bufferLectura);
+    return;
+}
+
+
+void solicitar_informacion_memoria(uint32_t direccionFisica, uint32_t cantidadBytes, uint32_t pid) {
+    t_buffer *bufferLectura = buffer_create();
+    buffer_pack(bufferLectura, &direccionFisica, sizeof(uint32_t));
+    buffer_pack(bufferLectura, &cantidadBytes, sizeof(uint32_t));
+    buffer_pack(bufferLectura, &pid, sizeof(uint32_t));
+    stream_send_buffer(conexionMemoria, I_F_WRITE, bufferLectura);
+    free(bufferLectura->stream);
+    free(bufferLectura);
+    return;
 }

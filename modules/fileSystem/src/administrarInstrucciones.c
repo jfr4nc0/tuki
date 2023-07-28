@@ -142,6 +142,14 @@ bool leer_archivo(char* nombreArchivo, uint32_t puntero, uint32_t direccionFisic
 }
 
 
+
+void escribir_archivo(char *nombreArchivo, uint32_t punteroProceso, uint32_t direccionFisica, uint32_t cantidadBytesAEscribir, uint32_t pidProceso)
+{
+    bool primeraVez = true;
+    log_info(loggerFileSystem, ESCRIBIR_ARCHIVO, nombreArchivo, punteroProceso, direccionFisica, cantidadBytesAEscribir);
+    t_fcb* fcb = dictionary_get(dictionaryFcbs, nombreArchivo);
+}
+
 /*
 Se deberá solicitar a la Memoria la información que se encuentra a partir de la dirección física y
 escribirlo en los bloques correspondientes del archivo a partir del puntero recibido.
