@@ -272,7 +272,7 @@ void _planificador_corto_plazo() {
 }
 
 void *manejo_desalojo_pcb() {
-    for(;;){
+    for(;;) {
         sem_wait(&sem_proceso_a_executing);
         sem_wait(&sem_lista_estados[ENUM_EXECUTING]);
         PCB* pcb_en_ejecucion = list_get(lista_estados[ENUM_EXECUTING], 0);
@@ -425,9 +425,9 @@ void *manejo_desalojo_pcb() {
 
          free(ultimaInstruccion);
          free(ultimaInstruccionDecodificada);
+        }
     }
     return NULL;
-    }
 }
 
 void enviar_f_read_write(PCB* pcb, char** instruccion, codigo_operacion codigoOperacion) {
