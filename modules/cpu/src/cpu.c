@@ -13,7 +13,9 @@ int main(int argc, char** argv) {
     t_config* config = iniciar_config(DEFAULT_CONFIG_PATH, loggerCpu);
     cargar_config(config);
 
-    int conexionCpuMemoria = armar_conexion(config, MEMORIA, loggerCpu);
+	pthread_mutex_init(&m_recibir_pcb,NULL);
+
+	int conexionCpuMemoria = armar_conexion(config, MEMORIA, loggerCpu);
     enviar_codigo_operacion(conexionCpuMemoria, AUX_SOY_CPU);
 
     int servidorCPU = iniciar_servidor(config, loggerCpu);
@@ -34,10 +36,13 @@ int main(int argc, char** argv) {
 
 void atender_kernel(int clienteKernel){
 	// Kernel no debería mandar dos pcbs simultaneamente a cpu, por las dudas tener en cuenta igual
-	PCB* pcb_a_ejecutar = recibir_pcb(clienteKernel);
+	while(1) {
+		pthread_mutex_lock(&m_recibir_pcb);
+		PCB* pcb_a_ejecutar = recibir_pcb(clienteKernel);
 
-	ejecutar_proceso(pcb_a_ejecutar, clienteKernel);
-
+		ejecutar_proceso(pcb_a_ejecutar, clienteKernel);
+		pthread_mutex_unlock(&m_recibir_pcb);
+	}
 	return;
 
 }
@@ -129,6 +134,7 @@ PCB* recibir_pcb(int clienteAceptado) {
 
 	pcb->lista_segmentos = leer_string_array(buffer, &desplazamiento);
 
+	/*
 	pcb->lista_archivos_abiertos = list_create();
 	int cantidad_de_archivos = leer_int(buffer, &desplazamiento);
 	for (int i = 0; i < cantidad_de_archivos; i++) {
@@ -141,8 +147,10 @@ PCB* recibir_pcb(int clienteAceptado) {
 		    free(archivo_abierto);
 	}
 
+*/
 	pcb->estimacion_rafaga = leer_double(buffer, &desplazamiento);
 	pcb->ready_timestamp = leer_double(buffer, &desplazamiento);
+
 
 	return pcb;
 }
@@ -158,7 +166,7 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
 	t_list* data_instruccion; // Array para los parametros que necesite una instruccion
 
 	int cantidad_instrucciones = list_size(pcb->lista_instrucciones);
-	int posicion_actual = 0;
+	int posicion_actual = pcb->contador_instrucciones;
 	codigo_operacion ultimaOperacion = -1;
 
     while ((posicion_actual < cantidad_instrucciones) && !hubo_interrupcion) {
@@ -253,6 +261,19 @@ void guardar_contexto_de_ejecucion(PCB* pcb) {
     strcpy(pcb->registrosCpu->RCX,  registrosCpu->RCX);
     strcpy(pcb->registrosCpu->RDX,  registrosCpu->RDX);
 
+	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro AX: %s", pcb->registrosCpu->AX);
+	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro BX: %s", pcb->registrosCpu->BX);
+	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro CX: %s", pcb->registrosCpu->CX);
+	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro DX: %s", pcb->registrosCpu->DX);
+	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro EAX: %s", pcb->registrosCpu->EAX);
+	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro EBX: %s", pcb->registrosCpu->EBX);
+	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro ECX: %s", pcb->registrosCpu->ECX);
+	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro EDX: %s", pcb->registrosCpu->EDX);
+	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro RAX: %s", pcb->registrosCpu->RAX);
+	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro RBX: %s", pcb->registrosCpu->RBX);
+	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro RCX: %s", pcb->registrosCpu->RCX);
+	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro RDX: %s", pcb->registrosCpu->RDX);
+
 }
 
 int ejecutar_instruccion(char** instruccion, PCB* pcb) {
@@ -307,6 +328,7 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 			instruccion_f_write(instruccion[1],instruccion[2],instruccion[3]);
 			break;
 		case I_TRUNCATE:
+			hubo_interrupcion = true;
 			// F_TRUNCATE (Nombre Archivo, Tamaño)
 			instruccion_f_truncate(instruccion[1],instruccion[2]);
 			break;
@@ -470,7 +492,7 @@ void agregar_pcb_a_paquete(t_paquete* paquete, PCB* pcb) {
 
 	agregar_int_a_paquete(paquete, pcb->contador_instrucciones);
 	agregar_lista_a_paquete(paquete, pcb->lista_segmentos);
-	agregar_lista_a_paquete(paquete, pcb->lista_archivos_abiertos);
+	// agregar_lista_a_paquete(paquete, pcb->lista_archivos_abiertos);
 	agregar_registros_a_paquete_para_kernel(paquete, pcb->registrosCpu);
 	agregar_valor_a_paquete(paquete, &pcb->estimacion_rafaga, sizeof(double));
 	agregar_valor_a_paquete(paquete, &pcb->ready_timestamp, sizeof(double));

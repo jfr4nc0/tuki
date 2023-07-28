@@ -288,6 +288,7 @@ void *manejo_desalojo_pcb() {
         log_info(kernelLogger, "CODIGO DE OPERACION RECIBIDO: %d", operacionRecibida);
 
         pcb_en_ejecucion = recibir_proceso_desajolado(pcb_en_ejecucion);
+        pcb_en_ejecucion->contador_instrucciones++;
         set_timespec(&fin_ejecucion_proceso);
 
          // Actualizo el estimado en el pcb segun el real ejecutado
@@ -353,10 +354,11 @@ void *manejo_desalojo_pcb() {
                 // abrir archivo proceso
                 list_add(pcb_en_ejecucion->lista_archivos_abiertos, archivoAbierto);
 
+                sem_wait(&sem_lista_estados[ENUM_EXECUTING]);
+				list_replace(lista_estados[ENUM_EXECUTING], 0, (void*)pcb_en_ejecucion);
+				sem_post(&sem_lista_estados[ENUM_EXECUTING]);
 
-                cambiar_estado_proceso_con_semaforos(pcb_en_ejecucion, ENUM_READY);
-
-                sem_post(&sem_proceso_a_ready_terminado);
+                sem_post(&sem_proceso_a_executing);
                 sem_post(&sem_cpu_disponible);
                 break;
             }
@@ -557,6 +559,9 @@ PCB* recibir_proceso_desajolado(PCB* pcb_en_ejecucion) {
         exit(EXIT_FAILURE);
     }
 
+    // pcb_recibido->lista_archivos_abiertos = pcb_en_ejecucion->lista_archivos_abiertos;
+    list_add_all(pcb_recibido->lista_archivos_abiertos, pcb_en_ejecucion->lista_archivos_abiertos);
+
     return pcb_recibido;
 }
 
@@ -579,8 +584,10 @@ PCB* recibir_pcb_de_cpu() {
 
     pcb->lista_segmentos = leer_string_array(buffer, &desplazamiento); //TODO: Modificar cuando se mergee memoria
 
+
     pcb->lista_archivos_abiertos = list_create();
-    int cantidad_de_archivos = leer_int(buffer, &desplazamiento);
+    /*
+     *     int cantidad_de_archivos = leer_int(buffer, &desplazamiento);
     for (int i = 0; i < cantidad_de_archivos; i++) {
             t_archivo_abierto* archivo_abierto = malloc(sizeof(t_archivo_abierto));
 
@@ -590,6 +597,7 @@ PCB* recibir_pcb_de_cpu() {
             list_add(pcb->lista_archivos_abiertos, archivo_abierto);
             free(archivo_abierto);
     }
+    */
 
     pcb->registrosCpu = malloc(sizeof(registros_cpu));
     strcpy(pcb->registrosCpu->AX, leer_registro_4_bytes(buffer, &desplazamiento));
@@ -721,7 +729,7 @@ void mostrar_pcb(PCB* pcb){
     log_trace(kernelLogger, "LISTA SEGMENTOS: ");
     list_iterate(pcb->lista_segmentos, (void*) iterator);
     log_trace(kernelLogger, "LISTA ARCHIVOS ABIERTOS: ");
-    list_iterate(pcb->lista_archivos_abiertos, (void*) iterator);
+    // list_iterate(pcb->lista_archivos_abiertos, (void*) iterator);
     log_trace(kernelLogger, "ESTIMACION HHRN: %f", pcb->estimacion_rafaga);
     log_trace(kernelLogger, "TIMESTAMP EN EL QUE EL PROCESO LLEGO A READY POR ULTIMA VEZ: %f", pcb->ready_timestamp);
 }
@@ -949,7 +957,7 @@ void agregar_pcb_a_paquete_para_cpu(t_paquete* paquete, PCB* pcb) {
     agregar_lista_a_paquete(paquete, pcb->lista_instrucciones);
     agregar_int_a_paquete(paquete, pcb->contador_instrucciones);
     agregar_lista_a_paquete(paquete, pcb->lista_segmentos);
-    agregar_lista_archivos_a_paquete(paquete, pcb->lista_archivos_abiertos);
+    // agregar_lista_archivos_a_paquete(paquete, pcb->lista_archivos_abiertos);
     agregar_valor_a_paquete(paquete, &pcb->estimacion_rafaga, sizeof(double));
     agregar_valor_a_paquete(paquete, &pcb->ready_timestamp, sizeof(double));
 }
