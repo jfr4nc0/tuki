@@ -259,6 +259,14 @@ int leer_int(char* buffer, int* desp) {
 	return respuesta;
 }
 
+uint32_t leer_uint32(char* buffer, int* desp) {
+	uint32_t respuesta;
+	memcpy(&respuesta, buffer + (*desp), sizeof(uint32_t));
+	(*desp)+=sizeof(uint32_t);
+
+	return respuesta;
+}
+
 char* leer_registro_4_bytes(char* buffer, int* desp){
 	int size = 4;
 
