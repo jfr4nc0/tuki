@@ -15,6 +15,7 @@
 #include <pthread.h>
 #include <string.h>
 #include <errno.h>
+#include <pthread.h>
 
 // Internas
 #include "administrarInstrucciones.h"
@@ -26,7 +27,7 @@ t_log* loggerFileSystem;
 t_list* listaFCB;
 int conexionMemoria;
 
-pthread_mutex_t* m_instruccion;
+pthread_mutex_t m_instruccion;
 
 // Functions
 void atender_kernel(int);

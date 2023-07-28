@@ -66,7 +66,7 @@ typedef struct {
 
 typedef struct timespec timestamp;
 
-pthread_mutex_t* permiso_compactacion;
+pthread_mutex_t permiso_compactacion;
 
 /*----------------- FUNCIONES ------------------*/
 
@@ -201,6 +201,6 @@ t_dictionary* tablaArchivosAbiertos;
 
 
 #define PATH_LOG_KERNEL             "logs/kernel.log"
-#define PATH_CONFIG_KERNEL          "../../tuki-pruebas/prueba-base/kernel.config"
+#define PATH_CONFIG_KERNEL          "tuki-pruebas/prueba-base/kernel.config"
 
 #endif

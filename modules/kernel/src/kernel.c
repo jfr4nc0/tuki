@@ -289,6 +289,9 @@ void *manejo_desalojo_pcb() {
          double tiempo_en_cpu = obtener_diferencial_de_tiempo_en_milisegundos(&fin_ejecucion_proceso, &inicio_ejecucion_proceso);
          pcb_estimar_proxima_rafaga(pcb_en_ejecucion, tiempo_en_cpu);
 
+         // Por ahora
+         sem_post(&sem_cpu_disponible);
+
          char* ultimaInstruccion = malloc(sizeof(char*));
          char** ultimaInstruccionDecodificada = malloc(sizeof(char*));
          ultimaInstruccion = string_duplicate((char *)list_get(pcb_en_ejecucion->lista_instrucciones, pcb_en_ejecucion->contador_instrucciones));
@@ -303,10 +306,11 @@ void *manejo_desalojo_pcb() {
                 char* nombreArchivo = ultimaInstruccionDecodificada[1];
                 strtok(nombreArchivo, "$");
 
-                t_semaforo_recurso* semaforoArchivo = (t_semaforo_recurso*) dictionary_get(tablaArchivosAbiertos, nombreArchivo);
-                t_estado* estado = semaforoArchivo == NULL ? NULL : semaforoArchivo->estadoRecurso;
+                bool existeSemaforo = dictionary_has_key(tablaArchivosAbiertos, nombreArchivo);
 
-                if (semaforoArchivo != NULL) {
+                if (existeSemaforo) {
+                	 t_semaforo_recurso* semaforoArchivo = (t_semaforo_recurso*) dictionary_get(tablaArchivosAbiertos, nombreArchivo);
+                	 t_estado* estado = semaforoArchivo == NULL ? NULL : semaforoArchivo->estadoRecurso;
                     // Esta abierto y siendo usado, hay que bloquearlo
                     pthread_mutex_lock(estado->mutexEstado);
 
@@ -334,6 +338,7 @@ void *manejo_desalojo_pcb() {
                 }
 
                 // abrir archivo globalmente
+                t_semaforo_recurso* semaforoArchivo = malloc(sizeof(t_semaforo_recurso));
                 semaforoArchivo->instancias = 0;
                 semaforoArchivo->estadoRecurso = crear_archivo_estado(ENUM_ARCHIVO_BLOCK);
                 dictionary_put(tablaArchivosAbiertos, nombreArchivo, semaforoArchivo);
@@ -348,6 +353,7 @@ void *manejo_desalojo_pcb() {
 
                 cambiar_estado_proceso_con_semaforos(pcb_en_ejecucion, ENUM_READY);
 
+                sem_post(&sem_proceso_a_ready_terminado);
                 break;
             }
 
@@ -420,7 +426,7 @@ void *manejo_desalojo_pcb() {
 }
 
 void enviar_f_read_write(PCB* pcb, char** instruccion, codigo_operacion codigoOperacion) {
-    pthread_mutex_lock(permiso_compactacion);
+    pthread_mutex_lock(&permiso_compactacion);
     char* nombreArchivo = instruccion[1];
     strtok(nombreArchivo, "$");
     uint32_t direccion = (uint32_t)(uintptr_t)instruccion[2];
@@ -436,7 +442,7 @@ void enviar_f_read_write(PCB* pcb, char** instruccion, codigo_operacion codigoOp
 
     enviar_operacion(conexionFileSystem, codigoOperacion, sizeof(t_parametros_hilo_IO), parametrosHilos);
     recibir_operacion(conexionFileSystem);
-    pthread_mutex_unlock(permiso_compactacion);
+    pthread_mutex_unlock(&permiso_compactacion);
 }
 
 t_estado* crear_archivo_estado(t_nombre_estado nombreEstado) {
@@ -869,7 +875,7 @@ static bool criterio_hrrn(PCB* pcb_A, PCB* pcb_B) {
 }
 
 void inicializar_diccionario_recursos() {
-    t_dictionary* tablaArchivosAbiertos = dictionary_create();
+    tablaArchivosAbiertos = dictionary_create();
     diccionario_recursos = dictionary_create();
 
     int indice = 0;
@@ -901,7 +907,7 @@ void inicializar_semaforos() {
     sem_init(&sem_proceso_a_ready_inicializar, 0, 0);
     sem_init(&sem_proceso_a_ready_terminado, 0, 0);
     sem_init(&sem_proceso_a_executing, 0, 0);
-    pthread_mutex_init(permiso_compactacion,NULL);
+    pthread_mutex_init(&permiso_compactacion,NULL);
     // pthread_mutex_init(mutexTablaAchivosAbiertos, NULL);
     /* TODO: JOAN Y JOACO
      * LOS CHICOS TENIAN ESTOS TAMBIEN Y ES PROBABLE QUE LOS NECESITEN
