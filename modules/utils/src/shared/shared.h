@@ -96,6 +96,7 @@ typedef enum {
     I_DELETE_SEGMENT,
     I_YIELD,
     I_EXIT,
+	SEGMENTATION_FAULT,
     AUX_CREATE_PCB,
 	// Desalojos
 	DESALOJO_YIELD,

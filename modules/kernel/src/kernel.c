@@ -341,6 +341,10 @@ void *manejo_desalojo_pcb() {
 		 		free(nombre_recurso);
 		 		 break;
 		 	 }
+		 	 case SEGMENTATION_FAULT:{ //TODO
+
+		 		 break;
+		 	 }
 		 }
 		 free(ultimaInstruccion);
 		 free(ultimaInstruccionDecodificada);

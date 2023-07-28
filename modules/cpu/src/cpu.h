@@ -22,6 +22,37 @@ typedef struct {
 
 cpu_config_t* configCpu;
 
+enum registro {
+    REGISTRO_AX,
+    REGISTRO_BX,
+    REGISTRO_CX,
+    REGISTRO_DX,
+    REGISTRO_EAX,
+    REGISTRO_EBX,
+    REGISTRO_ECX,
+    REGISTRO_EDX,
+    REGISTRO_RAX,
+    REGISTRO_RBX,
+    REGISTRO_RCX,
+    REGISTRO_RDX,
+    REGISTRO_NULL
+};
+
+typedef enum registro t_registro;
+
+typedef struct ParametrosHiloIO {
+    int id_proceso;
+	uint32_t direccionFisica;
+	uint32_t tamanio;
+} t_parametros_lectura;
+
+typedef struct ParametrosHiloIO {
+    int id_proceso;
+	uint32_t direccionFisica;
+	uint32_t tamanio;
+	char* bytes_a_enviar;
+} t_parametros_escritura
+
 extern registros_cpu* registrosCpu;
 
 void atender_kernel(int);
@@ -39,6 +70,7 @@ void procesar_instruccion(void*);
 void set_registro(char*, char*);
 void set_registros(PCB* pcb);
 void instruccion_set(char* registro,char* valor);
+char* recibir_valor_a_escribir(int clienteAceptado);
 PCB* recibir_pcb(int);
 void enviar_pcb_desalojado_a_kernel(PCB*, int, codigo_operacion);
 void envio_pcb_a_kernel_con_codigo(int , PCB* , codigo_operacion );
