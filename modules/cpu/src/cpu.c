@@ -279,7 +279,7 @@ void guardar_contexto_de_ejecucion(PCB* pcb) {
 int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 
 	char* instruccion_ = malloc(sizeof(char*));
-	strcpy(instruccion_, strtok(instruccion[0], "$"));
+	strcpy(instruccion_, strtok(instruccion[0], "\n"));
 
 	int operacion = keyFromString(instruccion_);
 

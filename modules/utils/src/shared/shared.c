@@ -32,6 +32,7 @@ static t_symstruct lookUpTable[] = {
 
 int keyFromString(char *key) {
     int i;
+    //int cantidad_de_instrucciones = sizeof(lookUpTable) / sizeof(lookUpTable[0]);
     for (i=0; i < 16; i++) {
         t_symstruct sym = lookUpTable[i];
         if (strcmp(sym.key, key) == 0)

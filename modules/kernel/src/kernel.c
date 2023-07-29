@@ -234,7 +234,10 @@ PCB* desencolar_primer_pcb(pcb_estado estado) {
     int estadoNumerico = (int)estado;
     sem_wait(&sem_lista_estados[estadoNumerico]);
     // pthread_mutex_lock(mutex_lista_estados[estado_]);
-    PCB *pcb = list_remove(lista_estados[estadoNumerico], 0);
+    PCB *pcb = (PCB*) list_get(lista_estados[estadoNumerico], 0);
+
+    list_remove_and_destroy_element(lista_estados[estadoNumerico], 0, (void*)pcb);
+
     sem_post(&sem_lista_estados[estadoNumerico]);
     // pthread_mutex_unlock(mutex_lista_estados[estado_]);
 
@@ -257,6 +260,7 @@ void _planificador_corto_plazo() {
 
         if(string_equals_ignore_case(kernelConfig->ALGORITMO_PLANIFICACION, "FIFO")) {
             pcbParaEjecutar = elegir_pcb_segun_fifo();
+            log_info(kernelLogger, "el pcb a ejecutar es %d", pcbParaEjecutar->id_proceso);
         }
         else if (string_equals_ignore_case(kernelConfig->ALGORITMO_PLANIFICACION, "HRRN")) {
             pcbParaEjecutar = elegir_pcb_segun_hrrn();
@@ -310,7 +314,9 @@ void *manejo_desalojo_pcb() {
 
          switch(operacionRecibida) {
             case I_YIELD: {
-                sem_post(&sem_cpu_disponible);
+            	cambiar_estado_proceso_con_semaforos(pcb_en_ejecucion, ENUM_READY);
+            	sem_post(&sem_cpu_disponible);
+            	sem_post(&sem_proceso_a_ready_terminado);
             	break;
             }
             case I_F_OPEN: {
@@ -474,7 +480,7 @@ void *manejo_desalojo_pcb() {
 		 		//TODO: FALTA INSTRUCCION
 
 		 		log_info(kernelLogger, "PID: <%d> - Eliminar Segmento - Id Segmento: <%d>",pcb_en_ejecucion->id_proceso, id_segmento);
-		 		 break;
+		 		break;
 		 	 }
 		 }
 		 free(ultimaInstruccion);
@@ -790,6 +796,7 @@ PCB* elegir_pcb_segun_fifo(){
     sem_wait(&sem_lista_estados[ENUM_READY]);
     //sem_wait(&sem_lista_estados[ENUM_EXECUTING]);
     pcb = list_get(lista_estados[ENUM_READY], 0);
+
     sem_post(&sem_lista_estados[ENUM_READY]);
     //sem_post(&sem_lista_estados[ENUM_EXECUTING]);
 
@@ -810,7 +817,8 @@ PCB* elegir_pcb_segun_hrrn(){
 }
 
 void terminar_proceso(PCB* pcb_para_finalizar, codigo_operacion motivo_finalizacion){
-    switch (pcb_para_finalizar->estado){
+    log_info(kernelLogger, "llega a la 818");
+	switch (pcb_para_finalizar->estado){
         case ENUM_NEW:
             cambiar_estado_proceso_con_semaforos(pcb_para_finalizar, ENUM_EXIT);
             break;
@@ -995,10 +1003,10 @@ void mover_de_lista_con_sem(void* elem, int estadoNuevo, int estadoAnterior) {
 		sem_post(&sem_lista_estados[estadoAnterior]);
 		sem_post(&sem_lista_estados[estadoNuevo]);
 		return;
+	}else {
+	log_warning(kernelLogger, "PCB se intento mover de estado pero ya estaba en estado %s",nombres_estados[estadoAnterior]);
 	}
-	log_warning(kernelLogger, "PCB se intento mover de estado pero ya estaba en estado %s",
-			nombres_estados[estadoAnterior]);
-    return;
+	return;
 }
 
 /*------------ ALGORITMO HRRN -----------------*/
