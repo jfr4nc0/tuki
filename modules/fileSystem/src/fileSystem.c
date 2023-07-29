@@ -64,7 +64,7 @@ void ejecutar_instrucciones_kernel(void* cliente) {
 //				t_archivo_abierto* archivo = obtener_archivo_completo_de_socket(clienteKernel);
                 t_list* listaConParametros = recibir_paquete(clienteKernel);
                 char* nombreArchivo = (char*)list_get(listaConParametros, 0);
-                char* punteroTexto = list_get(listaConParametros, 1);
+                char* punteroTexto = (char*)list_get(listaConParametros, 1);
 
                 char *ptr;
                 uint32_t puntero = strtoul(punteroTexto, &ptr, 10);

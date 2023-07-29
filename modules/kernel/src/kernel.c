@@ -264,7 +264,7 @@ void _planificador_corto_plazo() {
 
         cambiar_estado_proceso_con_semaforos(pcbParaEjecutar, ENUM_EXECUTING);
 
-        log_trace(kernelLogger, "---------------MOSTRANDO PCB A ENVIAR A CPU---------------");
+        log_trace(kernelLogger, "------MOSTRANDO PCB ELEGIDO POR ALGORITMO PARA ENVIAR A CPU--------");
         mostrar_pcb(pcbParaEjecutar);
 
         sem_post(&sem_proceso_a_executing);
@@ -289,6 +289,11 @@ void *manejo_desalojo_pcb() {
 
         pcb_en_ejecucion = recibir_proceso_desajolado(pcb_en_ejecucion);
         pcb_en_ejecucion->contador_instrucciones++;
+
+        sem_wait(&sem_lista_estados[ENUM_EXECUTING]);
+		list_replace(lista_estados[ENUM_EXECUTING], 0, (void*)pcb_en_ejecucion);
+		sem_post(&sem_lista_estados[ENUM_EXECUTING]);
+
         set_timespec(&fin_ejecucion_proceso);
 
          // Actualizo el estimado en el pcb segun el real ejecutado
@@ -390,8 +395,8 @@ void *manejo_desalojo_pcb() {
             }
 
             case I_TRUNCATE: {
-                cambiar_estado_proceso_con_semaforos(pcb_en_ejecucion, ENUM_BLOCKED);
-
+            	cambiar_estado_proceso_con_semaforos(pcb_en_ejecucion, ENUM_BLOCKED);
+            	sem_post(&sem_cpu_disponible);
                 t_paquete* paquete = crear_paquete(operacionRecibida);
                 agregar_a_paquete(paquete, (void*)ultimaInstruccionDecodificada[1], strlen(ultimaInstruccionDecodificada[1]));
                 agregar_a_paquete(paquete, (void*)ultimaInstruccionDecodificada[2], strlen(ultimaInstruccionDecodificada[2]));
@@ -400,7 +405,7 @@ void *manejo_desalojo_pcb() {
                 log_info(kernelLogger, "ENVIO TRUNCATE de archivo: %s, tamanio: %s", ultimaInstruccionDecodificada[1], ultimaInstruccionDecodificada[2]);
                 eliminar_paquete(paquete);
                 codigo_operacion cod1 = recibir_operacion(conexionFileSystem);
-                codigo_operacion cod2 = recibir_operacion(conexionFileSystem);
+                recibir_operacion(conexionFileSystem); // basura
 
                 cambiar_estado_proceso_con_semaforos(pcb_en_ejecucion, ENUM_READY);
                 sem_post(&sem_proceso_a_ready_terminado);
@@ -849,20 +854,30 @@ void agregar_a_lista_con_sem(void* elem, int estado) {
 * Funcion auxiliar de cambiar_estado_proceso_con_semaforos
 */
 void mover_de_lista_con_sem(void* elem, int estadoNuevo, int estadoAnterior) {
-    sem_wait(&sem_lista_estados[estadoNuevo]);
-    sem_wait(&sem_lista_estados[estadoAnterior]);
-    PCB* pcb = elem;
-    pcb->estado = estadoNuevo;
-    if (pcb->estado == ENUM_READY) {
-    	// TODO: FALLA
-         // set_timespec((timestamp*)(time_t)pcb->ready_timestamp);
-    }
-    list_remove_element(lista_estados[estadoAnterior], elem);
-    list_add(lista_estados[estadoNuevo], elem);
+	if (estadoNuevo != estadoAnterior) {
+		sem_wait(&sem_lista_estados[estadoNuevo]);
+		sem_wait(&sem_lista_estados[estadoAnterior]);
+		PCB* pcb = elem;
+		pcb->estado = estadoNuevo;
+		if (pcb->estado == ENUM_READY) {
+			// TODO: FALLA
+			 // set_timespec((timestamp*)(time_t)pcb->ready_timestamp);
+		}
 
-    sem_post(&sem_lista_estados[estadoAnterior]);
-    sem_post(&sem_lista_estados[estadoNuevo]);
+		bool pcbEliminado = list_remove_element(lista_estados[estadoAnterior], elem);
 
+		if (!pcbEliminado) {
+			log_error(kernelLogger, "NO se pudo mover pcb de estado %s a estado %s",
+					nombres_estados[estadoAnterior], nombres_estados[estadoNuevo] );
+		}
+		list_add(lista_estados[estadoNuevo], elem);
+
+		sem_post(&sem_lista_estados[estadoAnterior]);
+		sem_post(&sem_lista_estados[estadoNuevo]);
+		return;
+	}
+	log_warning(kernelLogger, "PCB se intento mover de estado pero ya estaba en estado %s",
+			nombres_estados[estadoAnterior]);
     return;
 }
 
