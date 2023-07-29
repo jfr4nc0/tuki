@@ -296,7 +296,8 @@ void *manejo_desalojo_pcb() {
          ultimaInstruccion = string_duplicate((char *)list_get(pcb_en_ejecucion->lista_instrucciones, pcb_en_ejecucion->contador_instrucciones));
          ultimaInstruccionDecodificada = decode_instruccion(ultimaInstruccion, kernelLogger);
 
-        t_data_desalojo* data;
+
+        t_data_desalojo* data = malloc(sizeof(t_data_desalojo));
         data->instruccion = ultimaInstruccionDecodificada;
         data->operacion = operacionRecibida;
         data->pcb = pcb_en_ejecucion;
@@ -309,6 +310,7 @@ void *manejo_desalojo_pcb() {
          
          free(ultimaInstruccion);
          free(ultimaInstruccionDecodificada);
+         free(data);
         }
     return NULL;
     }

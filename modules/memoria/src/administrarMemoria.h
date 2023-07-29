@@ -9,7 +9,7 @@
 #include <shared/shared.h>
 #include "compartido.h"
 
-#define CREACION_DE_SEGMENTO        "PID: %s - Crear Segmento: %d - Base: %d - TAMAÑO: %d"
+#define CREACION_DE_SEGMENTO        "PID: %s - Crear Segmento: %d - Base: %p - TAMAÑO: %zu"
 #define ELIMINACION_DE_SEGMENTO     "PID: %d - Eliminar Segmento: %d - Base: %p - TAMAÑO: %zu"
 #define I__SEGMENTO_0_CREADO        "Segmento0 generico creado de tamaño %zu"
 #define INICIO_COMPACTACIÓN         "Solicitud de Compactación"

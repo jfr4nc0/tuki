@@ -130,9 +130,9 @@ void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion) 
 	int pid = *(int*)list_get(listaRecibida, 0);
 
 	switch(codigoDeOperacion){
-		case AUX_CREATE_PCB:
+		case AUX_CREATE_PCB: //TODO FIX no crea el pcb, chequear si es correcto
 		{
-			codigoRespuesta = inicializar_proceso(pid, sizeof(int));
+			codigoRespuesta = inicializar_proceso(pid, sizeof(int)); //TODO FIX
 			t_list* obtenerSegmentosPorIdProceso = obtener_tabla_segmentos_por_proceso_id(pid);
 
 			if (codigoRespuesta == AUX_OK) {
