@@ -98,6 +98,7 @@ void inicializar_escucha_conexiones_consolas(int servidorKernel) {
 
 void enviar_proceso_a_ready() {
     while(1) {
+        sem_wait(&sem_grado_multiprogamacion);
         sem_wait(&sem_proceso_a_ready_inicializar);
         sem_wait(&sem_lista_estados[ENUM_NEW]);
         // El tp dice que se obtienen por FIFO
@@ -167,11 +168,6 @@ void crear_hilo_planificadores() {
 }
 
 void _planificador_largo_plazo() {
-    // TODO: AGREGAR SEMAFOROS ACA, VOS PODES SOFY Y FRAN
-    // pthread_t m_liberar_pcb_de_exit;
-    // pthread_create(&m_liberar_pcb_de_exit, NULL, (void*) liberar_pcb_de_exit, NULL);
-    // pthread_detach(m_liberar_pcb_de_exit);
-
     pthread_t hilo_procesos_a_ready;
     pthread_create(&hilo_procesos_a_ready, NULL, (void*) enviar_proceso_a_ready, NULL);
     pthread_detach(hilo_procesos_a_ready);

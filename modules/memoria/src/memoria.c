@@ -37,7 +37,7 @@ void testing_funciones(){
 void atender_conexiones(int servidorMemoria) {
     while (1){
     	int clienteAceptado = esperar_cliente(servidorMemoria, loggerMemoria);
-
+    	log_trace(loggerMemoria, "cliente: %d",clienteAceptado);
 		pthread_t hilo_administrar_cliente;
 		pthread_create(&hilo_administrar_cliente, NULL, (void*) administrar_cliente, (void*) (intptr_t) clienteAceptado);
 		pthread_detach(hilo_administrar_cliente);
@@ -49,9 +49,10 @@ void administrar_cliente(void* clienteAceptado) {
         pthread_t thread_kernel;
         pthread_t thread_file_system;
 
-    	// Recibo una primera operación para saber que módulo se conectó
-		int modulo = recibir_operacion((int)(intptr_t)clienteAceptado);
-
+        log_trace(loggerMemoria, "cliente: %d",(int)(intptr_t)clienteAceptado);
+        // Recibo una primera operación para saber que módulo se conectó
+		int modulo = recibir_operacion((int)(intptr_t)clienteAceptado); // recibe ok
+		log_trace(loggerMemoria, "Modulo: %d",modulo);
 		// No se almacena ya que se ignora, pero necesito llamarlo para liberar el mensaje
 		recibir_paquete((int)(intptr_t)clienteAceptado);
 
@@ -110,13 +111,13 @@ void iterator(char* value) {
 void ejecutar_instrucciones(int cliente, char* modulo) {
 	log_info(loggerMemoria, "Esperando instrucciones de: %s ", modulo);
 
-	codigo_operacion codigoDeOperacion = recibir_operacion(cliente);
-    log_info(loggerMemoria, I__RECIBO_INSTRUCCION, codigoDeOperacion, modulo);
-    
 	while(1){
-    		pthread_mutex_lock(&mutex_memoria_ocupada);
-    		administrar_instrucciones(cliente, codigoDeOperacion);
-    		pthread_mutex_unlock(&mutex_memoria_ocupada);
+		codigo_operacion codigoDeOperacion = recibir_operacion(cliente);
+		log_info(loggerMemoria, I__RECIBO_INSTRUCCION, codigoDeOperacion, modulo);
+    
+		pthread_mutex_lock(&mutex_memoria_ocupada);
+		administrar_instrucciones(cliente, codigoDeOperacion);
+		pthread_mutex_unlock(&mutex_memoria_ocupada);
     	}
 
     return;
