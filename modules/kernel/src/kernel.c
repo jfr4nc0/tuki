@@ -288,7 +288,7 @@ void* manejo_desalojo_pcb() {
         envio_pcb_a_cpu(conexionCPU, pcb_para_cpu, OP_EXECUTE_PCB);
 
         codigo_operacion operacionRecibida = recibir_operacion(conexionCPU);
-        log_info(kernelLogger, "CODIGO DE OPERACION RECIBIDO: %d", operacionRecibida);
+        log_debug(kernelLogger, "CODIGO DE OPERACION RECIBIDO: %d", operacionRecibida);
 
         PCB* pcb_en_ejecucion = malloc(sizeof(PCB));
         pcb_en_ejecucion = recibir_proceso_desajolado(pcb_para_cpu);
@@ -305,6 +305,8 @@ void* manejo_desalojo_pcb() {
          ultimaInstruccionDecodificada = decode_instruccion(ultimaInstruccion, kernelLogger);
 
          pcb_en_ejecucion->contador_instrucciones++;
+
+         log_info(kernelLogger, "Instruccion a ejecutar %s", ultimaInstruccionDecodificada[0]); // Por ahora
 
          switch(operacionRecibida) {
             case I_YIELD: {
