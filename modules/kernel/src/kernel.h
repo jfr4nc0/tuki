@@ -56,7 +56,11 @@ typedef struct ParametrosHiloIO {
     uint32_t pidProceso;
 } t_parametros_hilo_IO;
 
-
+typedef struct {
+    codigo_operacion operacion;
+    PCB* pcb;
+    char** instruccion;
+}t_data_desalojo;
 typedef struct {
     t_nombre_estado nombreEstado;
     t_list* listaProcesos;
@@ -101,6 +105,7 @@ void *__ejecucion_desalojo_pcb(void *);
 PCB* elegir_pcb_segun_fifo();
 PCB* elegir_pcb_segun_hrrn();
 void *manejo_desalojo_pcb();
+codigo_operacion manejo_instrucciones(t_data_desalojo* data);
 void recibir_proceso_desalojado(PCB*, int );
 PCB* recibir_pcb_de_cpu();
 
@@ -182,24 +187,26 @@ t_dictionary* tablaArchivosAbiertos;
 
 
 /*-------------------- LOGS OBLIGATORIOS ------------------*/
-#define ABRIR_ARCHIVO               "PID: <PID> - Abrir Archivo: <NOMBRE ARCHIVO>"
-#define ACTUALIZAR_PUNTERO_ARCHIVO     "PID: <PID> - Actualizar puntero Archivo: <NOMBRE ARCHIVO> - Puntero <PUNTERO>" // Nota: El valor del puntero debe ser luego de ejecutar F_SEEK.
-#define CERRAR_ARCHIVO              "PID: <PID> - Cerrar Archivo: <NOMBRE ARCHIVO>"
-#define CREACION_DE_PROCESO         "Se crea el proceso <PID> en NEW"
-#define CREAR_SEGMENTO              "PID: <PID> - Crear Segmento - Id: < id SEGMENTO> - Tamaño: <TAMAÑO>"
-#define ELIMINAR_SEGMENTO           "PID: <PID> - Eliminar Segmento - Id Segmento: < id SEGMENTO>"
-#define ESCRIBIR_ARCHIVO            "PID: <PID> -  Escribir Archivo: <NOMBRE ARCHIVO> - Puntero <PUNTERO> - Dirección Memoria <DIRECCIÓN MEMORIA> - Tamaño <TAMAÑO>"
+#define ABRIR_ARCHIVO               "PID: %d - Abrir Archivo: <NOMBRE ARCHIVO>"
+#define ACTUALIZAR_PUNTERO_ARCHIVO     "PID: %d - Actualizar puntero Archivo: <NOMBRE ARCHIVO> - Puntero <PUNTERO>" // Nota: El valor del puntero debe ser luego de ejecutar F_SEEK.
+#define CERRAR_ARCHIVO              "PID: %d - Cerrar Archivo: <NOMBRE ARCHIVO>"
+#define CREACION_DE_PROCESO         "Se crea el proceso %d en NEW"
+#define CREAR_SEGMENTO              "PID: %d - Crear Segmento - Id: %d - Tamaño: %d"
+#define ELIMINAR_SEGMENTO           "PID: %d - Eliminar Segmento - Id Segmento: %d"
+#define ESCRIBIR_ARCHIVO            "PID: %d -  Escribir Archivo: <NOMBRE ARCHIVO> - Puntero <PUNTERO> - Dirección Memoria <DIRECCIÓN MEMORIA> - Tamaño <TAMAÑO>"
 #define FIN_COMPACTACIÓN            "Se finalizó el proceso de compactación"
-#define FIN_DE_PROCESO              "Finaliza el proceso <PID> - Motivo: <SUCCESS / SEG_FAULT / OUT_OF_MEMORY>"
-#define I_O                         "PID: <PID> - Ejecuta IO: <TIEMPO>"
+#define FIN_DE_PROCESO              "Finaliza el proceso %d - Motivo: <SUCCESS / SEG_FAULT / OUT_OF_MEMORY>"
+#define I_O                         "PID: %d - Ejecuta IO: <TIEMPO>"
 #define INGRESO_A_READY             "Cola Ready <ALGORITMO>: [<LISTA DE PIDS>]"
 #define INICIO_COMPACTACIÓN         "Compactación: <Se solicitó compactación / Esperando Fin de Operaciones de FS>"
-#define LEER_ARCHIVO                "PID: <PID> - Leer Archivo: <NOMBRE ARCHIVO> - Puntero <PUNTERO> - Dirección Memoria <DIRECCIÓN MEMORIA> - Tamaño <TAMAÑO>"
-#define MOTIVO_DE_BLOQUEO           "PID: <PID> - Bloqueado por: <IO / NOMBRE_RECURSO / NOMBRE_ARCHIVO>"
-#define SIGNAL                      "PID: <PID> - Signal: <NOMBRE RECURSO> - Instancias: <INSTANCIAS RECURSO>" // Nota: El valor de las instancias es después de ejecutar el Signal
-#define TRUNCAR_ARCHIVO             "PID: <PID> - Archivo: <NOMBRE ARCHIVO> - Tamaño: <TAMAÑO>"
-#define WAIT                        "PID: <PID> - Wait: <NOMBRE RECURSO> - Instancias: <INSTANCIAS RECURSO>" // Nota: El valor de las instancias es después de ejecutar el Wait
-#define LOG_CAMBIO_DE_ESTADO "PID: %d - Estado Anterior: %s - Estado Actual: %s"
+#define LEER_ARCHIVO                "PID: %d - Leer Archivo: <NOMBRE ARCHIVO> - Puntero <PUNTERO> - Dirección Memoria <DIRECCIÓN MEMORIA> - Tamaño <TAMAÑO>"
+#define MOTIVO_DE_BLOQUEO           "PID: %d - Bloqueado por: <IO / NOMBRE_RECURSO / NOMBRE_ARCHIVO>"
+#define SIGNAL                      "PID: %d - Signal: <NOMBRE RECURSO> - Instancias: <INSTANCIAS RECURSO>" // Nota: El valor de las instancias es después de ejecutar el Signal
+#define TRUNCAR_ARCHIVO             "PID: %d - Archivo: <NOMBRE ARCHIVO> - Tamaño: <TAMAÑO>"
+#define WAIT                        "PID: %d - Wait: <NOMBRE RECURSO> - Instancias: <INSTANCIAS RECURSO>" // Nota: El valor de las instancias es después de ejecutar el Wait
+#define LOG_CAMBIO_DE_ESTADO        "PID: %d - Estado Anterior: %s - Estado Actual: %s"
+#define E__CREAR_SEGMENTO           "PID: %d - ERROR en crear Segmento - Id: %d - Tamaño: %d"
+#define E__ELIMINAR_SEGMENTO        "PID: %d - Eliminar Segmento - Id Segmento: %d"
 
 ////////////////////////////////////
 
