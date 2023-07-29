@@ -101,7 +101,7 @@ void enviar_proceso_a_ready() {
         sem_wait(&sem_grado_multiprogamacion);
         sem_wait(&sem_proceso_a_ready_inicializar);
         sem_wait(&sem_lista_estados[ENUM_NEW]);
-        // El tp dice que se obtienen por FIFO
+
         PCB* pcb = list_get(lista_estados[ENUM_NEW], 0);
 
         if (conexionMemoria > 0) {

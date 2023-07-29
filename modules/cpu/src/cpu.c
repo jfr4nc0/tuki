@@ -261,18 +261,18 @@ void guardar_contexto_de_ejecucion(PCB* pcb) {
     strcpy(pcb->registrosCpu->RCX,  registrosCpu->RCX);
     strcpy(pcb->registrosCpu->RDX,  registrosCpu->RDX);
 
-	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro AX: %s", pcb->registrosCpu->AX);
-	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro BX: %s", pcb->registrosCpu->BX);
-	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro CX: %s", pcb->registrosCpu->CX);
-	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro DX: %s", pcb->registrosCpu->DX);
-	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro EAX: %s", pcb->registrosCpu->EAX);
-	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro EBX: %s", pcb->registrosCpu->EBX);
-	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro ECX: %s", pcb->registrosCpu->ECX);
-	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro EDX: %s", pcb->registrosCpu->EDX);
-	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro RAX: %s", pcb->registrosCpu->RAX);
-	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro RBX: %s", pcb->registrosCpu->RBX);
-	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro RCX: %s", pcb->registrosCpu->RCX);
-	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro RDX: %s", pcb->registrosCpu->RDX);
+	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro AX: %s", truncar_string(pcb->registrosCpu->AX,4));
+	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro BX: %s", truncar_string(pcb->registrosCpu->BX,4));
+	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro CX: %s", truncar_string(pcb->registrosCpu->CX,4));
+	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro DX: %s", truncar_string(pcb->registrosCpu->DX,4));
+	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro EAX: %s", truncar_string(pcb->registrosCpu->EAX,8));
+	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro ECX: %s", truncar_string(pcb->registrosCpu->ECX,8));
+	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro EBX: %s", truncar_string(pcb->registrosCpu->EBX,8));
+	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro EDX: %s", truncar_string(pcb->registrosCpu->EDX,8));
+	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro RAX: %s", truncar_string(pcb->registrosCpu->RAX,16));
+	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro RBX: %s", truncar_string(pcb->registrosCpu->RBX,16));
+	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro RCX: %s", truncar_string(pcb->registrosCpu->RCX,16));
+	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro RDX: %s", truncar_string(pcb->registrosCpu->RDX,16));
 
 }
 

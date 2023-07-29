@@ -42,7 +42,18 @@ int keyFromString(char *key) {
 
 /*-------------------- FUNCIONES GENERALES --------------------*/
 
+char* truncar_string(char* str,int size){
+    char* truncado = malloc(size+1);
+    if(truncado==NULL){
+        printf("Error al asignar memoria.\n");
+        return NULL;
+    }
 
+    strncpy(truncado, str, size);
+    truncado[size] = '\0';
+    
+    return truncado;
+}
 
 char** leer_arreglo_string(char* buffer, int* desplazamiento) {
 
