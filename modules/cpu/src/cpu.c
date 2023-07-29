@@ -278,7 +278,7 @@ void guardar_contexto_de_ejecucion(PCB* pcb) {
 
 int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 
-	char* texto = strtok(instruccion[0], "$");
+	char* texto = strtok(instruccion[0], "\n");
 	int operacion = keyFromString(texto);
 
 	if (operacion == -1) {
@@ -488,7 +488,7 @@ void agregar_lista_a_paquete(t_paquete* paquete, t_list* lista) {
 	for(int i = 0; i < tamanio; i++) {
 		void* elemento = list_get(lista, i);
 		char* palabra = (char*)elemento;
-		strtok(palabra, "$"); // Removemos el salto de linea
+		strtok(palabra, "\n"); // Removemos el salto de linea
 		log_debug(loggerCpu, "Agregando instruccion: %s, tamanio %zu", palabra, strlen(palabra));
 		agregar_a_paquete(paquete, palabra, strlen(palabra));
 	}
