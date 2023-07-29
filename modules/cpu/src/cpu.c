@@ -278,7 +278,8 @@ void guardar_contexto_de_ejecucion(PCB* pcb) {
 
 int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 
-	int operacion = keyFromString(instruccion[0]);
+	char* texto = strtok(instruccion[0], "$");
+	int operacion = keyFromString(texto);
 
 	if (operacion == -1) {
 		log_warning(loggerCpu, "Desconocemos la instruccion %s", instruccion[0]);

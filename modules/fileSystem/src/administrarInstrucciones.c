@@ -6,7 +6,7 @@ bool existe_archivo(char *nombreArchivo) {
     bool existeArchivo = dictionary_has_key(dictionaryFcbs, nombreArchivo);
 
     if (existeArchivo) {
-        log_debug(loggerFileSystem, "Archivo %s existe y se encuentra en el fcb", nombreArchivo);
+        log_info(loggerFileSystem, "Archivo %s existe y se encuentra en el fcb", nombreArchivo);
     } else {
         log_warning(loggerFileSystem, FCB_NOT_FOUND, nombreArchivo);
     }
