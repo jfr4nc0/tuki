@@ -319,16 +319,15 @@ void* manejo_desalojo_pcb() {
                 if (existeSemaforo) {
                 	 t_semaforo_recurso* semaforoArchivo = (t_semaforo_recurso*) dictionary_get(tablaArchivosAbiertos, nombreArchivo);
                 	 t_estado* estado = semaforoArchivo == NULL ? NULL : semaforoArchivo->estadoRecurso;
+
                     // Esta abierto y siendo usado, hay que bloquearlo
+                    agregar_a_lista_con_sem((void*)pcb_en_ejecucion, ENUM_BLOCKED);
                     pthread_mutex_lock(estado->mutexEstado);
-
                     list_add(estado->listaProcesos, pcb_en_ejecucion);
-
-                    cambiar_estado_proceso_con_semaforos(pcb_en_ejecucion, ENUM_BLOCKED);
-
-                    pthread_mutex_unlock(estado->mutexEstado);
                     semaforoArchivo->instancias--;
-                    sem_post(estado->semaforoEstado);
+
+                    log_info(kernelLogger, ABRIR_ARCHIVO, pcb_en_ejecucion->id_proceso, nombreArchivo);
+                    sem_post(estado->semaforoEstado);;
                     sem_post(&sem_proceso_a_ready_terminado);
                     continue;
                 }
@@ -359,10 +358,9 @@ void* manejo_desalojo_pcb() {
                 // abrir archivo proceso
                 list_add(pcb_en_ejecucion->lista_archivos_abiertos, archivoAbierto);
 
-                sem_wait(&sem_lista_estados[ENUM_EXECUTING]);
-				list_add(lista_estados[ENUM_EXECUTING], (void*)pcb_en_ejecucion);
-				sem_post(&sem_lista_estados[ENUM_EXECUTING]);
+                agregar_a_lista_con_sem((void*)pcb_en_ejecucion, ENUM_EXECUTING);
 
+                log_info(kernelLogger, ABRIR_ARCHIVO, pcb_en_ejecucion->id_proceso, nombreArchivo);
                 sem_post(&sem_proceso_a_executing);
                 sem_post(&sem_cpu_disponible);
                 break;
@@ -423,16 +421,18 @@ void* manejo_desalojo_pcb() {
 
             case I_F_SEEK: {
                 char* nombreArchivo = ultimaInstruccionDecodificada[1];
-                uint32_t puntero = (uint32_t)(uintptr_t)ultimaInstruccionDecodificada[2];
-                strtok(nombreArchivo, "$");
+                char *endptr;
+                uint32_t puntero = strtoul(ultimaInstruccionDecodificada[2], &endptr, 10);
                 t_archivo_abierto* archivoAbierto = encontrar_archivo_abierto(pcb_en_ejecucion->lista_archivos_abiertos, nombreArchivo);
                 archivoAbierto->puntero = puntero;
+                log_info(kernelLogger, F_SEEK_HECHO, pcb_en_ejecucion->id_proceso, nombreArchivo, puntero);
+                agregar_a_lista_con_sem((void*)pcb_en_ejecucion, ENUM_EXECUTING);
                 sem_post(&sem_proceso_a_executing);
 
                 break;
             }
             case I_F_READ: {
-                cambiar_estado_proceso_con_semaforos(pcb_en_ejecucion, ENUM_BLOCKED);
+            	agregar_a_lista_con_sem((void*)pcb_en_ejecucion, ENUM_BLOCKED);
                 enviar_f_read_write(pcb_en_ejecucion, ultimaInstruccionDecodificada, operacionRecibida);
                 break;
             }
@@ -507,11 +507,11 @@ t_archivo_abierto* encontrar_archivo_abierto(t_list* listaArchivosAbiertos, char
 
     for (int i = 0; i < cantidadArchivos; i++) {
         t_archivo_abierto* archivoAbierto = list_get(listaArchivosAbiertos, i);
-        if (archivoAbierto->nombreArchivo == nombreArchivo) {
+        if (strcmp(archivoAbierto->nombreArchivo, nombreArchivo) == 0) {
             return archivoAbierto;
         }
     }
-
+    log_warning("No se encontró el archivo %s en la lista de archivos abiertos.", nombreArchivo);
     return NULL;
 
 }

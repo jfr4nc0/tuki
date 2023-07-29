@@ -288,6 +288,17 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 	}
 
 	switch(operacion) {
+		// Si hay interrupcion no hago nada y se lo devuelvo a kernel
+		case I_YIELD:
+		case I_F_OPEN:
+		case I_EXIT:
+		case I_F_CLOSE:
+		case I_F_SEEK:
+		case I_F_READ:
+		case I_F_WRITE:
+		case I_TRUNCATE:
+			hubo_interrupcion = true;
+			break;
 		case I_SET:
 			// SET (Registro, Valor)
 			int retardo = configCpu->RETARDO_INSTRUCCION;
@@ -305,33 +316,6 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 			break;
 		case I_IO:
 			// I/O (Tiempo)
-			instruccion_io(instruccion[1]);
-			break;
-		case I_F_OPEN:
-			// F_OPEN (Nombre Archivo)
-			instruccion_f_open(instruccion[1]);
-			hubo_interrupcion = true;
-			break;
-		case I_F_CLOSE:
-			// F_CLOSE (Nombre Archivo)
-			instruccion_f_close(instruccion[1]);
-			break;
-		case I_F_SEEK:
-			// F_SEEK (Nombre Archivo, Posición)
-			instruccion_f_seek(instruccion[1],instruccion[2]);
-			break;
-		case I_F_READ:
-			// F_READ (Nombre Archivo, Dirección Lógica, Cantidad de Bytes)
-			instruccion_f_read(instruccion[1],instruccion[2],instruccion[3]);
-			break;
-		case I_F_WRITE:
-			// F_WRITE (Nombre Archivo, Dirección Lógica, Cantidad de bytes)
-			instruccion_f_write(instruccion[1],instruccion[2],instruccion[3]);
-			break;
-		case I_TRUNCATE:
-			hubo_interrupcion = true;
-			// F_TRUNCATE (Nombre Archivo, Tamaño)
-			instruccion_f_truncate(instruccion[1],instruccion[2]);
 			break;
 		case I_WAIT:
 			// WAIT (Recurso)
@@ -348,13 +332,6 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 		case I_DELETE_SEGMENT:
 			// DELETE_SEGMENT (Id del Segmento)
 			instruccion_delete_segment(instruccion[1]);
-			break;
-		case I_YIELD:
-			//enviar_pcb_desalojado_a_kernel(pcb, clienteKernel);
-			hubo_interrupcion = true;
-			break;
-		case I_EXIT:
-			hubo_interrupcion = true;
 			break;
 	}
 	return operacion;
@@ -556,27 +533,7 @@ void agregar_valor_a_paquete(t_paquete* paquete, void* valor, int tamanio) {
     paquete->buffer->size += tamanio;
 }
 //
-void instruccion_io(char* tiempo) {
 
-}
-void instruccion_f_open(char* nombre_archivo) {
-
-}
-void instruccion_f_close(char* nombre_archivo) {
-
-}
-void instruccion_f_seek(char* nombre_archivo, char* posicion) {
-
-}
-void instruccion_f_read(char* nombre_archivo, char* dir_logica, char* cant_bytes) {
-
-}
-void instruccion_f_write(char* nombre_archivo, char* dir_logica, char* cant_bytes) {
-
-}
-void instruccion_f_truncate(char* nombre_archivo,char* tamanio) {
-
-}
 void instruccion_wait(char* recurso) {
 
 }
