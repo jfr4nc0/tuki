@@ -266,7 +266,7 @@ void _planificador_corto_plazo() {
             pcbParaEjecutar = elegir_pcb_segun_hrrn();
         }
 
-        cambiar_estado_proceso_con_semaforos(pcbParaEjecutar, ENUM_EXECUTING);
+        agregar_a_lista_con_sem((void*)pcbParaEjecutar, ENUM_EXECUTING);
 
         //log_trace(kernelLogger, "------MOSTRANDO PCB ELEGIDO POR ALGORITMO PARA ENVIAR A CPU--------");
         //mostrar_pcb(pcbParaEjecutar);
@@ -279,7 +279,7 @@ void *manejo_desalojo_pcb() {
     for(;;) {
         sem_wait(&sem_proceso_a_executing);
         sem_wait(&sem_lista_estados[ENUM_EXECUTING]);
-        PCB* pcb_en_ejecucion = list_get(lista_estados[ENUM_EXECUTING], 0);
+        PCB* pcb_en_ejecucion = list_remove(lista_estados[ENUM_EXECUTING], 0);
         sem_post(&sem_lista_estados[ENUM_EXECUTING]);
 
         timestamp inicio_ejecucion_proceso;
@@ -292,11 +292,6 @@ void *manejo_desalojo_pcb() {
         //log_info(kernelLogger, "CODIGO DE OPERACION RECIBIDO: %d", operacionRecibida);
 
         pcb_en_ejecucion = recibir_proceso_desajolado(pcb_en_ejecucion);
-
-
-        sem_wait(&sem_lista_estados[ENUM_EXECUTING]);
-		list_replace(lista_estados[ENUM_EXECUTING], 0, (void*)pcb_en_ejecucion);
-		sem_post(&sem_lista_estados[ENUM_EXECUTING]);
 
         set_timespec(&fin_ejecucion_proceso);
 
@@ -314,7 +309,7 @@ void *manejo_desalojo_pcb() {
 
          switch(operacionRecibida) {
             case I_YIELD: {
-            	cambiar_estado_proceso_con_semaforos(pcb_en_ejecucion, ENUM_READY);
+            	agregar_a_lista_con_sem((void*)pcb_en_ejecucion, ENUM_READY);
             	sem_post(&sem_cpu_disponible);
             	sem_post(&sem_proceso_a_ready_terminado);
             	break;
@@ -795,7 +790,7 @@ PCB* elegir_pcb_segun_fifo(){
     PCB* pcb;
     sem_wait(&sem_lista_estados[ENUM_READY]);
     //sem_wait(&sem_lista_estados[ENUM_EXECUTING]);
-    pcb = list_get(lista_estados[ENUM_READY], 0);
+    pcb = list_remove(lista_estados[ENUM_READY], 0);
 
     sem_post(&sem_lista_estados[ENUM_READY]);
     //sem_post(&sem_lista_estados[ENUM_EXECUTING]);
@@ -809,7 +804,7 @@ PCB* elegir_pcb_segun_hrrn(){
     sem_wait(&sem_lista_estados[ENUM_READY]);
     //sem_wait(&sem_lista_estados[ENUM_EXECUTING]);
     list_sort(lista_estados[ENUM_READY], (void*) criterio_hrrn);
-    pcb = list_get(lista_estados[ENUM_READY], 0);
+    pcb = list_remove(lista_estados[ENUM_READY], 0);
     sem_post(&sem_lista_estados[ENUM_READY]);
     //sem_post(&sem_lista_estados[ENUM_EXECUTING]);
 
@@ -973,8 +968,10 @@ void liberar_listas_estados() {
 * no se me ocurre otro uso que el del estado nuevo
 */
 void agregar_a_lista_con_sem(void* elem, int estado) {
+	PCB* pcb = (PCB*) elem;
+	pcb->estado = estado;
     sem_wait(&sem_lista_estados[estado]);
-    list_add(lista_estados[estado], elem);
+    list_add(lista_estados[estado], (void*)pcb);
     sem_post(&sem_lista_estados[estado]);
 }
 
