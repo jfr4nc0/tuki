@@ -187,7 +187,8 @@ t_dictionary* tablaArchivosAbiertos;
 #define ABRIR_ARCHIVO               "PID: <%d> - Abrir Archivo: <%s> realizado"
 #define ABRIR_ARCHIVO_BLOQUEADO     "PID: <%d> - Esperando para abrir Archivo: <%s>"
 #define ACTUALIZAR_PUNTERO_ARCHIVO  "PID: <%d> - Actualizar puntero Archivo: <%s> - Puntero <PUNTERO>" // Nota: El valor del puntero debe ser luego de ejecutar F_SEEK.
-#define CERRAR_ARCHIVO              "PID: <%d> - Cerrar Archivo: <%s>"
+#define CERRAR_ARCHIVO              "PID: <%d> - Cerrar Archivo: <%s> terminado"
+#define CERRAR_ARCHIVO_DESBLOQUEA_PCB "PID: <%d> - Al cerrar el Archivo: <%s> debloquea al PID <%d>"
 #define CREACION_DE_PROCESO         "Se crea el proceso <%d> en NEW"
 #define CREAR_SEGMENTO              "PID: <%d> - Crear Segmento - Id: < id SEGMENTO> - Tamaño: <TAMAÑO>"
 #define ELIMINAR_SEGMENTO           "PID: <%d> - Eliminar Segmento - Id Segmento: < id SEGMENTO>"

@@ -329,7 +329,6 @@ void* manejo_desalojo_pcb() {
                     pthread_mutex_unlock(estado->mutexEstado);
 
                     log_info(kernelLogger, ABRIR_ARCHIVO, pcb_en_ejecucion->id_proceso, nombreArchivo);
-                    cambiar_estado_proceso_con_semaforos((void*)pcb_en_ejecucion, ENUM_READY);
                     sem_post(&sem_proceso_a_ready_terminado);
                     continue;
                 }
@@ -376,18 +375,24 @@ void* manejo_desalojo_pcb() {
                 t_semaforo_recurso* semaforoArchivo = (t_semaforo_recurso*) dictionary_get(tablaArchivosAbiertos, nombreArchivo);
                 t_estado* estado = semaforoArchivo->estadoRecurso;
 
-                pthread_mutex_lock(estado->mutexEstado);
                 bool debeDesbloquearAlgunProceso = !list_is_empty(estado->listaProcesos);
-                PCB* pcb = list_remove(estado->listaProcesos, 0);
                 if (debeDesbloquearAlgunProceso) {
-                    sem_wait(estado->semaforoEstado);
                     pthread_mutex_lock(estado->mutexEstado);
+
+                    PCB* pcb = list_remove(estado->listaProcesos, 0);
+                    log_info(kernelLogger, CERRAR_ARCHIVO_DESBLOQUEA_PCB,
+                    		pcb_en_ejecucion->id_proceso, nombreArchivo, pcb->id_proceso);
+
                     cambiar_estado_proceso_con_semaforos(pcb, ENUM_READY);
+                    sem_post(estado->semaforoEstado);
                     pthread_mutex_unlock(estado->mutexEstado);
                 } else {
                     // Ya no quedan procesos que usen el archivo
                     dictionary_remove(tablaArchivosAbiertos, nombreArchivo);
                 }
+                agregar_a_lista_con_sem(pcb_en_ejecucion, ENUM_EXECUTING);
+
+                log_info(kernelLogger, CERRAR_ARCHIVO, pcb_en_ejecucion->id_proceso, nombreArchivo);
 
                 sem_post(&sem_proceso_a_executing);
                 sem_post(&sem_cpu_disponible);
