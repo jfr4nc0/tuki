@@ -290,15 +290,23 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 	}
 
 	switch(operacion) {
+		// Si hay interrupcion no hago nada y se lo devuelvo a kernel
+		case I_YIELD:
+		case I_F_OPEN:
+		case I_EXIT:
+		case I_F_CLOSE:
+		case I_F_SEEK:
+		case I_F_READ:
+		case I_F_WRITE:
+		case I_TRUNCATE:
+			hubo_interrupcion = true;
+			break;
 		case I_SET:
 			// SET (Registro, Valor)
 			int retardo = configCpu->RETARDO_INSTRUCCION;
 			intervalo_de_pausa(retardo);
 			instruccion_set(instruccion[1],instruccion[2]);
 			//log_info(loggerCpu, "REGISTRO AX: %s", registrosCpu->AX);
-			break;
-		case I_EXIT:
-			hubo_interrupcion = true;
 			break;
 		case I_MOV_IN:{
 			// MOV_IN (Registro, Dirección Lógica)
@@ -393,33 +401,6 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 		}
 		case I_IO:
 			// I/O (Tiempo)
-			hubo_interrupcion = true;
-			break;
-		case I_F_OPEN:
-			// F_OPEN (Nombre Archivo)
-			hubo_interrupcion = true;
-			break;
-		case I_F_CLOSE:
-			// F_CLOSE (Nombre Archivo)
-			hubo_interrupcion = true;
-			break;
-		case I_F_SEEK:
-			// F_SEEK (Nombre Archivo, Posición)
-			//instruccion_f_seek(instruccion[1],instruccion[2]);
-			break;
-		case I_F_READ:
-			// F_READ (Nombre Archivo, Dirección Lógica, Cantidad de Bytes)
-			//instruccion_f_read(instruccion[1],instruccion[2],instruccion[3]);
-			break;
-		case I_F_WRITE:
-			// F_WRITE (Nombre Archivo, Dirección Lógica, Cantidad de bytes)
-			//instruccion_f_write(instruccion[1],instruccion[2],instruccion[3]);
-			break;
-		case I_TRUNCATE:
-			hubo_interrupcion = true;
-			// F_TRUNCATE (Nombre Archivo, Tamaño)
-			//instruccion_f_truncate(instruccion[1],instruccion[2]);
-			break;
 		case I_WAIT:
 			// WAIT (Recurso)
 			hubo_interrupcion = true;
@@ -435,10 +416,6 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 		case I_DELETE_SEGMENT:
 			// DELETE_SEGMENT (Id del Segmento)
 			//instruccion_delete_segment(instruccion[1]);
-			break;
-		case I_YIELD:
-			//enviar_pcb_desalojado_a_kernel(pcb, clienteKernel);
-			hubo_interrupcion = true;
 			break;
 	}
 	return operacion;
@@ -785,7 +762,7 @@ void agregar_lista_a_paquete(t_paquete* paquete, t_list* lista) {
 	for(int i = 0; i < tamanio; i++) {
 		void* elemento = list_get(lista, i);
 		char* palabra = (char*)elemento;
-		strtok(palabra, "$"); // Removemos el salto de linea
+		strtok(palabra, "\n"); // Removemos el salto de linea
 		log_debug(loggerCpu, "Agregando instruccion: %s, tamanio %zu", palabra, strlen(palabra));
 		agregar_a_paquete(paquete, palabra, strlen(palabra));
 	}
@@ -829,29 +806,6 @@ void agregar_valor_a_paquete(t_paquete* paquete, void* valor, int tamanio) {
     memcpy(paquete->buffer->stream + paquete->buffer->size, valor, tamanio);
     paquete->buffer->size += tamanio;
 }
-
-void instruccion_f_seek(char* nombre_archivo, char* posicion) {
-
-}
-void instruccion_f_read(char* nombre_archivo, char* dir_logica, char* cant_bytes) {
-
-}
-void instruccion_f_write(char* nombre_archivo, char* dir_logica, char* cant_bytes) {
-
-}
-void instruccion_f_truncate(char* nombre_archivo,char* tamanio) {
-
-}
-void instruccion_create_segment(char* id_segmento, char* tamanio) {
-
-}
-void instruccion_delete_segment(char* id_segmento) {
-
-}
-void instruccion_exit() {
-
-}
-
 /*
  * Devuelve el pcb a kernel porque terminó de ejecutar el proceso
  */

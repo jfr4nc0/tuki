@@ -118,7 +118,7 @@ void cambiar_estado_proceso_con_semaforos(PCB*, pcb_estado);
 void agregar_a_lista_con_sem(void*, int);
 void liberar_listas_estados();
 void inicializar_listas_estados();
-void mover_de_lista_con_sem(void*, int, int);
+void mover_de_lista_con_sem(int idProceso, int estadoNuevo, int estadoAnterior);
 //////////////////
 
 // Funciones para enviar un pcb a cpu //////////////
@@ -157,6 +157,8 @@ t_archivo_abierto* encontrar_archivo_abierto(t_list* listaArchivosAbiertos, char
 int encontrar_index_archivo_abierto(t_list* listaArchivosAbiertos, char* nombreArchivo);
 void agregar_lista_archivos_a_paquete(t_paquete* paquete, t_list* lista);
 t_semaforo_recurso* inicializar_archivo_estado(t_nombre_estado nombreEstado);
+void iterator_debug(char*);
+int obtener_index_pcb_de_lista(int estado, int idProceso);
 
 t_list* archivosAbiertosGlobal;
 
@@ -183,25 +185,27 @@ t_dictionary* tablaArchivosAbiertos;
 
 
 /*-------------------- LOGS OBLIGATORIOS ------------------*/
-#define ABRIR_ARCHIVO               "PID: <PID> - Abrir Archivo: <NOMBRE ARCHIVO>"
-#define ACTUALIZAR_PUNTERO_ARCHIVO     "PID: <PID> - Actualizar puntero Archivo: <NOMBRE ARCHIVO> - Puntero <PUNTERO>" // Nota: El valor del puntero debe ser luego de ejecutar F_SEEK.
-#define CERRAR_ARCHIVO              "PID: <PID> - Cerrar Archivo: <NOMBRE ARCHIVO>"
-#define CREACION_DE_PROCESO         "Se crea el proceso <PID> en NEW"
-#define CREAR_SEGMENTO              "PID: <PID> - Crear Segmento - Id: < id SEGMENTO> - Tamaño: <TAMAÑO>"
-#define ELIMINAR_SEGMENTO           "PID: <PID> - Eliminar Segmento - Id Segmento: < id SEGMENTO>"
-#define ESCRIBIR_ARCHIVO            "PID: <PID> -  Escribir Archivo: <NOMBRE ARCHIVO> - Puntero <PUNTERO> - Dirección Memoria <DIRECCIÓN MEMORIA> - Tamaño <TAMAÑO>"
+#define ABRIR_ARCHIVO               "PID: <%d> - Abrir Archivo: <%s> realizado"
+#define ABRIR_ARCHIVO_BLOQUEADO     "PID: <%d> - Esperando para abrir Archivo: <%s>"
+#define ACTUALIZAR_PUNTERO_ARCHIVO  "PID: <%d> - Actualizar puntero Archivo: <%s> - Puntero <PUNTERO>" // Nota: El valor del puntero debe ser luego de ejecutar F_SEEK.
+#define CERRAR_ARCHIVO              "PID: <%d> - Cerrar Archivo: <%s> terminado"
+#define CERRAR_ARCHIVO_DESBLOQUEA_PCB "PID: <%d> - Al cerrar el Archivo: <%s> debloquea al PID <%d>"
+#define CREACION_DE_PROCESO         "Se crea el proceso <%d> en NEW"
+#define CREAR_SEGMENTO              "PID: <%d> - Crear Segmento - Id: < id SEGMENTO> - Tamaño: <TAMAÑO>"
+#define ELIMINAR_SEGMENTO           "PID: <%d> - Eliminar Segmento - Id Segmento: < id SEGMENTO>"
+#define ESCRIBIR_ARCHIVO            "PID: <%d> -  Escribir Archivo: <%s> - Puntero <PUNTERO> - Dirección Memoria <DIRECCIÓN MEMORIA> - Tamaño <TAMAÑO>"
 #define FIN_COMPACTACIÓN            "Se finalizó el proceso de compactación"
-#define FIN_DE_PROCESO              "Finaliza el proceso <PID> - Motivo: <SUCCESS / SEG_FAULT / OUT_OF_MEMORY>"
-#define I_O                         "PID: <PID> - Ejecuta IO: <TIEMPO>"
+#define FIN_DE_PROCESO              "Finaliza el proceso <%d> - Motivo: <%s>" // MOTIVOS PUEDEN SER SUCCESS / SEG_FAULT / OUT_OF_MEMORY
+#define I_O                         "PID: <%d> - Ejecuta IO: <TIEMPO>"
 #define INGRESO_A_READY             "Cola Ready <ALGORITMO>: [<LISTA DE PIDS>]"
 #define INICIO_COMPACTACIÓN         "Compactación: <Se solicitó compactación / Esperando Fin de Operaciones de FS>"
-#define LEER_ARCHIVO                "PID: <PID> - Leer Archivo: <NOMBRE ARCHIVO> - Puntero <PUNTERO> - Dirección Memoria <DIRECCIÓN MEMORIA> - Tamaño <TAMAÑO>"
-#define MOTIVO_DE_BLOQUEO           "PID: <PID> - Bloqueado por: <IO / NOMBRE_RECURSO / NOMBRE_ARCHIVO>"
-#define SIGNAL                      "PID: <PID> - Signal: <NOMBRE RECURSO> - Instancias: <INSTANCIAS RECURSO>" // Nota: El valor de las instancias es después de ejecutar el Signal
-#define TRUNCAR_ARCHIVO             "PID: <PID> - Archivo: <NOMBRE ARCHIVO> - Tamaño: <TAMAÑO>"
-#define WAIT                        "PID: <PID> - Wait: <NOMBRE RECURSO> - Instancias: <INSTANCIAS RECURSO>" // Nota: El valor de las instancias es después de ejecutar el Wait
-#define LOG_CAMBIO_DE_ESTADO "PID: %d - Estado Anterior: %s - Estado Actual: %s"
-
+#define LEER_ARCHIVO                "PID: <%d> - Leer Archivo: <%s> - Puntero <PUNTERO> - Dirección Memoria <DIRECCIÓN MEMORIA> - Tamaño <TAMAÑO>"
+#define MOTIVO_DE_BLOQUEO           "PID: <%d> - Bloqueado por: <IO / NOMBRE_RECURSO / NOMBRE_ARCHIVO>"
+#define SIGNAL                      "PID: <%d> - Signal: <%s> - Instancias: <INSTANCIAS RECURSO>" // Nota: El valor de las instancias es después de ejecutar el Signal
+#define TRUNCAR_ARCHIVO             "PID: <%d> - Archivo: <%s> - Tamaño: <TAMAÑO>"
+#define WAIT                        "PID: <%d> - Wait: <%s> - Instancias: <INSTANCIAS RECURSO>" // Nota: El valor de las instancias es después de ejecutar el Wait
+#define LOG_CAMBIO_DE_ESTADO        "PID: %d - Estado Anterior: %s - Estado Actual: %s"
+#define F_SEEK_HECHO                "PID <%d> Instruccion F_SEEK hecha correctamente, archivo %s ahora apuntando al puntero %d"
 ////////////////////////////////////
 
 

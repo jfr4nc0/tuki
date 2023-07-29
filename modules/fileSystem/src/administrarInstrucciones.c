@@ -2,11 +2,11 @@
 
 
 bool existe_archivo(char *nombreArchivo) {
-	strtok(nombreArchivo, "$");
+	strtok(nombreArchivo, "\n");
     bool existeArchivo = dictionary_has_key(dictionaryFcbs, nombreArchivo);
 
     if (existeArchivo) {
-        log_debug(loggerFileSystem, "Archivo %s existe y se encuentra en el fcb", nombreArchivo);
+        log_info(loggerFileSystem, "Archivo %s existe y se encuentra en el fcb", nombreArchivo);
     } else {
         log_warning(loggerFileSystem, FCB_NOT_FOUND, nombreArchivo);
     }
@@ -50,7 +50,7 @@ t_fcb *crear_fcb_inicial(char *nombreArchivo) {
 }
 
 bool truncar_archivo(char* nombreArchivo, uint32_t tamanioNuevo) {
-	strtok(nombreArchivo, "$");
+	strtok(nombreArchivo, "\n");
     log_info(loggerFileSystem, TRUNCATE_ARCHIVO, nombreArchivo, tamanioNuevo);
 
     t_fcb* fcb = dictionary_get(dictionaryFcbs, nombreArchivo);
