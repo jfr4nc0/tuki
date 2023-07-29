@@ -176,12 +176,13 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
         log_info(loggerCpu, "PID: <%u> - Ejecutando: %s", pcb->id_proceso, instruccion_decodificada[0]);
         ultimaOperacion = ejecutar_instruccion(instruccion_decodificada, pcb);
 
+        log_info(loggerCpu, "PROGRAM COUNTER: %d", pcb->contador_instrucciones);
+
         if (!hubo_interrupcion) {
 			pcb->contador_instrucciones++;
 			posicion_actual++;
         }
 
-        log_info(loggerCpu, "PROGRAM COUNTER: %d", pcb->contador_instrucciones);
     }
 
     log_info(loggerCpu, "Se salió de la ejecucion en la instrucción %s. Guardando el contexto de ejecucion...", instruccion);
@@ -277,7 +278,10 @@ void guardar_contexto_de_ejecucion(PCB* pcb) {
 
 int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 
-	int operacion = keyFromString(instruccion[0]);
+	char* instruccion_ = malloc(sizeof(char*));
+	strcpy(instruccion_, strtok(instruccion[0], "$"));
+
+	int operacion = keyFromString(instruccion_);
 
 	if (operacion == -1) {
 		log_warning(loggerCpu, "Desconocemos la instruccion %s", instruccion[0]);
@@ -292,6 +296,9 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 			intervalo_de_pausa(retardo);
 			instruccion_set(instruccion[1],instruccion[2]);
 			//log_info(loggerCpu, "REGISTRO AX: %s", registrosCpu->AX);
+			break;
+		case I_EXIT:
+			hubo_interrupcion = true;
 			break;
 		case I_MOV_IN:{
 			// MOV_IN (Registro, Dirección Lógica)
@@ -431,9 +438,6 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 			break;
 		case I_YIELD:
 			//enviar_pcb_desalojado_a_kernel(pcb, clienteKernel);
-			hubo_interrupcion = true;
-			break;
-		case I_EXIT:
 			hubo_interrupcion = true;
 			break;
 	}

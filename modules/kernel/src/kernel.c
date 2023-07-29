@@ -147,7 +147,7 @@ void recibir_de_consola(void *clienteAceptado) {
 
     nuevo_proceso(listaInstrucciones, conexionConConsola);
 
-    //crear_hilo_planificador(); //TODO: ESTO ESTA MAL ACA
+    //crear_hilo_planificadores(); //TODO: ESTO ESTA MAL ACA
 
     list_destroy(listaInstrucciones);
 
@@ -264,8 +264,8 @@ void _planificador_corto_plazo() {
 
         cambiar_estado_proceso_con_semaforos(pcbParaEjecutar, ENUM_EXECUTING);
 
-        log_trace(kernelLogger, "------MOSTRANDO PCB ELEGIDO POR ALGORITMO PARA ENVIAR A CPU--------");
-        mostrar_pcb(pcbParaEjecutar);
+        //log_trace(kernelLogger, "------MOSTRANDO PCB ELEGIDO POR ALGORITMO PARA ENVIAR A CPU--------");
+        //mostrar_pcb(pcbParaEjecutar);
 
         sem_post(&sem_proceso_a_executing);
     }
@@ -285,10 +285,10 @@ void *manejo_desalojo_pcb() {
         envio_pcb_a_cpu(conexionCPU, pcb_en_ejecucion, OP_EXECUTE_PCB);
 
         codigo_operacion operacionRecibida = recibir_operacion(conexionCPU);
-        log_info(kernelLogger, "CODIGO DE OPERACION RECIBIDO: %d", operacionRecibida);
+        //log_info(kernelLogger, "CODIGO DE OPERACION RECIBIDO: %d", operacionRecibida);
 
         pcb_en_ejecucion = recibir_proceso_desajolado(pcb_en_ejecucion);
-        pcb_en_ejecucion->contador_instrucciones++;
+
 
         sem_wait(&sem_lista_estados[ENUM_EXECUTING]);
 		list_replace(lista_estados[ENUM_EXECUTING], 0, (void*)pcb_en_ejecucion);
@@ -305,9 +305,13 @@ void *manejo_desalojo_pcb() {
          ultimaInstruccion = string_duplicate((char *)list_get(pcb_en_ejecucion->lista_instrucciones, pcb_en_ejecucion->contador_instrucciones));
          ultimaInstruccionDecodificada = decode_instruccion(ultimaInstruccion, kernelLogger);
 
+         log_info(kernelLogger, "OPERACION DE DESALOJO: %s", ultimaInstruccion);
+         pcb_en_ejecucion->contador_instrucciones++;
+
          switch(operacionRecibida) {
             case I_YIELD: {
-                break;
+                sem_post(&sem_cpu_disponible);
+            	break;
             }
             case I_F_OPEN: {
                 char* nombreArchivo = ultimaInstruccionDecodificada[1];
@@ -713,8 +717,8 @@ PCB* recibir_pcb_de_cpu() {
 
     pcb->estimacion_rafaga = leer_double(buffer, &desplazamiento);
     pcb->ready_timestamp = leer_double(buffer, &desplazamiento);
-    log_info(kernelLogger, "---------------------------------------------Recibi el proceso de PID: %d", pcb->id_proceso);
-    mostrar_pcb(pcb);
+    log_info(kernelLogger, "Recibi el proceso de PID: %d", pcb->id_proceso);
+    //mostrar_pcb(pcb);
     return pcb;
 }
 

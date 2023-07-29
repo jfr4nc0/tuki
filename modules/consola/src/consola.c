@@ -21,7 +21,7 @@ int main(int argc, char** argv) {
     	enviarInstrucciones(pathInstrucciones, conexionKernel, logger);
     }
 
-    terminar_programa(conexionKernel, logger, config);
+    //terminar_programa(conexionKernel, logger, config);
 }
 
 // TODO: Mover todas las funciones a funciones.c

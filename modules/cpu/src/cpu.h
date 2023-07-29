@@ -97,8 +97,8 @@ pthread_mutex_t m_recibir_pcb;
 #define ERROR_SEGMENTATION_FAULT     "PID: <PID> - Error SEG_FAULT- Segmento: <NUMERO SEGMENTO> - Offset: <OFFSET> - Tamaño: <TAMAÑO>"
 ////////////////////////////////
 
-#define DEFAULT_LOG_PATH      "logs/cpu.log"
-#define DEFAULT_CONFIG_PATH   "tuki-pruebas/prueba-base/cpu.config"
+#define DEFAULT_LOG_PATH      "/home/utnso/eclipse-workspace/tp-2023-1c-KernelPanic/logs/cpu.log"
+#define DEFAULT_CONFIG_PATH   "/home/utnso/eclipse-workspace/tp-2023-1c-KernelPanic/tuki-pruebas/prueba-base/cpu.config"
 
 void devolver_pcb_kernel(PCB*, int, codigo_operacion);
 
