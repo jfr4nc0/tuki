@@ -61,10 +61,17 @@ void ejecutar_instrucciones_kernel(void* cliente) {
 			}
 			case I_TRUNCATE: {
 				// pthread_mutex_lock(&m_instruccion);
-				t_archivo_abierto* archivo = obtener_archivo_completo_de_socket(clienteKernel);
+//				t_archivo_abierto* archivo = obtener_archivo_completo_de_socket(clienteKernel);
+                t_list* listaConParametros = recibir_paquete(clienteKernel);
+                char* nombreArchivo = (char*)list_get(listaConParametros, 0);
+                char* punteroTexto = (char*)list_get(listaConParametros, 1);
+
+                char *ptr;
+                uint32_t puntero = strtoul(punteroTexto, &ptr, 10);
+
 				// archivo->puntero en este caso es la cantidad a truncar
-				devolver_instruccion_generico(truncar_archivo(archivo->nombreArchivo, archivo->puntero), clienteKernel);
-				free(archivo);
+				devolver_instruccion_generico(truncar_archivo(nombreArchivo, puntero), clienteKernel);
+				// free(archivo);
 				// pthread_mutex_unlock(&m_instruccion);
 				break;
 			}
@@ -115,10 +122,9 @@ t_archivo_abierto* obtener_archivo_completo_de_socket(int cliente) {
 	int desplazamiento = 0;
 	buffer = recibir_buffer(&tamanio, cliente);
 
- 	int size = sizeof(t_archivo_abierto*);
-    t_archivo_abierto* archivo = malloc(size);
-	memcpy(archivo, buffer, size);
-
+    t_archivo_abierto* archivo = malloc(sizeof(t_archivo_abierto));
+    archivo->nombreArchivo = leer_string(buffer, &desplazamiento);
+    archivo->puntero = leer_uint32_t(buffer, &desplazamiento);
 	return archivo;
 }
 

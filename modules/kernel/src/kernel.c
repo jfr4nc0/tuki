@@ -125,11 +125,14 @@ void enviar_proceso_a_ready() {
         cambiar_estado_proceso_sin_semaforos(pcb, ENUM_READY);
         sem_post(&sem_lista_estados[ENUM_NEW]);
 
-        list_add(lista_estados[ENUM_READY], pcb);
         sem_post(&sem_lista_estados[ENUM_READY]);
 
         sem_post(&sem_proceso_a_ready_terminado);
     }
+}
+
+void iterator_debug(char* value) {
+    log_debug(kernelLogger, "%s ", value);
 }
 
 void iterator(char* value) {
@@ -258,41 +261,42 @@ void _planificador_corto_plazo() {
             pcbParaEjecutar = elegir_pcb_segun_hrrn();
         }
 
-        cambiar_estado_proceso_con_semaforos(pcbParaEjecutar, ENUM_EXECUTING);
+        agregar_a_lista_con_sem((void*)pcbParaEjecutar, ENUM_EXECUTING);
 
-        log_trace(kernelLogger, "---------------MOSTRANDO PCB A ENVIAR A CPU---------------");
+        log_trace(kernelLogger, "------MOSTRANDO PCB ELEGIDO POR ALGORITMO PARA ENVIAR A CPU--------");
         mostrar_pcb(pcbParaEjecutar);
 
         sem_post(&sem_proceso_a_executing);
     }
 }
 
-void *manejo_desalojo_pcb() {
+void* manejo_desalojo_pcb() {
     for(;;) {
         sem_wait(&sem_proceso_a_executing);
         sem_wait(&sem_lista_estados[ENUM_EXECUTING]);
-        PCB* pcb_en_ejecucion = list_get(lista_estados[ENUM_EXECUTING], 0);
+        PCB* pcb_para_cpu = list_remove(lista_estados[ENUM_EXECUTING], 0);
         sem_post(&sem_lista_estados[ENUM_EXECUTING]);
 
         timestamp inicio_ejecucion_proceso;
         timestamp fin_ejecucion_proceso;
 
         set_timespec(&inicio_ejecucion_proceso);
-        envio_pcb_a_cpu(conexionCPU, pcb_en_ejecucion, OP_EXECUTE_PCB);
+        envio_pcb_a_cpu(conexionCPU, pcb_para_cpu, OP_EXECUTE_PCB);
 
         codigo_operacion operacionRecibida = recibir_operacion(conexionCPU);
         log_info(kernelLogger, "CODIGO DE OPERACION RECIBIDO: %d", operacionRecibida);
 
-        pcb_en_ejecucion = recibir_proceso_desajolado(pcb_en_ejecucion);
-        pcb_en_ejecucion->contador_instrucciones++;
+        PCB* pcb_en_ejecucion = malloc(sizeof(PCB));
+        pcb_en_ejecucion = recibir_proceso_desajolado(pcb_para_cpu);
+
         set_timespec(&fin_ejecucion_proceso);
 
          // Actualizo el estimado en el pcb segun el real ejecutado
          double tiempo_en_cpu = obtener_diferencial_de_tiempo_en_milisegundos(&fin_ejecucion_proceso, &inicio_ejecucion_proceso);
          pcb_estimar_proxima_rafaga(pcb_en_ejecucion, tiempo_en_cpu);
 
-         char* ultimaInstruccion = malloc(sizeof(char*));
-         char** ultimaInstruccionDecodificada = malloc(sizeof(char*));
+         char* ultimaInstruccion;
+         char** ultimaInstruccionDecodificada;
          ultimaInstruccion = string_duplicate((char *)list_get(pcb_en_ejecucion->lista_instrucciones, pcb_en_ejecucion->contador_instrucciones));
          ultimaInstruccionDecodificada = decode_instruccion(ultimaInstruccion, kernelLogger);
 
@@ -322,7 +326,7 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
     char** instruccion = data->instruccion;
 
 	switch(operacion) {
-		 	 case I_YIELD: {
+		 	 case I_YIELD: {// TODO mandar el proceso a la cola de ready
 		 		 break;
 		 	 }
 		 	 case I_F_OPEN: {
@@ -347,8 +351,7 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
                     // continue;
                 }
 
-                size_t tamanioPalabra = strlen(nombreArchivo)-1;
-                log_error(kernelLogger, "El tamanio del nombre de archivo es %zu", tamanioPalabra);
+                size_t tamanioPalabra = strlen(nombreArchivo);
 
                 enviar_operacion(conexionFileSystem, operacion, tamanioPalabra, nombreArchivo);
                 codigo_operacion operacionRecibida = recibir_operacion(conexionFileSystem);
@@ -371,6 +374,9 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
                 // abrir archivo proceso
                 list_add(pcb->lista_archivos_abiertos, archivoAbierto);
 
+                sem_wait(&sem_lista_estados[ENUM_EXECUTING]);
+				list_add(lista_estados[ENUM_EXECUTING], (void*)pcb);
+				sem_post(&sem_lista_estados[ENUM_EXECUTING]);
 
                 cambiar_estado_proceso_con_semaforos(pcb, ENUM_READY);
 
@@ -403,18 +409,28 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
             }
 
             case I_TRUNCATE: {
-                char* nombreArchivo = instruccion[1];
-                strtok(nombreArchivo, "$");
-                cambiar_estado_proceso_con_semaforos(pcb, ENUM_BLOCKED);
+            	agregar_a_lista_con_sem((void*)pcb, ENUM_BLOCKED);
+				PCB* pcb_bloqueado = list_get(lista_estados[ENUM_BLOCKED], 0);
 
-                t_archivo_abierto* archivo;
-                archivo->nombreArchivo = nombreArchivo;
-                archivo->puntero = (uint32_t)(uintptr_t)instruccion[2];
-                // cambiar_estado_proceso_con_semaforos(pcb, ENUM_BLOCKED);
-                enviar_operacion(conexionFileSystem, operacion, sizeof(t_archivo_abierto), archivo);
-                recibir_operacion(conexionFileSystem);
+            	sem_post(&sem_cpu_disponible);
+                t_paquete* paquete = crear_paquete(operacion);
+                agregar_a_paquete(paquete, (void*)instruccion[1], strlen(instruccion[1]));
+                agregar_a_paquete(paquete, (void*)instruccion[2], strlen(instruccion[2]));
 
-                cambiar_estado_proceso_con_semaforos(pcb, ENUM_READY);
+                enviar_paquete(paquete, conexionFileSystem);
+                log_info(kernelLogger, "ENVIO TRUNCATE de archivo: %s, tamanio: %s", instruccion[1], instruccion[2]);
+                eliminar_paquete(paquete);
+                codigo_operacion cod1 = recibir_operacion(conexionFileSystem);
+                log_info(kernelLogger, "Exitoso TRUNCATE de archivo: %s, tamanio: %s", instruccion[1], instruccion[2]);
+
+                recibir_operacion(conexionFileSystem); // basura
+
+                cambiar_estado_proceso_con_semaforos(pcb_bloqueado, ENUM_READY);
+
+                sem_wait(&sem_lista_estados[ENUM_READY]);
+				PCB* pcb_ready = (PCB*)list_get(lista_estados[ENUM_READY], 0);
+				sem_post(&sem_lista_estados[ENUM_READY]);
+
                 sem_post(&sem_proceso_a_ready_terminado);
                 break;
             }
@@ -743,7 +759,7 @@ PCB* elegir_pcb_segun_fifo(){
     PCB* pcb;
     sem_wait(&sem_lista_estados[ENUM_READY]);
     //sem_wait(&sem_lista_estados[ENUM_EXECUTING]);
-    pcb = list_get(lista_estados[ENUM_READY], 0);
+    pcb = list_remove(lista_estados[ENUM_READY], 0);
     sem_post(&sem_lista_estados[ENUM_READY]);
     //sem_post(&sem_lista_estados[ENUM_EXECUTING]);
 
@@ -756,8 +772,7 @@ PCB* elegir_pcb_segun_hrrn(){
     sem_wait(&sem_lista_estados[ENUM_READY]);
     //sem_wait(&sem_lista_estados[ENUM_EXECUTING]);
     list_sort(lista_estados[ENUM_READY], (void*) criterio_hrrn);
-    pcb = list_get(lista_estados[ENUM_READY], 0);
-    sem_post(&sem_lista_estados[ENUM_READY]);
+    pcb = list_remove(lista_estados[ENUM_READY], 0);
     //sem_post(&sem_lista_estados[ENUM_EXECUTING]);
 
     return pcb;
@@ -768,7 +783,7 @@ void mostrar_pcb(PCB* pcb){
     char* estado = nombres_estados[pcb->estado];
     log_trace(kernelLogger, "ESTADO: %s", estado);
     log_trace(kernelLogger, "INSTRUCCIONES A EJECUTAR: ");
-    list_iterate(pcb->lista_instrucciones, (void*) iterator);
+    list_iterate(pcb->lista_instrucciones, (void*) iterator_debug);
     log_trace(kernelLogger, "PROGRAM COUNTER: %d", pcb->contador_instrucciones);
     log_trace(kernelLogger, "Registro AX: %s", pcb->registrosCpu->AX);
     log_trace(kernelLogger, "Registro BX: %s", pcb->registrosCpu->BX);
@@ -783,7 +798,7 @@ void mostrar_pcb(PCB* pcb){
     log_trace(kernelLogger, "Registro RCX: %s", pcb->registrosCpu->RCX);
     log_trace(kernelLogger, "Registro RDX: %s", pcb->registrosCpu->RDX);
     log_trace(kernelLogger, "LISTA SEGMENTOS: ");
-    list_iterate(pcb->lista_segmentos, (void*) iterator);
+    list_iterate(pcb->lista_segmentos, (void*) iterator_debug);
     log_trace(kernelLogger, "LISTA ARCHIVOS ABIERTOS: ");
     // list_iterate(pcb->lista_archivos_abiertos, (void*) iterator);
     log_trace(kernelLogger, "ESTIMACION HHRN: %f", pcb->estimacion_rafaga);
@@ -862,8 +877,7 @@ void cambiar_estado_proceso_sin_semaforos(PCB* pcb, pcb_estado estadoNuevo) {
  */
 void cambiar_estado_proceso_con_semaforos(PCB* pcb, pcb_estado estadoNuevo) {
     pcb_estado estadoAnterior = pcb->estado;
-    pcb->estado = estadoNuevo;
-    mover_de_lista_con_sem(pcb, estadoNuevo, estadoAnterior);
+    mover_de_lista_con_sem(pcb->id_proceso, estadoNuevo, pcb->estado);
 
     char* estadoAntes = nombres_estados[estadoAnterior];
     char* estadoPosterior = nombres_estados[estadoNuevo];
@@ -895,29 +909,71 @@ void liberar_listas_estados() {
 * no se me ocurre otro uso que el del estado nuevo
 */
 void agregar_a_lista_con_sem(void* elem, int estado) {
+	PCB* pcb = (PCB*) elem;
+	pcb->estado = estado;
     sem_wait(&sem_lista_estados[estado]);
-    list_add(lista_estados[estado], elem);
+    list_add(lista_estados[estado], (void*)pcb);
     sem_post(&sem_lista_estados[estado]);
+}
+
+int obtener_index_pcb_de_lista(int estadoPasado, int idProceso) {
+	t_list* listaPorEstado = lista_estados[estadoPasado];
+
+    for (int index = 0; index < list_size(listaPorEstado); index++) {
+		PCB* pcb = list_get(listaPorEstado, index);
+		if (pcb->id_proceso == idProceso) {
+			return index;
+		}
+	}
+
+    log_warning(kernelLogger, "PCB con id %d no encontrado en lista de estados: %s, se busca en las otras", idProceso, nombres_estados[estadoPasado]);
+
+    for (int estado = 0; estado < CANTIDAD_ESTADOS; estado++) {
+        t_list* listaPorEstado = lista_estados[estado];
+        for (int index = 0; index < list_size(listaPorEstado); index++) {
+            PCB* pcb = list_get(listaPorEstado, index);
+            if (pcb->id_proceso == idProceso) {
+                log_warning(kernelLogger, "PCB con id %d Lista encontrada en lista de estados: %s", pcb->id_proceso, nombres_estados[estado]);
+                return index;
+            }
+        }
+    }
+    log_error(kernelLogger, "No se encontró el pcb id <%d> en ninguna lista de estados", idProceso);
+	return -1;
 }
 
 /*
 * Funcion auxiliar de cambiar_estado_proceso_con_semaforos
 */
-void mover_de_lista_con_sem(void* elem, int estadoNuevo, int estadoAnterior) {
-    sem_wait(&sem_lista_estados[estadoNuevo]);
-    sem_wait(&sem_lista_estados[estadoAnterior]);
-    PCB* pcb = elem;
-    pcb->estado = estadoNuevo;
-    if (pcb->estado == ENUM_READY) {
-    	// TODO: FALLA
-         // set_timespec((timestamp*)(time_t)pcb->ready_timestamp);
-    }
-    list_remove_element(lista_estados[estadoAnterior], elem);
-    list_add(lista_estados[estadoNuevo], elem);
+void mover_de_lista_con_sem(int idProceso, int estadoNuevo, int estadoAnterior) {
+	if (estadoNuevo != estadoAnterior) {
+		sem_wait(&sem_lista_estados[estadoNuevo]);
+		sem_wait(&sem_lista_estados[estadoAnterior]);
+		int index = obtener_index_pcb_de_lista(estadoAnterior, idProceso);
+        PCB* pcb = (PCB*)list_get(lista_estados[estadoAnterior], index);
+        pcb->estado = estadoNuevo;
+		/*
+		if (pcb->estado == ENUM_READY) {
+			// TODO: FALLA
+			 // set_timespec((timestamp*)(time_t)pcb->ready_timestamp);
+		}
+		*/
+		PCB* pcbEliminado = (PCB*)list_remove(lista_estados[estadoAnterior], index);
 
-    sem_post(&sem_lista_estados[estadoAnterior]);
-    sem_post(&sem_lista_estados[estadoNuevo]);
+		if (pcbEliminado->id_proceso != pcb->id_proceso) {
+			log_error(kernelLogger, "ERROR AL MOVER pcb de estado %s a estado %s",
+					nombres_estados[estadoAnterior], nombres_estados[estadoNuevo] );
+		}
+		int indexDevuelto = list_add(lista_estados[estadoNuevo], (void*)pcb);
+		log_info(kernelLogger, "Se ha añadido el pcb <%d> a la lista de estados <%s> devuelve indice %d",
+				pcb->id_proceso, nombres_estados[estadoNuevo], indexDevuelto);
 
+		sem_post(&sem_lista_estados[estadoAnterior]);
+		sem_post(&sem_lista_estados[estadoNuevo]);
+		return;
+	}
+	log_warning(kernelLogger, "PCB se intento mover de estado pero ya estaba en estado %s",
+			nombres_estados[estadoAnterior]);
     return;
 }
 
@@ -1047,7 +1103,7 @@ void agregar_lista_archivos_a_paquete(t_paquete* paquete, t_list* lista) {
         agregar_a_paquete(paquete, nombreArchivo, strlen(nombreArchivo));
 
         log_debug(kernelLogger, "Agregando puntero: %d, tamanio %zu", archivo->puntero, sizeof(uint32_t));
-        agregar_a_paquete(paquete, (void*)(int)archivo->puntero, sizeof(int));
+        agregar_a_paquete(paquete, (void*)(intptr_t)(int)archivo->puntero, sizeof(int));
     }
 }
 

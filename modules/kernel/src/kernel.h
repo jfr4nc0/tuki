@@ -123,7 +123,7 @@ void cambiar_estado_proceso_con_semaforos(PCB*, pcb_estado);
 void agregar_a_lista_con_sem(void*, int);
 void liberar_listas_estados();
 void inicializar_listas_estados();
-void mover_de_lista_con_sem(void*, int, int);
+void mover_de_lista_con_sem(int idProceso, int estadoNuevo, int estadoAnterior);
 //////////////////
 
 // Funciones para enviar un pcb a cpu //////////////
@@ -161,6 +161,8 @@ t_archivo_abierto* encontrar_archivo_abierto(t_list* listaArchivosAbiertos, char
 int encontrar_index_archivo_abierto(t_list* listaArchivosAbiertos, char* nombreArchivo);
 void agregar_lista_archivos_a_paquete(t_paquete* paquete, t_list* lista);
 t_semaforo_recurso* inicializar_archivo_estado(t_nombre_estado nombreEstado);
+void iterator_debug(char*);
+int obtener_index_pcb_de_lista(int estado, int idProceso);
 
 t_list* archivosAbiertosGlobal;
 

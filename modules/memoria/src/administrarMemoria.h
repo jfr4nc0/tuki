@@ -68,6 +68,8 @@ void compactar_memoria();
 int guardarSegmentoEnTabla(t_segmento* segmento, int idProceso);
 codigo_operacion crear_segmento_por_pid(int pid, t_segmento* segmento);
 t_segmento* recibir_segmento_kernel(t_list* pcbRecibido);
+size_t calcular_distancia_entre_direcciones_base(void* start, void* end);
+size_t total_memoria_asignada();
 
 void iteratorTabla(t_segmento_tabla* elemento);
 

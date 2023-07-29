@@ -35,7 +35,6 @@ int main(int argc, char** argv) {
 }
 
 void atender_kernel(int clienteKernel){
-	// Kernel no debería mandar dos pcbs simultaneamente a cpu, por las dudas tener en cuenta igual
 	while(1) {
 		pthread_mutex_lock(&m_recibir_pcb);
 		PCB* pcb_a_ejecutar = recibir_pcb(clienteKernel);
@@ -160,8 +159,8 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
 	cargar_registros(pcb);
 
 	// ¿Por que se le hace malloc?
-	char* instruccion = malloc(sizeof(char*));
-	char** instruccion_decodificada = malloc(sizeof(char*));
+	char* instruccion;
+	char** instruccion_decodificada;
 
 	t_list* data_instruccion; // Array para los parametros que necesite una instruccion
 
@@ -278,7 +277,8 @@ void guardar_contexto_de_ejecucion(PCB* pcb) {
 
 int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 
-	int operacion = keyFromString(instruccion[0]);
+	char* texto = strtok(instruccion[0], "$");
+	int operacion = keyFromString(texto);
 
 	if (operacion == -1) {
 		log_warning(loggerCpu, "Desconocemos la instruccion %s", instruccion[0]);

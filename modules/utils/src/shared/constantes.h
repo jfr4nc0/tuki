@@ -33,11 +33,11 @@ int keyFromString(char *key);
 #define MOSTRAR_OCULTAR_MENSAJES_LOG_MEMORIA        1
 #define MOSTRAR_OCULTAR_MENSAJES_LOG_KERNEL         1
 
-#define LOG_LEVEL_CONSOLA                           LOG_LEVEL_TRACE
-#define LOG_LEVEL_CPU                               LOG_LEVEL_TRACE
-#define LOG_LEVEL_FILE_SYSTEM                       LOG_LEVEL_TRACE
-#define LOG_LEVEL_KERNEL                            LOG_LEVEL_TRACE
-#define LOG_LEVEL_MEMORIA                           LOG_LEVEL_TRACE
+#define LOG_LEVEL_CONSOLA                           LOG_LEVEL_INFO
+#define LOG_LEVEL_CPU                               LOG_LEVEL_INFO
+#define LOG_LEVEL_FILE_SYSTEM                       LOG_LEVEL_INFO
+#define LOG_LEVEL_KERNEL                            LOG_LEVEL_INFO
+#define LOG_LEVEL_MEMORIA                           LOG_LEVEL_INFO
 
 /*
  * Si se quiere cambiar todos los modulos a la vez se deberia poder

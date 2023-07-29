@@ -143,6 +143,11 @@ typedef struct {
     char* nombreArchivo;
     uint32_t puntero;
 }t_archivo_abierto;
+
+typedef struct {
+    char* nombreArchivo;
+    uint32_t puntero;
+}t_enviar_archivo_abierto;
 /*--------------------------------- FUNCIONES GENERALES --------------------------------*/
 char* truncar_string(char* str,int size);
 char* cantidad_strings_a_mostrar(int);
@@ -176,6 +181,7 @@ static void *__stream_create(uint8_t header, t_buffer *buffer);
 void stream_send_buffer(int toSocket, uint8_t header, t_buffer *buffer);
 char *buffer_unpack_string(t_buffer *self);
 void buffer_pack_string(t_buffer *self, char *stringToAdd);
+uint32_t leer_uint32_t(char* buffer, int* desp);
 
 /*----------------------------- FUNCIONES CLIENTE ----------------------------*/
 
