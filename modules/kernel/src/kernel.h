@@ -159,6 +159,7 @@ void agregar_lista_archivos_a_paquete(t_paquete* paquete, t_list* lista);
 t_semaforo_recurso* inicializar_archivo_estado(t_nombre_estado nombreEstado);
 void iterator_debug(char*);
 int obtener_index_pcb_de_lista(int estado, int idProceso);
+char* obtener_motivo(codigo_operacion );
 
 t_list* archivosAbiertosGlobal;
 

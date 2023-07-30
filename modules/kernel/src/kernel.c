@@ -123,7 +123,7 @@ void enviar_proceso_a_ready() {
         sem_wait(&sem_lista_estados[ENUM_READY]);
         cambiar_estado_proceso_sin_semaforos(pcb, ENUM_READY);
         sem_post(&sem_lista_estados[ENUM_NEW]);
-
+        log_error(kernelLogger, "el pcb -%d- esta en la posicion %d de la lista de READY", pcb->id_proceso, obtener_index_pcb_de_lista(ENUM_READY, pcb->id_proceso));
         sem_post(&sem_lista_estados[ENUM_READY]);
 
         sem_post(&sem_proceso_a_ready_terminado);
@@ -145,8 +145,8 @@ void recibir_de_consola(void *clienteAceptado) {
     recibir_operacion(conexionConConsola);
     t_list* listaInstrucciones = recibir_paquete(conexionConConsola);
 
-    log_info(kernelLogger, "Me llegaron los siguientes valores: ");
-    list_iterate(listaInstrucciones, (void*) iterator);
+    //log_info(kernelLogger, "Me llegaron los siguientes valores: ");
+    //list_iterate(listaInstrucciones, (void*) iterator);
 
     nuevo_proceso(listaInstrucciones, conexionConConsola);
 
@@ -270,7 +270,8 @@ void _planificador_corto_plazo() {
         }
 
         agregar_a_lista_con_sem((void*)pcbParaEjecutar, ENUM_EXECUTING);
-
+        log_info(kernelLogger,"PID: %d - Estado Anterior: %s - Estado Actual: %s", pcbParaEjecutar->id_proceso, nombres_estados[ENUM_READY], nombres_estados[ENUM_EXECUTING]);
+        log_error(kernelLogger, "el estado del pcb -%d- es: %d", pcbParaEjecutar->id_proceso, pcbParaEjecutar->estado);
         //log_trace(kernelLogger, "------MOSTRANDO PCB ELEGIDO POR ALGORITMO PARA ENVIAR A CPU--------");
         //mostrar_pcb(pcbParaEjecutar);
 
@@ -459,7 +460,9 @@ void* manejo_desalojo_pcb() {
                 break;
             }
 		 	 case I_EXIT: {
+		 		 agregar_a_lista_con_sem(pcb_en_ejecucion, ENUM_EXECUTING);
 		 		 terminar_proceso(pcb_en_ejecucion, EXIT__SUCCESS);
+		 		 sem_post(&sem_cpu_disponible);
 		 		 break;
 		 	 }
 		 	 case SEGMENTATION_FAULT:{
@@ -837,7 +840,7 @@ PCB* elegir_pcb_segun_hrrn(){
 }
 
 void terminar_proceso(PCB* pcb_para_finalizar, codigo_operacion motivo_finalizacion){
-    log_info(kernelLogger, "llega a la 818");
+    log_info(kernelLogger, "el estado del proceso es: %d", pcb_para_finalizar->estado);
 	switch (pcb_para_finalizar->estado){
         case ENUM_NEW:
             cambiar_estado_proceso_con_semaforos(pcb_para_finalizar, ENUM_EXIT);
@@ -845,7 +848,7 @@ void terminar_proceso(PCB* pcb_para_finalizar, codigo_operacion motivo_finalizac
 
         case ENUM_EXECUTING:
         	cambiar_estado_proceso_con_semaforos(pcb_para_finalizar, ENUM_EXIT);
-            break;
+        	break;
 
         case ENUM_BLOCKED:
         	cambiar_estado_proceso_con_semaforos(pcb_para_finalizar, ENUM_EXIT);
@@ -855,8 +858,27 @@ void terminar_proceso(PCB* pcb_para_finalizar, codigo_operacion motivo_finalizac
             //error
             break;
     }
+	char* motivo_de_finalizacion = malloc(sizeof(char*));
+	motivo_de_finalizacion = obtener_motivo(motivo_finalizacion);
+	log_info(kernelLogger, "Finaliza el proceso con PID <%d> - Motivo: <%s>", pcb_para_finalizar->id_proceso, motivo_de_finalizacion);
+}
 
-    log_info(kernelLogger, "Finaliza el proceso con PID <%d> - Motivo: <%s>", pcb_para_finalizar->id_proceso, motivo_finalizacion);
+char* obtener_motivo(codigo_operacion codigo_motivo){
+
+	int codigo = (int)codigo_motivo;
+	char* respuesta;
+
+	switch(codigo){
+		case EXIT__SUCCESS:{
+			strcpy(respuesta, "EXIT_SUCCESS");
+			break;
+		}
+		case EXIT_SEGMENTATION_FAULT:{
+			strcpy(respuesta, "EXIT_SEGMENTATION_FAULT");
+			break;
+		}
+	}
+	return respuesta;
 }
 
 

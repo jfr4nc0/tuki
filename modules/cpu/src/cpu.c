@@ -279,10 +279,10 @@ void guardar_contexto_de_ejecucion(PCB* pcb) {
 int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 
 	char* instruccion_ = malloc(sizeof(char*));
-	strcpy(instruccion_, strtok(instruccion[0], "\n"));
+	instruccion_ = strtok(instruccion[0], "\n");
 
 	int operacion = keyFromString(instruccion_);
-
+	log_error(loggerCpu, "llega, la operacion es: %d", operacion);
 	if (operacion == -1) {
 		log_warning(loggerCpu, "Desconocemos la instruccion %s", instruccion[0]);
 
@@ -291,7 +291,10 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 
 	switch(operacion) {
 		// Si hay interrupcion no hago nada y se lo devuelvo a kernel
-		case I_YIELD:
+		case I_YIELD:{
+			hubo_interrupcion = true;
+			break;
+		}
 		case I_F_OPEN:
 		case I_EXIT:
 		case I_F_CLOSE:

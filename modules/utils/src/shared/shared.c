@@ -41,6 +41,45 @@ int keyFromString(char *key) {
     return -1;
 }
 
+int keyFromString_prueba(char *key) {
+	int respuesta;
+
+	if(string_starts_with(key, "SET") == 0){
+		respuesta = I_SET;
+	}else if(string_starts_with(key, "MOV_IN") == 0){
+		respuesta = I_MOV_IN;
+	}else if(string_starts_with(key, "MOV_OUT") == 0){
+		respuesta = I_MOV_OUT;
+	}else if(string_starts_with(key, "I/O") == 0){
+		respuesta = I_IO;
+	}if(string_starts_with(key, "F_OPEN") == 0){
+		respuesta = I_F_OPEN;
+	}else if(string_starts_with(key, "F_CLOSE") == 0){
+		respuesta = I_F_CLOSE;
+	}else if(string_starts_with(key, "F_SEEK") == 0){
+		respuesta = I_F_SEEK;
+	}else if(string_starts_with(key, "F_READ") == 0){
+		respuesta = I_F_READ;
+	}if(string_starts_with(key, "F_WRITE") == 0){
+		respuesta = I_F_WRITE;
+	}else if(string_starts_with(key, "F_TRUNCATE") == 0){
+		respuesta = I_TRUNCATE;
+	}else if(string_starts_with(key, "WAIT") == 0){
+		respuesta = I_WAIT;
+	}else if(string_starts_with(key, "SIGNAL") == 0){
+		respuesta = I_SIGNAL;
+	}if(string_starts_with(key, "CREATE_SEGMENT") == 0){
+		respuesta = I_CREATE_SEGMENT;
+	}else if(string_starts_with(key, "DELETE_SEGMENT") == 0){
+		respuesta = I_DELETE_SEGMENT;
+	}else if(string_starts_with(key, "YIELD") == 0){
+		respuesta = I_YIELD;
+	}else if(string_starts_with(key, "EXIT") == 0){
+		respuesta = I_EXIT;
+	}
+	return respuesta;
+}
+
 /*-------------------- FUNCIONES GENERALES --------------------*/
 
 
@@ -324,9 +363,50 @@ void eliminar_paquete(t_paquete* paquete) {
 }
 
 char** decode_instruccion(char* linea_a_parsear, t_log* logger) {
+
 	char** instruccion = string_split(linea_a_parsear, " ");
+
 	if(instruccion[0] == NULL) {
 	    log_info(logger, "Se ignora linea vacía.");
+	}
+	return instruccion;
+}
+
+
+char** decode_instruccion_prueba(char* linea_a_parsear, t_log* logger) {
+
+	//linea_a_parsear[strcspn(linea_a_parsear, "\n")]='\0';
+	char** instruccion = string_split(linea_a_parsear, " ");
+
+	int instruccion_;
+	log_error(logger, "LA LINEA A PARSEAR ES: %s", linea_a_parsear);
+	if(string_starts_with(linea_a_parsear, "SET") == 0){
+		instruccion_ = I_SET;
+	}else if(string_starts_with(linea_a_parsear, "YIELD") == 0){
+		instruccion_ = I_YIELD;
+	}else if(string_starts_with(linea_a_parsear, "EXIT") == 0){
+		instruccion_ = I_EXIT;
+	}
+
+	switch(instruccion_){
+		case I_SET:{
+			instruccion = string_split(linea_a_parsear, " \n");
+			if (instruccion[0] == NULL) {
+				log_info(logger, "Se ignora linea vacía.");
+				return instruccion;
+			}
+			break;
+		}
+		case I_YIELD:{
+			char* instruccion_yield = "YIELD";
+			instruccion = &instruccion_yield;
+			break;
+		}
+		case I_EXIT:{
+			char* instruccion_exit = "EXIT";
+			instruccion = &instruccion_exit;
+			break;
+		}
 	}
 	return instruccion;
 }

@@ -50,13 +50,14 @@ void enviarInstrucciones(char* pathInstrucciones, int conexion_kernel, t_log* lo
 
 	} else {
 
-	    char instruccion[LONGITUD_MAXIMA_CADENA];
+		char instruccion[LONGITUD_MAXIMA_CADENA];
 
-	    while (fgets(instruccion, LONGITUD_MAXIMA_CADENA, instrucciones) != NULL) {
-	        strtok(instruccion, "$"); // Removemos el salto de linea
-	        agregar_a_paquete(paquete, instruccion, strlen(instruccion));
-	    }
-
+		while (fgets(instruccion, LONGITUD_MAXIMA_CADENA, instrucciones) != NULL) {
+			// Eliminar el salto de línea (si existe)
+			instruccion[strcspn(instruccion, "\n")] = '\0';
+			// Agregar la instrucción al paquete
+			agregar_a_paquete(paquete, instruccion, strlen(instruccion) + 1); // +1 para incluir el '\0'
+		}
 	    enviar_paquete(paquete, conexion_kernel);
 	    log_info(logger, "ENVIO INSTRUCCIONES.");
 	}

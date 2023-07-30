@@ -23,6 +23,7 @@
 #include <time.h>
 #include <math.h>
 #include <errno.h>
+#include <string.h>
 
 // Internas
 #include "constantes.h"
