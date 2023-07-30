@@ -38,12 +38,12 @@ t_algoritmo algoritmo_seleccionado(char* algoritmo){
 }
 
 void iteratorTabla(t_segmento_tabla* elemento) {
-    log_debug(loggerMemoria, "Id proceso %d, segmento id %d, posicion %p, size %zu",
+    log_info(loggerMemoria, "Id proceso %d, segmento id %d, posicion %p, size %zu",
     		elemento->idProceso, elemento->segmento->id, elemento->segmento->direccionBase, elemento->segmento->size);
 }
 
 void iteratorSegmento(t_segmento* elemento) {
-	log_debug(loggerMemoria, "Segmento id %d, posicion %p, size %zu", elemento->id, elemento->direccionBase, elemento->size);
+	log_info(loggerMemoria, "Segmento id %d, posicion %p, size %zu", elemento->id, elemento->direccionBase, elemento->size);
 }
 
 /*
@@ -68,7 +68,7 @@ codigo_operacion inicializar_proceso(int pid, size_t pcbSize) {
     segmento->size = pcbSize;
     void* respuesta = crear_segmento(pid, segmento->size);
 
-    return adapter_respuesta_segmento(pid,pcbSize,respuesta);
+    return adapter_respuesta_segmento(pid,segmento,respuesta);
 }
 
 void finalizar_proceso(int idProceso) {
@@ -138,7 +138,7 @@ codigo_operacion crear_segmento_por_pid(int pid, t_segmento* segmento){
 
 void* crear_segmento(int idProceso, size_t size) {
     // Verificar disponibilidad de espacio contiguo
-    void* direccion_base = buscar_espacio_contiguo(size);
+    void* direccion_base = buscar_espacio_contiguo(size); //REVISAR
     if (direccion_base != NULL) {
         añadir_segmento(idProceso, size, direccion_base);
         recalcular_huecos_libres();
@@ -166,9 +166,9 @@ bool añadir_segmento(int idProceso, size_t size, void* direccion_base) {
     	// log_info(loggerMemoria, "Segmento id %d, de tamaño %zu, creado por proceso %d", segmento->id, size, idProceso);
         log_info(loggerMemoria,CREACION_DE_SEGMENTO,idProceso,segmento->id,segmento->direccionBase,segmento->size);
         log_info(loggerMemoria, "Logueo tabla segmentos: ");
-        list_iterate(memoria->tablaDeSegmentos, (void*) iteratorTabla);
+        list_iterate(memoria->tablaDeSegmentos, (void*) iteratorTabla); // TODO no esta logueando
         log_info(loggerMemoria, "Logueo lista segmentos: ");
-        list_iterate(memoria->segmentos, (void*) iteratorSegmento);
+        list_iterate(memoria->segmentos, (void*) iteratorSegmento); // TODO no esta logueando
     	return true;
     }
 
@@ -203,6 +203,16 @@ t_list* eliminar_segmento(int idProceso, int idSegmento) {
     return NULL;
 }
 
+// t_segmento* list_get_segmento(t_list* tablaSegmento, int index){
+// 	t_segmento_tabla* tabla_segmento = malloc(sizeof(t_segmento_tabla));
+
+//     t_segmento* segmento = malloc(sizeof(t_segmento));
+//     segmento->direccionBase = tablaSegmento
+// }
+
+size_t calcular_distancia_entre_direcciones_base(void* start, void* end){
+	return (size_t)((char*)end - (char*)start);
+}
 
 t_list* recalcular_huecos_libres() {
     list_clean(memoria->huecosLibres);
@@ -213,13 +223,15 @@ t_list* recalcular_huecos_libres() {
     int cantidadSegmentos = list_size(memoria->tablaDeSegmentos);
 
     for (int segmentoPosicion = 0; segmentoPosicion < cantidadSegmentos - 1; segmentoPosicion++) {
-        t_segmento* segmentoActual = list_get(memoria->tablaDeSegmentos, segmentoPosicion);
-        t_segmento* segmentoSiguiente = list_get(memoria->tablaDeSegmentos, segmentoPosicion);
+        t_segmento_tabla* tablaSegmentoActual = malloc(sizeof(t_segmento_tabla));
+        t_segmento_tabla* tablaSegmentoSiguiente = malloc(sizeof(t_segmento_tabla));
+        tablaSegmentoActual = list_get(memoria->tablaDeSegmentos, segmentoPosicion);
+        tablaSegmentoSiguiente = list_get(memoria->tablaDeSegmentos, segmentoPosicion+1);
 
         // Calcular la dirección base y el tamaño del hueco libre
         t_hueco_libre* huecoLibre = malloc(sizeof(t_hueco_libre));
-        huecoLibre->direccionBase = segmentoActual->direccionBase + segmentoActual->size;
-        huecoLibre->size = segmentoSiguiente->direccionBase - huecoLibre->direccionBase;
+        huecoLibre->direccionBase = calcular_direccion(tablaSegmentoActual->segmento->direccionBase,tablaSegmentoActual->segmento->size);
+        huecoLibre->size = calcular_distancia_entre_direcciones_base(huecoLibre->direccionBase,tablaSegmentoSiguiente->segmento->direccionBase);
 
         if (huecoLibre->size > 0) {
             list_add(memoria->huecosLibres, huecoLibre);
@@ -346,23 +358,55 @@ void* obtener_base_segmento_first_fit(size_t size){
     }
 }
 
+
+/* Calcula el total de la memoria usada por los segmentos
+ * @return size_t
+ */
+size_t total_memoria_asignada(){
+    size_t suma_size_tabla_segmentos = 0;
+
+    for (int i = 0; i < list_size(memoria->tablaDeSegmentos); i++)
+    {
+        t_segmento_tabla* fila = list_get(memoria->tablaDeSegmentos, i);
+        suma_size_tabla_segmentos += fila->segmento->size;
+    }
+    return memoria->sizeEspacioUsuario-suma_size_tabla_segmentos;
+}
+
 void* obtener_base_segmento_worst_fit(size_t size){
     t_hueco_libre* huecoLibre;
-
+    void* direccionBase;
+    void* proximaDireccion = NULL;
     /*
     ** Comparar lista con el solicitado o espacio de hueco restante,
     ** ahora se compara todos los segmentos (huecos libres) que encontro, habria que comparar con el tamaño del segmento solicitado
     */
+    
     recalcular_huecos_libres();
     list_sort(memoria->huecosLibres, (void*) comparar_segmentos_por_mayor );
+    t_list* aux_huecos_libres = memoria->huecosLibres;
     
+    if(list_size(aux_huecos_libres)==0){
+    	size_t total_memoria = total_memoria_asignada();
+        size_t res = total_memoria-size; // Calcula el total de memoria asignada con el size del segmento a agregar
+        if(res>=0){
+            // Calcular espacio disponible
+            return obtener_base_segmento_first_fit(size);
+        } else {
+            // Segfault
+            return NULL;
+        }
+    }
+
     for (int i = 0; i < list_size(memoria->huecosLibres); i++){
 
         huecoLibre = list_get(memoria->huecosLibres,i);
         if ((uintptr_t)calcular_direccion(huecoLibre->direccionBase, huecoLibre->size) >=
-        (uintptr_t)calcular_direccion(huecoLibre->direccionBase,size)) {return huecoLibre->direccionBase;} // TODO Revisar el comparador
+        (uintptr_t)calcular_direccion(huecoLibre->direccionBase,size)) {
+            return huecoLibre->direccionBase;
+            }
         }
-        return NULL; 
+        return NULL; //Segfault 
     }
 
 void* obtener_base_segmento_best_fit(size_t size){
@@ -374,15 +418,30 @@ void* obtener_base_segmento_best_fit(size_t size){
     */
     recalcular_huecos_libres();
     list_sort(memoria->huecosLibres, (void*) comparar_segmentos_por_menor );
+    t_list* aux_huecos_libres = memoria->huecosLibres;
     
-    for (int i = 0; i < list_size(memoria->huecosLibres); i++){
+    if(list_size(aux_huecos_libres)==0){
+    	size_t total_memoria = total_memoria_asignada();
+		size_t res = total_memoria-size;
+        if(res>=0){
+            // Calcular espacio disponible
+            return obtener_base_segmento_first_fit(size);
+        } else {
+            // Segfault
+            return NULL;
+        }
+    }
+
+    for (int i = 0; i < list_size(aux_huecos_libres); i++){
 
         huecoLibre = list_get(memoria->huecosLibres,i);
         if ((uintptr_t)calcular_direccion(huecoLibre->direccionBase, huecoLibre->size) >=
-        (uintptr_t)calcular_direccion(huecoLibre->direccionBase,size)) {return huecoLibre->direccionBase;} // TODO Revisar el comparador
-        }
-        return NULL; 
-    }
+        (uintptr_t)calcular_direccion(huecoLibre->direccionBase,size)) {
+        	return huecoLibre->direccionBase;
+        } // TODO Revisar el comparador
+	}
+	return NULL;
+}
 
 /*
  * @param size_t size Tamaño pedido de memoria

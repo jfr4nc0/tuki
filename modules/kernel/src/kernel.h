@@ -56,7 +56,11 @@ typedef struct ParametrosHiloIO {
     uint32_t pidProceso;
 } t_parametros_hilo_IO;
 
-
+typedef struct {
+    codigo_operacion operacion;
+    PCB* pcb;
+    char** instruccion;
+}t_data_desalojo;
 typedef struct {
     t_nombre_estado nombreEstado;
     t_list* listaProcesos;
@@ -101,6 +105,7 @@ void *__ejecucion_desalojo_pcb(void *);
 PCB* elegir_pcb_segun_fifo();
 PCB* elegir_pcb_segun_hrrn();
 void *manejo_desalojo_pcb();
+codigo_operacion manejo_instrucciones(t_data_desalojo* data);
 void recibir_proceso_desalojado(PCB*, int );
 PCB* recibir_pcb_de_cpu();
 
@@ -205,6 +210,8 @@ t_dictionary* tablaArchivosAbiertos;
 #define WAIT                        "PID: <%d> - Wait: <%s> - Instancias: <INSTANCIAS RECURSO>" // Nota: El valor de las instancias es después de ejecutar el Wait
 #define LOG_CAMBIO_DE_ESTADO        "PID: %d - Estado Anterior: %s - Estado Actual: %s"
 #define F_SEEK_HECHO                "PID <%d> Instruccion F_SEEK hecha correctamente, archivo %s ahora apuntando al puntero %d"
+#define E__CREAR_SEGMENTO           "PID: %d - ERROR en crear Segmento - Id: %d - Tamaño: %d"
+#define E__ELIMINAR_SEGMENTO        "PID: %d - Eliminar Segmento - Id Segmento: %d"
 ////////////////////////////////////
 
 

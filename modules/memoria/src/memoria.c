@@ -11,6 +11,7 @@ int main() {
     int servidorMemoria = iniciar_servidor(configInicial, loggerMemoria);
     inicializar_memoria(memoriaConfig->TAM_MEMORIA, memoriaConfig->TAM_SEGMENTO_0,memoriaConfig->ALGORITMO_ASIGNACION);
 
+	incializar_estructuras();
 //	testing_funciones();
 
     atender_conexiones(servidorMemoria);
@@ -20,6 +21,10 @@ int main() {
     liberar_memoria();
 
 	return 0;
+}
+
+void incializar_estructuras(){
+	pthread_mutex_init(&mutex_memoria_ocupada,NULL);
 }
 
 void testing_funciones(){
@@ -32,7 +37,7 @@ void testing_funciones(){
 void atender_conexiones(int servidorMemoria) {
     while (1){
     	int clienteAceptado = esperar_cliente(servidorMemoria, loggerMemoria);
-
+    	log_trace(loggerMemoria, "cliente: %d",clienteAceptado);
 		pthread_t hilo_administrar_cliente;
 		pthread_create(&hilo_administrar_cliente, NULL, (void*) administrar_cliente, (void*) (intptr_t) clienteAceptado);
 		pthread_detach(hilo_administrar_cliente);
@@ -44,9 +49,10 @@ void administrar_cliente(void* clienteAceptado) {
         pthread_t thread_kernel;
         pthread_t thread_file_system;
 
-    	// Recibo una primera operación para saber que módulo se conectó
-		int modulo = recibir_operacion((int)(intptr_t)clienteAceptado);
-
+        log_trace(loggerMemoria, "cliente: %d",(int)(intptr_t)clienteAceptado);
+        // Recibo una primera operación para saber que módulo se conectó
+		int modulo = recibir_operacion((int)(intptr_t)clienteAceptado); // recibe ok
+		log_trace(loggerMemoria, "Modulo: %d",modulo);
 		// No se almacena ya que se ignora, pero necesito llamarlo para liberar el mensaje
 		recibir_paquete((int)(intptr_t)clienteAceptado);
 
@@ -105,9 +111,14 @@ void iterator(char* value) {
 void ejecutar_instrucciones(int cliente, char* modulo) {
 	log_info(loggerMemoria, "Esperando instrucciones de: %s ", modulo);
 
-	codigo_operacion codigoDeOperacion = recibir_operacion(cliente);
-    log_info(loggerMemoria, I__RECIBO_INSTRUCCION, codigoDeOperacion, modulo);
-    administrar_instrucciones(cliente, codigoDeOperacion);
+	while(1){
+		codigo_operacion codigoDeOperacion = recibir_operacion(cliente);
+		log_info(loggerMemoria, I__RECIBO_INSTRUCCION, codigoDeOperacion, modulo);
+    
+		pthread_mutex_lock(&mutex_memoria_ocupada);
+		administrar_instrucciones(cliente, codigoDeOperacion);
+		pthread_mutex_unlock(&mutex_memoria_ocupada);
+    	}
 
     return;
 }
@@ -119,7 +130,7 @@ void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion) 
 	int pid = *(int*)list_get(listaRecibida, 0);
 
 	switch(codigoDeOperacion){
-		case AUX_CREATE_PCB:
+		case AUX_CREATE_PCB: 
 		{
 			codigoRespuesta = inicializar_proceso(pid, sizeof(int));
 			t_list* obtenerSegmentosPorIdProceso = obtener_tabla_segmentos_por_proceso_id(pid);
