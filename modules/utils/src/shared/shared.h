@@ -72,6 +72,8 @@ typedef struct {
     char RDX[16];
 } registros_cpu;
 
+typedef struct timespec timestamp;
+
 typedef struct {
 	int id_proceso; // Identificador del proceso, unico en todo el sistema
 	pcb_estado estado;
@@ -178,10 +180,10 @@ char* leer_registro_16_bytes(char* , int* );
 
 /*--------- BUFFERS ------------*/
 void buffer_pack(t_buffer* self, void* streamToAdd, int size);
-static void __stream_send(int toSocket, void *streamToSend, uint32_t bufferSize);
+void __stream_send(int toSocket, void *streamToSend, uint32_t bufferSize);
 t_buffer *buffer_unpack(t_buffer *self, void *dest, int size);
 t_buffer *buffer_create(void);
-static void *__stream_create(uint8_t header, t_buffer *buffer);
+void *__stream_create(uint8_t header, t_buffer *buffer);
 void stream_send_buffer(int toSocket, uint8_t header, t_buffer *buffer);
 char *buffer_unpack_string(t_buffer *self);
 void buffer_pack_string(t_buffer *self, char *stringToAdd);
@@ -209,7 +211,7 @@ int recibir_operacion(int);
 void* recibir_buffer(int*, int);
 void* leer_de_buffer(char*, int*, size_t);
 char* leer_texto(char* buffer, int* desp, int size);
-
+timestamp* leer_timestamp(char* buffer, int* desp);
 
 void intervalo_de_pausa(int );
 

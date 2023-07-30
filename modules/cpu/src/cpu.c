@@ -39,7 +39,6 @@ void atender_kernel(int clienteKernel){
 	while(1) {
 		pthread_mutex_lock(&m_recibir_pcb);
 		PCB* pcb_a_ejecutar = recibir_pcb(clienteKernel);
-
 		ejecutar_proceso(pcb_a_ejecutar, clienteKernel);
 		pthread_mutex_unlock(&m_recibir_pcb);
 	}
@@ -173,10 +172,8 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
 	    instruccion = string_duplicate((char *)list_get(pcb->lista_instrucciones, pcb->contador_instrucciones));
 		instruccion_decodificada = decode_instruccion(instruccion, loggerCpu);
 
-        log_info(loggerCpu, "PID: <%u> - Ejecutando: %s", pcb->id_proceso, instruccion_decodificada[0]);
+        log_info(loggerCpu, "PID: %u - Ejecutando: %s", pcb->id_proceso, instruccion_decodificada[0]);
         ultimaOperacion = ejecutar_instruccion(instruccion_decodificada, pcb);
-
-        log_info(loggerCpu, "PROGRAM COUNTER: %d", pcb->contador_instrucciones);
 
         if (!hubo_interrupcion) {
 			pcb->contador_instrucciones++;
@@ -185,7 +182,6 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
 
     }
 
-    log_info(loggerCpu, "Se salió de la ejecucion en la instrucción %s. Guardando el contexto de ejecucion...", instruccion);
     guardar_contexto_de_ejecucion(pcb);
 
     free(instruccion);
@@ -225,7 +221,6 @@ void mostrar_pcb(PCB* pcb){
 	log_trace(loggerCpu, "LISTA ARCHIVOS ABIERTOS: ");
 	list_iterate(pcb->lista_archivos_abiertos, (void*) iterator);
 	log_trace(loggerCpu, "ESTIMACION HHRN: %f", pcb->estimacion_rafaga);
-	log_trace(loggerCpu, "TIMESTAMP EN EL QUE EL PROCESO LLEGO A READY POR ULTIMA VEZ: %f", pcb->ready_timestamp);
 }
 
 void iterator(char* value) {
@@ -282,9 +277,9 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 	instruccion_ = strtok(instruccion[0], "\n");
 
 	int operacion = keyFromString(instruccion_);
-	log_error(loggerCpu, "llega, la operacion es: %d", operacion);
+
 	if (operacion == -1) {
-		log_warning(loggerCpu, "Desconocemos la instruccion %s", instruccion[0]);
+		log_error(loggerCpu, "Desconocemos la instruccion %s", instruccion[0]);
 
 		return -1;
 	}
@@ -598,7 +593,7 @@ char *registros_cpu_get_valor_registro(char* registro, int tamanioRegistro){
 
 void log_acceso_a_memoria(uint32_t pid, char* modo, uint32_t idSegmento, uint32_t dirFisica, void* valor, uint32_t tamanio){
     char* valorPrinteable = agregarCaracterNulo(valor, tamanio);
-    log_info(loggerCpu, "PID: <%d> - Acción: <%s> - Segmento: <%d> - Dirección Física: <%d> - Valor: <%s>", pid, modo, idSegmento, dirFisica, valorPrinteable);
+    log_info(loggerCpu, "PID: %d> - Acción: %s - Segmento: %d - Dirección Física: %d - Valor: %s", pid, modo, idSegmento, dirFisica, valorPrinteable);
     free(valorPrinteable);
     return;
 }
@@ -624,7 +619,7 @@ char* agregarCaracterNulo(void* data, uint32_t length){
 }
 
 void loggear_segmentation_fault(uint32_t pid, uint32_t numSegmento, uint32_t offset, uint32_t tamanio){
-    log_info(loggerCpu, "PID: <%u> - Error SEG_FAULT- Segmento: <%u> - Offset: <%u> - Tamaño: <%u>", pid, numSegmento, offset, tamanio);
+    log_info(loggerCpu, "PID: %u - Error SEG_FAULT- Segmento: %u - Offset: %u - Tamaño: %u", pid, numSegmento, offset, tamanio);
     return;
 }
 
@@ -702,6 +697,7 @@ void* get_registro_cpu(char* registro, registros_cpu* registrosCpu){
 	} else if (strcmp(registro, "RDX") == 0) {
 		return &(registrosCpu->RDX);
 	}
+	return NULL;
 }
 void instruccion_mov_in(char* registro, char* dir_logica, PCB* pcb) {
 	/*

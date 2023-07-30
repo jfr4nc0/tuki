@@ -68,8 +68,6 @@ typedef struct {
     t_estado* estadoRecurso;
 }t_semaforo_recurso;
 
-typedef struct timespec timestamp;
-
 pthread_mutex_t permiso_compactacion;
 
 /*----------------- FUNCIONES ------------------*/
@@ -100,7 +98,7 @@ double rafaga_estimada(PCB*);
 void *__ejecucion_desalojo_pcb(void *);
 PCB* elegir_pcb_segun_fifo();
 PCB* elegir_pcb_segun_hrrn();
-void *manejo_desalojo_pcb();
+void manejo_desalojo_pcb();
 void recibir_proceso_desalojado(PCB*, int );
 PCB* recibir_pcb_de_cpu();
 
@@ -141,9 +139,22 @@ void envio_pcb_a_cpu(int , PCB* , codigo_operacion );
 void agregar_pcb_a_paquete_para_cpu(t_paquete* , PCB* );
 void agregar_registros_a_paquete_cpu(t_paquete* , registros_cpu* );
 PCB* recibir_proceso_desajolado(PCB* pcb_en_ejecucion);
+void destruir_segmento(t_segmento* segmento);
+
+PCB *remover_pcb_segun_maximo_hrrn(pcb_estado *estado);
+PCB *__estado_obtener_pcb_segun_maximo_hrrn_atomic(pcb_estado * estado);
+PCB *__estado_obtener_pcb_segun_maximo_hrrn(pcb_estado *estado);
+void *comparar_pcb_segun_hrrn(void *pcbA, void *pcbB);
+double __calcular_valor_hrrn(PCB *pcb, timestamp *tiempoActual);
+double obtener_diferencial_de_tiempo_en_milisegundos(timestamp *end, timestamp *start);
+
+
+
 // t_semaforo_recurso* diccionario_semaforos_recursos_get_semaforo_recurso(tablaArchivosAbiertos, nombreArchivo);
 
 t_estado* crear_archivo_estado(t_nombre_estado nombreEstado);
+
+void instruccion_wait(PCB *, char *);
 
 ////////////////////////////////////////////////////
 
@@ -169,6 +180,8 @@ sem_t sem_proceso_a_ready_terminado;
 sem_t sem_proceso_a_executing;
 sem_t sem_grado_multiprogamacion;
 sem_t sem_cpu_disponible;
+sem_t proceso_para_finalizar;
+sem_t proceso_en_exit;
 
 pthread_t planificador_largo_plazo;
 pthread_t planificador_corto_plazo;

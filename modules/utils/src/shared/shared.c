@@ -199,7 +199,6 @@ t_log* iniciar_logger(char* pathLog, int moduloPos) {
 
     t_log *logger;
     char *directorioActual = get_current_dir_name();
-    printf("Por crear logger desde %s \n", directorioActual);
     free(directorioActual);
     if (( logger = log_create(pathLog, modulo, mostrarConsola, log_level)) == NULL ) {
         printf(cantidad_strings_a_mostrar(2), E__LOGGER_CREATE, ENTER);
@@ -218,7 +217,7 @@ t_log* iniciar_logger(char* pathLog, int moduloPos) {
 t_config* iniciar_config(char* pathConfig, t_log* logger) {
     t_config* nuevo_config;
     char *directorioActual = get_current_dir_name();
-    printf("Por crear config desde %s \n", directorioActual);
+
     free(directorioActual);
     if ((nuevo_config = config_create(pathConfig)) == NULL) {
         log_error(logger, E__CONFIG_CREATE);
@@ -263,6 +262,13 @@ double leer_double(char* buffer, int* desp) {
 	double respuesta;
 	memcpy(&respuesta, buffer + (*desp), sizeof(double));
 	(*desp) += sizeof(double);
+
+	return respuesta;
+}
+timestamp* leer_timestamp(char* buffer, int* desp) {
+	timestamp* respuesta;
+	memcpy(&respuesta, buffer + (*desp), sizeof(timestamp));
+	(*desp) += sizeof(timestamp);
 
 	return respuesta;
 }
@@ -369,9 +375,9 @@ char** decode_instruccion(char* linea_a_parsear, t_log* logger) {
 	if(instruccion[0] == NULL) {
 	    log_info(logger, "Se ignora linea vacía.");
 	}
+
 	return instruccion;
 }
-
 
 char** decode_instruccion_prueba(char* linea_a_parsear, t_log* logger) {
 
@@ -390,7 +396,7 @@ char** decode_instruccion_prueba(char* linea_a_parsear, t_log* logger) {
 
 	switch(instruccion_){
 		case I_SET:{
-			instruccion = string_split(linea_a_parsear, " \n");
+			strtok(instruccion[2], "\n");
 			if (instruccion[0] == NULL) {
 				log_info(logger, "Se ignora linea vacía.");
 				return instruccion;
@@ -454,7 +460,7 @@ int crear_conexion(char *ip, char* puerto, char* modulo, t_log* logger) {
         uint32_t handshake = 1;
         uint32_t result;
 
-        log_info(logger, I__CONEXION_CREATE, modulo);
+        log_warning(logger, I__CONEXION_CREATE, modulo);
 
         send(clienteAceptado, &handshake, sizeof(uint32_t), 0);
         recv(clienteAceptado, &result, sizeof(uint32_t), MSG_WAITALL);
@@ -576,7 +582,7 @@ t_buffer *buffer_unpack(t_buffer *self, void *dest, int size) {
     return self;
 }
 
-static void *__stream_create(uint8_t header, t_buffer *buffer)
+void *__stream_create(uint8_t header, t_buffer *buffer)
 {
     void *streamToSend = malloc(sizeof(header) + sizeof(buffer->size) + buffer->size);
 
@@ -599,7 +605,7 @@ void stream_send_buffer(int toSocket, uint8_t header, t_buffer *buffer) {
     return;
 }
 
-static void __stream_send(int toSocket, void *streamToSend, uint32_t bufferSize) {
+void __stream_send(int toSocket, void *streamToSend, uint32_t bufferSize) {
     // Variables creadas para el sizeof
     uint8_t header = 0;
     uint32_t size = 0;
@@ -665,12 +671,15 @@ int iniciar_servidor(t_config* config, t_log* logger) {
            servinfo->ai_socktype,
            servinfo->ai_protocol);
 
+    int my_true = 1; //Defino un true para poder pasarle el puntero al true
+    setsockopt(socket_servidor, SOL_SOCKET, SO_REUSEADDR, &my_true, sizeof(int)); //Para cerrar el socket en cuanto se termine el proceso
+
     // Asociamos el socket a un puerto
     bind(socket_servidor, servinfo->ai_addr, servinfo->ai_addrlen);
 
     // Escuchamos las conexiones entrantes
     listen(socket_servidor, SOMAXCONN);
-    log_info(logger, I__SERVER_READY);
+    //log_warning(logger, I__SERVER_READY);
 
     freeaddrinfo(servinfo);
 
@@ -682,7 +691,7 @@ int esperar_cliente(int socket_servidor, t_log* logger) {
     uint32_t resultOk = 0;
     uint32_t resultError = -1;
 
-    log_info(logger, I_ESPERANDO_CONEXION);
+    //log_info(logger, I_ESPERANDO_CONEXION);
 
     // Aceptamos un nuevo cliente
     int clienteAceptado = accept(socket_servidor, NULL, NULL);
@@ -691,16 +700,16 @@ int esperar_cliente(int socket_servidor, t_log* logger) {
         return -1;
     }
 
-    log_info(logger, I__CONEXION_ACCEPT);
+    //log_info(logger, I__CONEXION_ACCEPT);
 
     log_debug(logger, "Se realiza un handshake de parte del servidor");
     recv(clienteAceptado, &handshake, sizeof(uint32_t), MSG_WAITALL);
 
     if(handshake == 1) {
         send(clienteAceptado, &resultOk, sizeof(uint32_t), 0);
-        log_info(logger, HANDSHAKE, OK);
+        //log_info(logger, HANDSHAKE, OK);
     } else {
-        log_error(logger, HANDSHAKE, ERROR);
+        //log_error(logger, HANDSHAKE, ERROR);
         send(clienteAceptado, &resultError, sizeof(uint32_t), 0);
     }
 
