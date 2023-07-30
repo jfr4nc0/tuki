@@ -327,6 +327,7 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
 
 	switch(operacion) {
 		 	 case I_YIELD: {// TODO mandar el proceso a la cola de ready
+		 		 cambiar_estado_proceso_con_semaforos(pcb, ENUM_READY);
 		 		 break;
 		 	 }
 		 	 case I_F_OPEN: {
@@ -952,12 +953,11 @@ void mover_de_lista_con_sem(int idProceso, int estadoNuevo, int estadoAnterior) 
 		int index = obtener_index_pcb_de_lista(estadoAnterior, idProceso);
         PCB* pcb = (PCB*)list_get(lista_estados[estadoAnterior], index);
         pcb->estado = estadoNuevo;
-		/*
+
 		if (pcb->estado == ENUM_READY) {
-			// TODO: FALLA
-			 // set_timespec((timestamp*)(time_t)pcb->ready_timestamp);
+            set_timespec((timestamp*)(time_t)pcb->ready_timestamp);
 		}
-		*/
+
 		PCB* pcbEliminado = (PCB*)list_remove(lista_estados[estadoAnterior], index);
 
 		if (pcbEliminado->id_proceso != pcb->id_proceso) {
