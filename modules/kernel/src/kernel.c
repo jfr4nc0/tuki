@@ -115,6 +115,7 @@ void enviar_proceso_a_ready() {
         }
 
         sem_wait(&sem_lista_estados[ENUM_READY]);
+        pcb->ready_timestamp = time(NULL);
         cambiar_estado_proceso_sin_semaforos(pcb, ENUM_READY);
         sem_post(&sem_lista_estados[ENUM_NEW]);
         sem_post(&sem_lista_estados[ENUM_READY]);
@@ -128,6 +129,9 @@ void iterator_debug(char* value) {
 
 void iterator(char* value) {
     log_info(kernelLogger, "%s ", value);
+}
+void iterator_id_proceso(PCB* pcb) {
+    log_warning(kernelLogger, "%d ", pcb->id_proceso);
 }
 
 void recibir_de_consola(void *clienteAceptado) {
@@ -161,31 +165,11 @@ void crear_hilo_planificadores() {
 
 void _planificador_largo_plazo() {
 
-    pthread_t m_liberar_pcb_de_exit;
-    pthread_create(&m_liberar_pcb_de_exit, NULL, (void*) liberar_pcb_de_exit, NULL);
-    pthread_detach(m_liberar_pcb_de_exit);
-
     pthread_t hilo_procesos_a_ready;
     pthread_create(&hilo_procesos_a_ready, NULL, (void*) enviar_proceso_a_ready, NULL);
     pthread_detach(hilo_procesos_a_ready);
 
     return;
-}
-
-void* liberar_pcb_de_exit(void* args){
-
-	for (;;) {
-
-    	PCB *pcb_a_liberar = desencolar_primer_pcb(ENUM_EXIT);
-    	mostrar_pcb(pcb_a_liberar);
-        // TODO: MEMORIA --> adapter_memoria_finalizar_proceso(pcbALiberar);
-        //stream_send_empty_buffer(pcb_get_socket(pcbALiberar), HEADER_proceso_terminado);
-
-        //destruir_pcb(pcb_a_liberar);
-        sem_post(&sem_grado_multiprogamacion);
-    }
-
-    return NULL;
 }
 
 void destruir_pcb(PCB* pcb) {
@@ -233,7 +217,7 @@ void _planificador_corto_plazo() {
 
     //Dispatcher
     while(1) {
-        sem_wait(&sem_cpu_disponible);
+    	sem_wait(&sem_cpu_disponible);
         sem_wait(&sem_proceso_a_ready_terminado);
         PCB* pcbParaEjecutar;
 
@@ -242,7 +226,7 @@ void _planificador_corto_plazo() {
             //log_info(kernelLogger, "el pcb a ejecutar es %d", pcbParaEjecutar->id_proceso);
         }
         else if (string_equals_ignore_case(kernelConfig->ALGORITMO_PLANIFICACION, "HRRN")) {
-            pcbParaEjecutar = elegir_pcb_segun_hrrn();
+        	pcbParaEjecutar = elegir_pcb_segun_hrrn();
         }
 
         agregar_a_lista_con_sem((void*)pcbParaEjecutar, ENUM_EXECUTING);
@@ -261,10 +245,7 @@ void manejo_desalojo_pcb() {
 
         sem_post(&sem_lista_estados[ENUM_EXECUTING]);
 
-        timestamp inicio_ejecucion_proceso;
-        timestamp fin_ejecucion_proceso;
-
-        set_timespec(&inicio_ejecucion_proceso);
+        double inicio_ejecucion_proceso = time(NULL);
 
         envio_pcb_a_cpu(conexionCPU, pcb_para_cpu, OP_EXECUTE_PCB);
 
@@ -275,11 +256,11 @@ void manejo_desalojo_pcb() {
         PCB* pcb_en_ejecucion = malloc(sizeof(PCB));
         pcb_en_ejecucion = recibir_proceso_desajolado(pcb_para_cpu);
 
-        set_timespec(&fin_ejecucion_proceso);
+        double fin_ejecucion_proceso = time(NULL);
 
-         // Actualizo el estimado en el pcb segun el real ejecutado
-         double tiempo_en_cpu = obtener_diferencial_de_tiempo_en_milisegundos(&fin_ejecucion_proceso, &inicio_ejecucion_proceso);
-         pcb_estimar_proxima_rafaga(pcb_en_ejecucion, tiempo_en_cpu);
+        double tiempo_en_cpu = fin_ejecucion_proceso - inicio_ejecucion_proceso;
+
+        pcb_estimar_proxima_rafaga(pcb_en_ejecucion, tiempo_en_cpu);
 
          char* ultimaInstruccion = malloc(sizeof(char*));
          char** ultimaInstruccionDecodificada = malloc(sizeof(char*));
@@ -291,6 +272,7 @@ void manejo_desalojo_pcb() {
          switch(operacionRecibida) {
             case I_YIELD: {
             	agregar_a_lista_con_sem((void*)pcb_en_ejecucion, ENUM_READY);
+            	pcb_en_ejecucion->ready_timestamp = time(NULL);
             	sem_post(&sem_cpu_disponible);
             	sem_post(&sem_proceso_a_ready_terminado);
             	break;
@@ -641,12 +623,16 @@ double obtener_diferencial_de_tiempo_en_milisegundos(timestamp *end, timestamp *
     const uint32_t NANOSECS_TO_MILISECS = 1000000;
     return (double) ( (end->tv_sec - start->tv_sec) * SECS_TO_MILISECS + (end->tv_nsec - start->tv_nsec) / NANOSECS_TO_MILISECS );
 }
+
 void pcb_estimar_proxima_rafaga(PCB *pcb_ejecutado, double tiempo_en_cpu){
-    double alfa_hrrn = kernelConfig->HRRN_ALFA;
+
+	double alfa_hrrn = kernelConfig->HRRN_ALFA;
 
     double estimadoProxRafagaPcb = pcb_ejecutado->estimacion_rafaga;
     double estimadoProxRafagaActualizado = alfa_hrrn * tiempo_en_cpu + (1.0 - alfa_hrrn) * estimadoProxRafagaPcb;
+
     pcb_ejecutado->estimacion_rafaga = estimadoProxRafagaActualizado;
+
     return;
 }
 
@@ -799,71 +785,43 @@ PCB* elegir_pcb_segun_fifo(){
 
 }
 
-PCB* elegir_pcb_segun_hrrn(){
-    PCB* pcb;
-
-    //pcb = remover_pcb_segun_maximo_hrrn(lista_estados[ENUM_READY]);
+PCB* elegir_pcb_segun_hrrn() {
 
     sem_wait(&sem_lista_estados[ENUM_READY]);
 
-    list_sort(lista_estados[ENUM_READY], (void*) criterio_hrrn);
-    pcb = list_remove(lista_estados[ENUM_READY], 0);
+    PCB* pcb = obtener_maximo_por_R(lista_estados[ENUM_READY]);
 
     sem_post(&sem_lista_estados[ENUM_READY]);
 
     return pcb;
 }
-/*
-PCB *remover_pcb_segun_maximo_hrrn(pcb_estado *estado){
-    PCB *pcb_obtenido = __estado_obtener_pcb_segun_maximo_hrrn_atomic(estado);
 
-    PCB* pcb_maximo_hrrn;
-    int indice =  obtener_index_pcb_de_lista(ENUM_READY, pcb_obtenido->id_proceso);
-    sem_wait(&sem_lista_estados[ENUM_READY]);
-    pcb_maximo_hrrn = list_remove(lista_estados[ENUM_READY], indice);
-    sem_post(&sem_lista_estados[ENUM_READY]);
+PCB* obtener_maximo_por_R(t_list* lista_procesos){
 
-    return pcb_maximo_hrrn;
+	PCB* pcb_maximo = list_get(lista_procesos, 0);
+	double tiempo_actual = time(NULL);
+
+	for(int i = 1; i < list_size(lista_procesos); i++){
+		PCB* pcb_aux = list_get(lista_procesos, i);
+		if(__calcular_valor_hrrn(pcb_aux, tiempo_actual) > __calcular_valor_hrrn(pcb_maximo, tiempo_actual)){
+			pcb_maximo = pcb_aux;
+		}
+	}
+
+	int indice = obtener_index_pcb_de_lista(ENUM_READY, pcb_maximo->id_proceso);
+
+	list_remove(lista_estados[ENUM_READY], indice);
+
+	return pcb_maximo;
 }
 
-PCB *__estado_obtener_pcb_segun_maximo_hrrn_atomic(pcb_estado * estado){
-    sem_wait(&sem_lista_estados[ENUM_READY]);
-    PCB *pcb_seleccionado = __estado_obtener_pcb_segun_maximo_hrrn(estado);
-    sem_post(&sem_lista_estados[ENUM_READY]);
+double __calcular_valor_hrrn(PCB *pcb, double tiempoActual){
 
-    return pcb_seleccionado;
+    double tiempoEnReady = tiempoActual - pcb->ready_timestamp;
+
+    return (pcb->estimacion_rafaga + tiempoEnReady) / pcb->estimacion_rafaga;
 }
-PCB *__estado_obtener_pcb_segun_maximo_hrrn(pcb_estado *estado){
 
-	int indice_estado = (int)estado;
-
-	PCB *pcb_seleccionado = (PCB *) list_get_maximum(lista_estados[indice_estado], comparar_pcb_segun_hrrn);
-
-    return pcb_seleccionado;
-}
-void *comparar_pcb_segun_hrrn(void *pcbA, void *pcbB){
-    PCB *pcb1 = (PCB *) pcbA;
-    PCB *pcb2 = (PCB *) pcbB;
-
-    timestamp *tiempoActual = malloc(sizeof(*tiempoActual));
-    set_timespec(tiempoActual);
-
-    double estimacionPcb1 = __calcular_valor_hrrn(pcb1, tiempoActual);
-    double estimacionPcb2 = __calcular_valor_hrrn(pcb2, tiempoActual);
-
-    free(tiempoActual);
-
-    return estimacionPcb1 >= estimacionPcb2 ? pcbA : pcbB;
-}
-double __calcular_valor_hrrn(PCB *pcb, timestamp *tiempoActual){
-    double estimadoProxRafaga = pcb->estimacion_rafaga;
-    //timestamp *tiempoLlegadaReady = pcb->ready_timestamp;
-    timestamp* tiempoLlegadaReady = pcb->ready_timestamp;
-    double tiempoEnReady = obtener_diferencial_de_tiempo_en_milisegundos(tiempoActual, tiempoLlegadaReady);
-
-    return ( 1.0 + (tiempoEnReady / estimadoProxRafaga) );
-}
-*/
 void terminar_proceso(PCB* pcb_para_finalizar, codigo_operacion motivo_finalizacion){
 
 	char* motivo_de_finalizacion = obtener_motivo(motivo_finalizacion);
@@ -959,9 +917,8 @@ PCB* nuevo_proceso(t_list* listaInstrucciones, int clienteAceptado) {
 
     pcb->lista_segmentos = list_create();
     pcb->lista_archivos_abiertos = list_create();
-    pcb->estimacion_rafaga = kernelConfig->ESTIMACION_INICIAL;
-    pcb->ready_timestamp = 0; //TODO
-    //pcb->hrrn_alfa = kernelConfig->HRRN_ALFA;
+    pcb->estimacion_rafaga = kernelConfig->ESTIMACION_INICIAL / 1000;
+    pcb->ready_timestamp = 0;
 
 	agregar_a_lista_con_sem(pcb, ENUM_NEW);
 	log_info(kernelLogger, "Se crea el proceso %d en NEW", pcb->id_proceso);
@@ -1098,7 +1055,7 @@ double rafaga_estimada(PCB* pcb) {
 
     return rafaga;
 }
-
+/*
 double calculo_HRRN(PCB* pcb) {
     double rafaga = rafaga_estimada(pcb);
     double res = 1.0 + (pcb->ready_timestamp / rafaga);
@@ -1109,9 +1066,9 @@ static bool criterio_hrrn(PCB* pcb_A, PCB* pcb_B) {
     double a = calculo_HRRN(pcb_A);
     double b = calculo_HRRN(pcb_B);
 
-    return a <= b;
+    return a > b;
 }
-
+*/
 void inicializar_diccionario_recursos() {
     tablaArchivosAbiertos = dictionary_create();
     diccionario_recursos = dictionary_create();

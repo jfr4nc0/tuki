@@ -46,6 +46,7 @@ typedef struct {
     sem_t sem_recurso;
 }t_recurso;
 
+typedef struct timespec timestamp;
 
 typedef struct ParametrosHiloIO {
     uint32_t idProceso;
@@ -74,7 +75,6 @@ pthread_mutex_t permiso_compactacion;
 
 void inicializar_estructuras();
 void _planificador_largo_plazo();
-void* liberar_pcb_de_exit();
 void destruir_pcb(PCB* pcb);
 PCB *desencolar_primer_pcb(pcb_estado estado);
 void _planificador_corto_plazo();
@@ -144,9 +144,9 @@ void destruir_segmento(t_segmento* segmento);
 PCB *remover_pcb_segun_maximo_hrrn(pcb_estado *estado);
 PCB *__estado_obtener_pcb_segun_maximo_hrrn_atomic(pcb_estado * estado);
 PCB *__estado_obtener_pcb_segun_maximo_hrrn(pcb_estado *estado);
-void *comparar_pcb_segun_hrrn(void *pcbA, void *pcbB);
-double __calcular_valor_hrrn(PCB *pcb, timestamp *tiempoActual);
-double obtener_diferencial_de_tiempo_en_milisegundos(timestamp *end, timestamp *start);
+double __calcular_valor_hrrn(PCB *pcb, double tiempoActual);
+PCB* obtener_maximo_por_R(t_list* lista_procesos);
+//double obtener_diferencial_de_tiempo_en_milisegundos(timestamp *end, timestamp *start);
 
 
 

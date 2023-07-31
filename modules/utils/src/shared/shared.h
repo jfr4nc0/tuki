@@ -72,8 +72,6 @@ typedef struct {
     char RDX[16];
 } registros_cpu;
 
-typedef struct timespec timestamp;
-
 typedef struct {
 	int id_proceso; // Identificador del proceso, unico en todo el sistema
 	pcb_estado estado;
@@ -211,7 +209,7 @@ int recibir_operacion(int);
 void* recibir_buffer(int*, int);
 void* leer_de_buffer(char*, int*, size_t);
 char* leer_texto(char* buffer, int* desp, int size);
-timestamp* leer_timestamp(char* buffer, int* desp);
+//timestamp* leer_timestamp(char* buffer, int* desp);
 
 void intervalo_de_pausa(int );
 

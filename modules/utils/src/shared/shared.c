@@ -265,13 +265,6 @@ double leer_double(char* buffer, int* desp) {
 
 	return respuesta;
 }
-timestamp* leer_timestamp(char* buffer, int* desp) {
-	timestamp* respuesta;
-	memcpy(&respuesta, buffer + (*desp), sizeof(timestamp));
-	(*desp) += sizeof(timestamp);
-
-	return respuesta;
-}
 
 long leer_long(char* buffer, int* desp) {
 	long respuesta;
