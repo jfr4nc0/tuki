@@ -644,7 +644,7 @@ PCB* recibir_proceso_desajolado(PCB* pcb_en_ejecucion) {
     }
 
     // pcb_recibido->lista_archivos_abiertos = pcb_en_ejecucion->lista_archivos_abiertos;
-    list_add_all(pcb_recibido->lista_archivos_abiertos, pcb_en_ejecucion->lista_archivos_abiertos);
+    list_add_all(pcb_recibido->lista_archivos_abiertos, pcb_en_ejecucion->lista_archivos_abiertos); // rompe
 
     return pcb_recibido;
 }
