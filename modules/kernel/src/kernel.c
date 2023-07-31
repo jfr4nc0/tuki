@@ -112,10 +112,9 @@ void enviar_proceso_a_ready() {
             } else if (codigoRespuesta == AUX_SOLO_CON_COMPACTACION) {
                 log_info(kernelLogger, "Se necesita compactar para proceso %d", pcb->id_proceso);
             } else if (codigoRespuesta == AUX_OK) {
-                t_list* segmentos = recibir_lista_segmentos(conexionMemoria);
+                pcb->lista_segmentos = recibir_lista_segmentos(conexionMemoria);
                 log_debug(kernelLogger, "Se creó en memoria el proceso %d, semgmentos creados: %d", pcb->id_proceso, list_size(segmentos));
-                mostrarListaSegmentos(segmentos);
-                pcb->lista_segmentos = segmentos;
+                mostrarListaSegmentos(pcb->lista_segmentos);
             } else {
                 log_error(kernelLogger, "Error interno en Modulo Memoria para crear proceso id: %d.", pcb->id_proceso);
             }
