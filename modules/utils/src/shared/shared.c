@@ -497,7 +497,7 @@ t_list* recibir_lista_segmentos(int clienteAceptado) {
     t_list* listaSegmentos = recibir_paquete(clienteAceptado);
 
     recibir_operacion(clienteAceptado);
-    char* buffer;
+    void* buffer;
 	int tamanio = 0;
 	int desp = 0;
 
@@ -598,11 +598,12 @@ void agregar_valor_a_paquete(t_paquete* paquete, void* valor, int tamanio) {
 PCB* recibir_pcb(int clienteAceptado) {
 	PCB* pcb = malloc(sizeof(PCB));
 
-	char* buffer;
+	void* buffer;
 	int tamanio = 0;
 	int desplazamiento = 0;
 
-	codigo_operacion codDePrueba1 = recibir_operacion(clienteAceptado);
+    codigo_operacion codDePrueba1 = recibir_operacion(clienteAceptado);
+
 	buffer = recibir_buffer(&tamanio, clienteAceptado);
 
 	pcb->id_proceso = leer_int(buffer, &desplazamiento);
@@ -631,7 +632,7 @@ PCB* recibir_pcb(int clienteAceptado) {
 	pcb->ready_timestamp = leer_double(buffer, &desplazamiento);
     free(buffer);
 
-    codigo_operacion codDePrueba2 = recibir_operacion(clienteAceptado);
+    codigo_operacion codAuxOkEliminar = recibir_operacion(clienteAceptado);
 	pcb->lista_segmentos = recibir_lista_segmentos(clienteAceptado);
 
 	return pcb;

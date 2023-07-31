@@ -38,6 +38,7 @@ void atender_kernel(int clienteKernel){
 	// Kernel no debería mandar dos pcbs simultaneamente a cpu, por las dudas tener en cuenta igual
 	while(1) {
 		pthread_mutex_lock(&m_recibir_pcb);
+		codigo_operacion codDePrueba1 = recibir_operacion(clienteKernel);
 		PCB* pcb_a_ejecutar = recibir_pcb(clienteKernel);
 
 		ejecutar_proceso(pcb_a_ejecutar, clienteKernel);
@@ -70,34 +71,6 @@ void inicializar_registros() {
     strcpy(registrosCpu->RCX, "");
     strcpy(registrosCpu->RDX, "");
 
-}
-
-void procesar_instruccion(void * clienteAceptado) {
-	int clienteKernel = (int) (intptr_t)clienteAceptado;
-
-	codigo_operacion codigoOperacion = recibir_operacion(clienteKernel);
-	if (codigoOperacion != OP_EXECUTE_PCB) {
-		log_error(loggerCpu, "No se recibió un codigo de operacion de tipo pcb. Codigo recibido %d", codigoOperacion);
-		abort();
-	}
-
-	PCB* pcb = recibir_pcb(clienteKernel);
-	log_trace(loggerCpu, "Registro AX: %s", pcb->registrosCpu->AX);
-	log_trace(loggerCpu, "Registro BX: %s", pcb->registrosCpu->BX);
-	log_trace(loggerCpu, "Registro CX: %s", pcb->registrosCpu->CX);
-	log_trace(loggerCpu, "Registro DX: %s", pcb->registrosCpu->DX);
-	log_trace(loggerCpu, "Registro EAX: %s", pcb->registrosCpu->EAX);
-	log_trace(loggerCpu, "Registro EBX: %s", pcb->registrosCpu->EBX);
-	log_trace(loggerCpu, "Registro ECX: %s", pcb->registrosCpu->ECX);
-	log_trace(loggerCpu, "Registro EDX: %s", pcb->registrosCpu->EDX);
-	log_trace(loggerCpu, "Registro RAX: %s", pcb->registrosCpu->RAX);
-	log_trace(loggerCpu, "Registro RBX: %s", pcb->registrosCpu->RBX);
-	log_trace(loggerCpu, "Registro RCX: %s", pcb->registrosCpu->RCX);
-	log_trace(loggerCpu, "Registro RDX: %s", pcb->registrosCpu->RDX);
-	ejecutar_proceso(pcb, clienteKernel);
-	//free(pcb);
-
-	return;
 }
 
 void ejecutar_proceso(PCB* pcb, int clienteKernel) {

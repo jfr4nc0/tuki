@@ -1,6 +1,6 @@
 #include "administrarMemoria.h"
 
-int idSegmentoGlobal = 1; // 0 Falla al enviar a kernel
+int idSegmentoGlobal = 0;
 t_memoria* memoria;
 
 void inicializar_memoria(size_t sizeMemoriaTotal, size_t sizeSegmento0, char* algoritmo) {
@@ -299,14 +299,6 @@ t_list* obtener_tabla_segmentos_por_proceso_id(int procesoId) {
     }
 
     return segmentos;
-}
-
-// TODO Implementar recibir el segmento enviado por el kernel
-t_segmento* recibir_segmento_kernel(t_list* pcbRecibido){
-    t_segmento* segmento;
-
-
-    return segmento;
 }
 
 ////////////////////////////////////////////////
