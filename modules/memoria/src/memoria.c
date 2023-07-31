@@ -10,9 +10,7 @@ int main() {
 
     int servidorMemoria = iniciar_servidor(configInicial, loggerMemoria);
     inicializar_memoria(memoriaConfig->TAM_MEMORIA, memoriaConfig->TAM_SEGMENTO_0,memoriaConfig->ALGORITMO_ASIGNACION);
-
-	incializar_estructuras();
-//	testing_funciones();
+	pthread_mutex_init(&mutex_memoria_ocupada,NULL);
 
     atender_conexiones(servidorMemoria);
 
@@ -23,13 +21,10 @@ int main() {
 	return 0;
 }
 
-void incializar_estructuras(){
-	pthread_mutex_init(&mutex_memoria_ocupada,NULL);
-}
 
 void testing_funciones(){
 	codigo_operacion res;
-	// res = inicializar_proceso(1,128);
+	res = inicializar_proceso(1, 128);
 	// res = crear_segmento_por_pid(1,100);
 	// res = crear_segmento_por_pid(1,80);
 }
@@ -114,7 +109,6 @@ void ejecutar_instrucciones(int cliente, char* modulo) {
 	while(1){
 		codigo_operacion codigoDeOperacion = recibir_operacion(cliente);
 		log_info(loggerMemoria, I__RECIBO_INSTRUCCION, codigoDeOperacion, modulo);
-    
 		pthread_mutex_lock(&mutex_memoria_ocupada);
 		administrar_instrucciones(cliente, codigoDeOperacion);
 		pthread_mutex_unlock(&mutex_memoria_ocupada);
@@ -126,36 +120,46 @@ void ejecutar_instrucciones(int cliente, char* modulo) {
 void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion) {
     codigo_operacion codigoRespuesta = AUX_ERROR;
 
+	t_list* listaRecibida = recibir_paquete(cliente);
+
 	switch(codigoDeOperacion){
-		case AUX_CREATE_PCB: 
+		case I_F_WRITE:
 		{
-			t_list* listaRecibida = recibir_paquete(cliente);
+			log_info(loggerMemoria, "Memoria entra a F write");
+			break;
+		}
+		case AUX_CREATE_PCB:
+		{
 			int pid = *(int*)list_get(listaRecibida, 0);
 			codigoRespuesta = inicializar_proceso(pid, sizeof(int));
-			t_list* obtenerSegmentosPorIdProceso = obtener_tabla_segmentos_por_proceso_id(pid);
-
+			t_list* listaSegmentosPorPid = obtener_tabla_segmentos_por_proceso_id(pid);
+			log_info(loggerMemoria, CREACION_DE_PROCESO, pid);
 			if (codigoRespuesta == AUX_OK) {
-				log_info(loggerMemoria, CREACION_DE_PROCESO, pid);
-				enviar_operacion(cliente, codigoRespuesta, sizeof(obtenerSegmentosPorIdProceso), obtenerSegmentosPorIdProceso);
-			} else { enviar_codigo_operacion(cliente, codigoRespuesta); }
+				enviar_lista_segmentos_del_proceso(cliente, AUX_OK, listaSegmentosPorPid, loggerMemoria);
+			} else {
+				enviar_codigo_operacion(cliente, codigoRespuesta);
+			}
 			break;
 		}
 		case I_CREATE_SEGMENT:
 		{
-			t_list* listaRecibida = recibir_tabla_segmentos(cliente,1); // Siempre se envia un solo segmento a la vez
-			t_segmento_tabla* tabla_segmento = (t_segmento_tabla*)list_get(listaRecibida,0);
-			codigoRespuesta = crear_segmento_por_pid(tabla_segmento);
-
+			// Recibir dos paquetes, uno con el pid y otro con el segmento
+			t_list* listaSegmentos = recibir_tabla_segmentos(cliente);
+			t_segmento_tabla* tabla_segmento = list_get(listaSegmentos, 0);
+			codigoRespuesta = crear_segmento_por_pid(tabla_segmento->idProceso, tabla_segmento->segmento);
+			t_list* listaSegmentosPorPid = obtener_tabla_segmentos_por_proceso_id(tabla_segmento->idProceso);
 			if(codigoRespuesta == AUX_OK){
-				enviar_operacion(cliente,codigoRespuesta, sizeof(tabla_segmento), tabla_segmento);
+				enviar_lista_segmentos_del_proceso(cliente, AUX_OK, listaSegmentosPorPid, loggerMemoria);
 			} else { enviar_codigo_operacion(cliente, codigoRespuesta);}
 			break;
 		}
 		case I_DELETE_SEGMENT:
 		{
-			t_list* listaRecibida = recibir_tabla_segmentos(cliente,1);
-			t_segmento_tabla* tabla_segmento = (t_segmento_tabla*)list_get(listaRecibida,0);
-			if(eliminar_segmento(tabla_segmento->idProceso, tabla_segmento->segmento->id)!=NULL){
+			int pid = *(int*)list_get(listaRecibida, 0);
+			t_list* listaSegmentos = recibir_lista_segmentos(cliente);
+			t_segmento* segmento = list_get(listaSegmentos, 0);
+
+			if(eliminar_segmento(pid, segmento->id)!=NULL){
 				enviar_codigo_operacion(cliente, AUX_OK);
 			} else {enviar_codigo_operacion(cliente, AUX_ERROR);}
 
@@ -169,7 +173,6 @@ void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion) 
 		}
 		case AUX_FINALIZAR_PROCESO:
 		{
-			t_list* listaRecibida = recibir_paquete(cliente);
 			int pid = *(int*)list_get(listaRecibida, 0);
 			finalizar_proceso(pid);
 			// enviar_codigo_operacion(cliente,codigoRespuesta);
@@ -177,8 +180,11 @@ void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion) 
 		}
 		default:
 		{
-			log_error(loggerMemoria,E__CODIGO_INVALIDO);
+			log_error(loggerMemoria, E__CODIGO_INVALIDO);
 			enviar_codigo_operacion(cliente, AUX_ERROR);
+			liberar_conexion(cliente);
+			exit(EXIT_FAILURE);
+			return;
 			break;
 		}
 	}

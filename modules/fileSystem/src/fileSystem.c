@@ -33,10 +33,6 @@ void atender_kernel(int servidorFileSystem) {
     }
 }
 
-void iterator(char* value) {
-    log_info(loggerFileSystem, "%s ", value);
-}
-
 void ejecutar_instrucciones_kernel(void* cliente) {
 	int clienteKernel = (int) (intptr_t) cliente;
 
@@ -78,8 +74,9 @@ void ejecutar_instrucciones_kernel(void* cliente) {
 			case I_F_READ: {
 				// pthread_mutex_lock(&m_instruccion);
 				char *nombreArchivo = NULL;
-				uint32_t direccionFisica, cantidadBytes, puntero, pidProceso;
-				recibir_buffer_lectura_archivo(clienteKernel, &nombreArchivo, &puntero, &direccionFisica, &cantidadBytes, &pidProceso);
+				uint32_t direccionFisica, cantidadBytes, puntero;
+                int pidProceso;
+				recibir_buffer_escritura_lectura_archivo(clienteKernel, &nombreArchivo, &puntero, &direccionFisica, &cantidadBytes, &pidProceso);
 				devolver_instruccion_generico(leer_archivo(nombreArchivo, puntero, direccionFisica, cantidadBytes, pidProceso), clienteKernel);
 				free(nombreArchivo);
 				// pthread_mutex_unlock(&m_instruccion);
@@ -88,10 +85,12 @@ void ejecutar_instrucciones_kernel(void* cliente) {
 			case I_F_WRITE: {
 				// pthread_mutex_lock(&m_instruccion);
 				char *nombreArchivo = NULL;
-				uint32_t direccionFisica, cantidadBytes, puntero, pidProceso;
-				recibir_buffer_escritura_archivo(clienteKernel, &nombreArchivo, &puntero, &direccionFisica, &cantidadBytes, &pidProceso);
+				uint32_t direccionFisica, cantidadBytes, puntero;
+                int pidProceso;
+				recibir_buffer_escritura_lectura_archivo(clienteKernel, &nombreArchivo, &puntero, &direccionFisica, &cantidadBytes, &pidProceso);
 				solicitar_informacion_memoria(direccionFisica, cantidadBytes, pidProceso);
 				char* informacionAEscribir = (char*)recibir_buffer_informacion_memoria(cantidadBytes);
+                log_info(loggerFileSystem, "Escrito %s exitoso", informacionAEscribir);
 				devolver_instruccion_generico(escribir_archivo(informacionAEscribir, nombreArchivo, puntero, cantidadBytes), clienteKernel);
 
 				free(nombreArchivo);
@@ -173,8 +172,21 @@ void* recibir_buffer_informacion_memoria(uint32_t cantidadBytes) {
 }
 
 
-void recibir_buffer_escritura_archivo(int clienteKernel, char **nombreArchivo, uint32_t *puntero, uint32_t *direccionFisica, uint32_t *cantidadBytes, uint32_t* pid)
+void recibir_buffer_escritura_lectura_archivo(int clienteKernel, char **nombreArchivo, uint32_t *puntero, uint32_t *direccionFisica, uint32_t *cantidadBytes, int* pid)
 {
+    t_list* listaParametros = recibir_paquete(clienteKernel);
+    *nombreArchivo              = strdup((char*)list_get(listaParametros, 0));
+    char* direccionFisicaTexto  = (char*)list_get(listaParametros, 1);
+    char* cantidadBytesTexto    = (char*)list_get(listaParametros, 2);
+    *pid                        = (int)(intptr_t)list_get(listaParametros, 3);
+
+    char *variableAlmacenadora1; char *variableAlmacenadora2;
+	*direccionFisica = strtoul(direccionFisicaTexto, &variableAlmacenadora2, 10);
+	*cantidadBytes = strtoul(cantidadBytesTexto, &variableAlmacenadora2, 10);
+    free(variableAlmacenadora1); free(variableAlmacenadora2);
+
+    return;
+/*
     int tamanio = 0;
     t_buffer *bufferLectura = recibir_buffer(&tamanio, clienteKernel);
 
@@ -200,9 +212,8 @@ void recibir_buffer_escritura_archivo(int clienteKernel, char **nombreArchivo, u
 
     free(bufferLectura->stream);
     free(bufferLectura);
-    return;
+*/
 }
-
 
 void solicitar_informacion_memoria(uint32_t direccionFisica, uint32_t cantidadBytes, uint32_t pid) {
     t_buffer *bufferLectura = buffer_create();

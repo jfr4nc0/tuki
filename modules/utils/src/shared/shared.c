@@ -51,8 +51,12 @@ char* truncar_string(char* str,int size){
 
     strncpy(truncado, str, size);
     truncado[size] = '\0';
-    
+
     return truncado;
+}
+
+void* calcular_direccion(void* posicionBase, size_t desplazamiento) {
+    return (void*)((uintptr_t)posicionBase + desplazamiento);
 }
 
 char** leer_arreglo_string(char* buffer, int* desplazamiento) {
@@ -254,6 +258,23 @@ long long leer_long_long(char* buffer, int* desp) {
 	return respuesta;
 }
 
+void* leer_algo(char* buffer, int* desp, size_t size) {
+	void* respuesta;
+	memcpy(respuesta, buffer + (*desp), size);
+	(*desp)+=sizeof(size);
+
+	return respuesta;
+}
+
+size_t leer_size(char* buffer, int* desp) {
+	size_t respuesta;
+	memcpy(&respuesta, buffer + (*desp), sizeof(size_t));
+	(*desp)+=sizeof(size_t);
+
+	return respuesta;
+}
+
+
 float leer_float(char* buffer, int* desp) {
 	float respuesta;
 	memcpy(&respuesta, buffer + (*desp), sizeof(float));
@@ -341,6 +362,38 @@ char** decode_instruccion(char* linea_a_parsear, t_log* logger) {
 	return instruccion;
 }
 
+char* encode_instruccion(char** strings) {
+    const char* separator = " ";
+    // Primero, calculamos el tamaño total de la cadena resultante
+    size_t total_length = 0;
+    for (int i = 0; strings[i] != NULL; i++) {
+        total_length += strlen(strings[i]);
+    }
+    // Sumamos la longitud de los separadores entre cadenas
+    total_length += (strlen(separator) * (int)(strlen(strings) - 1));
+
+    // Reservamos memoria para la cadena resultante
+    char* result = (char*)malloc(total_length + 1);
+    if (result == NULL) {
+        fprintf(stderr, "Error: No se pudo asignar memoria.\n");
+        return NULL;
+    }
+
+    // Copiamos cada cadena al resultado y añadimos el separador apropiado
+    int offset = 0;
+    for (int i = 0; strings[i] != NULL; i++) {
+        if (i > 0) { // && strings[i+1] != NULL
+            strcpy(result + offset, separator);
+            offset += strlen(separator);
+        }
+        strcpy(result + offset, strings[i]);
+        offset += strlen(strings[i]);
+    }
+
+    return result;
+}
+
+
 int armar_conexion(t_config* config, char* modulo, t_log* logger) {
     char* ip = extraer_de_modulo_config(config, IP_CONFIG, modulo, logger);
     char* puerto = extraer_de_modulo_config(config, PUERTO_CONFIG, modulo, logger);
@@ -362,6 +415,278 @@ void* serializar_paquete(t_paquete* paquete, int bytes) {
     desplazamiento+= paquete->buffer->size;
 
     return magic;
+}
+
+void agregar_lista_a_paquete(t_paquete* paquete, t_list* lista, t_log* logger) {
+	int tamanio = list_size(lista);
+	agregar_int_a_paquete(paquete, tamanio);
+
+	for(int i = 0; i < tamanio; i++) {
+		void* elemento = list_get(lista, i);
+		char* palabra = (char*)elemento;
+		strtok(palabra, "\n"); // Removemos el salto de linea
+		log_debug(logger, "Agregando instruccion: %s, tamanio %zu", palabra, strlen(palabra));
+		agregar_a_paquete(paquete, palabra, strlen(palabra));
+	}
+
+}
+
+void agregar_registros_a_paquete(t_paquete* paquete, registros_cpu* registrosCpu) {
+    agregar_registro4bytes_a_paquete(paquete, registrosCpu->AX);
+    agregar_registro4bytes_a_paquete(paquete, registrosCpu->BX);
+    agregar_registro4bytes_a_paquete(paquete, registrosCpu->CX);
+    agregar_registro4bytes_a_paquete(paquete, registrosCpu->DX);
+    agregar_registro8bytes_a_paquete(paquete, registrosCpu->EAX);
+    agregar_registro8bytes_a_paquete(paquete, registrosCpu->EBX);
+    agregar_registro8bytes_a_paquete(paquete, registrosCpu->ECX);
+    agregar_registro8bytes_a_paquete(paquete, registrosCpu->EDX);
+    agregar_registro16bytes_a_paquete(paquete, registrosCpu->RAX);
+    agregar_registro16bytes_a_paquete(paquete, registrosCpu->RBX);
+    agregar_registro16bytes_a_paquete(paquete, registrosCpu->RCX);
+    agregar_registro16bytes_a_paquete(paquete, registrosCpu->RDX);
+}
+
+void agregar_registro4bytes_a_paquete(t_paquete* paquete, char valor[4]) {
+    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(int));
+    memcpy(paquete->buffer->stream + paquete->buffer->size, (void*)valor, sizeof(int));
+    paquete->buffer->size += sizeof(int);
+}
+void agregar_registro8bytes_a_paquete(t_paquete* paquete, char valor[8]) {
+    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(long));
+    memcpy(paquete->buffer->stream + paquete->buffer->size, (void*)valor, sizeof(long));
+    paquete->buffer->size += sizeof(long);
+}
+void agregar_registro16bytes_a_paquete(t_paquete* paquete, char valor[16]) {
+    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(long)*2);
+    memcpy(paquete->buffer->stream + paquete->buffer->size, (void*)valor, sizeof(long)*2);
+    paquete->buffer->size += sizeof(long)*2;
+}
+
+void agregar_size_a_paquete(t_paquete* paquete, size_t valor) {
+    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(size_t));
+    memcpy(paquete->buffer->stream + paquete->buffer->size, &valor, sizeof(size_t));
+    paquete->buffer->size += sizeof(size_t);
+}
+
+void agregar_int_a_paquete(t_paquete* paquete, int valor) {
+    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(int));
+    memcpy(paquete->buffer->stream + paquete->buffer->size, &valor, sizeof(int));
+    paquete->buffer->size += sizeof(int);
+}
+
+void agregar_tabla_segmentos(t_paquete* paquete, int cliente, t_list* segmentosTabla, t_log* logger) {
+	// Envio aparte las direcciones
+    t_paquete* paqueteDirecciones = crear_paquete(AUX_OK);
+
+    for (int i = 0; i < list_size(segmentosTabla); i++) {
+        t_segmento* segmento = list_get(segmentosTabla, i);
+        agregar_a_paquete(paqueteDirecciones, &segmento, sizeof(t_segmento));
+    }
+    enviar_paquete(paqueteDirecciones, cliente);
+    eliminar_paquete(paqueteDirecciones);
+
+    // envio el resto
+    for (int i = 0; i < list_size(segmentosTabla); i++) {
+        t_segmento* segmento = list_get(segmentosTabla, i);
+        log_trace(logger, D__LOG_SEGMENTO, segmento->id, segmento->direccionBase, segmento->size);
+        agregar_int_a_paquete(paquete, segmento->id);
+        agregar_size_a_paquete(paquete, segmento->size);
+    }
+    return;
+}
+
+void enviar_tabla_segmento_por_pid(int cliente, void* pid, t_list* segmentosTabla, t_log* logger){
+    enviar_operacion(cliente, AUX_PID, sizeof(int), pid);
+	enviar_lista_segmentos_del_proceso(cliente, AUX_TABLA_SEGMENTO, segmentosTabla, logger);
+}
+
+void enviar_lista_segmentos_del_proceso(int cliente, codigo_operacion codOp, t_list* segmentosTabla, t_log* logger) {
+	t_paquete* paquete = crear_paquete(codOp);
+    agregar_tabla_segmentos(paquete, cliente, segmentosTabla, logger);
+    enviar_paquete(paquete, cliente);
+    eliminar_paquete(paquete);
+    return;
+}
+
+t_list* recibir_tabla_segmentos(int clienteAceptado){
+    recibir_operacion(clienteAceptado);
+    t_list* listaPid = recibir_paquete(clienteAceptado);
+    int pid = *(int*)list_get(listaPid, 0);
+    t_list* lista_tabla_segmentos = recibir_lista_segmentos(clienteAceptado);
+    
+    t_segmento_tabla* tabla_segmento = malloc(sizeof(tabla_segmento));
+    tabla_segmento->idProceso = pid;
+    t_list* lista_resultante = list_create();
+    for (int i = 0; i < list_size(lista_tabla_segmentos); i++)
+    {
+        t_segmento* segmento = (t_segmento*)list_get(lista_tabla_segmentos, i);
+        tabla_segmento->segmento = segmento;
+        list_add(lista_resultante,tabla_segmento);
+    }
+    
+    return lista_resultante;
+}
+
+// va de la mano con agregar_tabla_segmentos funcion
+t_list* recibir_lista_segmentos(int clienteAceptado) {
+	// Solo obtiene bien la direccion base
+    t_list* listaSegmentos = recibir_paquete(clienteAceptado);
+
+    recibir_operacion(clienteAceptado);
+    void* buffer;
+	int tamanio = 0;
+	int desp = 0;
+
+    buffer = recibir_buffer(&tamanio, clienteAceptado);
+
+    for (int i = 0; i < list_size(listaSegmentos); i++) {
+    	t_segmento* segmento = (t_segmento*)list_get(listaSegmentos, i);
+    	segmento->id = leer_int(buffer, &desp);
+        segmento->size = leer_size(buffer, &desp);
+
+        list_replace(listaSegmentos, i, segmento);
+    }
+    free(buffer);
+    return listaSegmentos;
+}
+
+void iteratorSinLog(char* value) {
+    printf("%s \n", value);
+}
+
+void mostrarListaSegmentos(t_list* segmentos) {
+	for (int indice = 0; indice < list_size(segmentos); indice++) {
+		t_segmento* segmento = list_get(segmentos, indice);
+		printf(D__LOG_SEGMENTO, segmento->id, segmento->direccionBase, segmento->size);
+	}
+}
+
+void mostrar_pcb(PCB* pcb, t_log* logger){
+    log_trace(logger, "PID: %d", pcb->id_proceso);
+    char* estado = nombres_estados[pcb->estado];
+    log_trace(logger, "ESTADO: %s", estado);
+    log_trace(logger, "INSTRUCCIONES A EJECUTAR: ");
+    list_iterate(pcb->lista_instrucciones, (void*) iteratorSinLog);
+    log_trace(logger, "PROGRAM COUNTER: %d", pcb->contador_instrucciones);
+    log_trace(logger, "Registro AX: %s", pcb->registrosCpu->AX);
+    log_trace(logger, "Registro BX: %s", pcb->registrosCpu->BX);
+    log_trace(logger, "Registro CX: %s", pcb->registrosCpu->CX);
+    log_trace(logger, "Registro DX: %s", pcb->registrosCpu->DX);
+    log_trace(logger, "Registro EAX: %s", pcb->registrosCpu->EAX);
+    log_trace(logger, "Registro EBX: %s", pcb->registrosCpu->EBX);
+    log_trace(logger, "Registro ECX: %s", pcb->registrosCpu->ECX);
+    log_trace(logger, "Registro EDX: %s", pcb->registrosCpu->EDX);
+    log_trace(logger, "Registro RAX: %s", pcb->registrosCpu->RAX);
+    log_trace(logger, "Registro RBX: %s", pcb->registrosCpu->RBX);
+    log_trace(logger, "Registro RCX: %s", pcb->registrosCpu->RCX);
+    log_trace(logger, "Registro RDX: %s", pcb->registrosCpu->RDX);
+    log_trace(logger, "LISTA SEGMENTOS: ");
+    mostrarListaSegmentos(pcb->lista_segmentos);
+    log_trace(logger, "LISTA ARCHIVOS ABIERTOS: ");
+    // list_iterate(pcb->lista_archivos_abiertos, (void*) iteratorSinLog);
+    log_trace(logger, "ESTIMACION HHRN: %f", pcb->estimacion_rafaga);
+    log_trace(logger, "TIMESTAMP EN EL QUE EL PROCESO LLEGO A READY POR ULTIMA VEZ: %f", pcb->ready_timestamp);
+}
+
+void enviar_pcb(int conexion, PCB* pcb_a_enviar, codigo_operacion codigo, t_log* log) {
+    t_paquete* paquete = crear_paquete(codigo);
+    agregar_pcb_a_paquete(paquete, pcb_a_enviar, log);
+    enviar_paquete(paquete, conexion);
+    eliminar_paquete(paquete);
+    enviar_lista_segmentos_del_proceso(conexion, codigo, pcb_a_enviar->lista_segmentos, log);
+}
+
+void agregar_pcb_a_paquete(t_paquete* paquete, PCB* pcb, t_log* log) {
+    agregar_int_a_paquete(paquete, pcb->id_proceso);
+    agregar_registros_a_paquete(paquete, pcb->registrosCpu);
+    agregar_int_a_paquete(paquete, pcb->estado);
+    agregar_lista_a_paquete(paquete, pcb->lista_instrucciones, log);
+    agregar_int_a_paquete(paquete, pcb->contador_instrucciones);
+    // agregar_lista_archivos_a_paquete(paquete, pcb->lista_archivos_abiertos);
+    agregar_valor_a_paquete(paquete, &pcb->estimacion_rafaga, sizeof(double));
+    agregar_valor_a_paquete(paquete, &pcb->ready_timestamp, sizeof(double));
+}
+
+void agregar_lista_archivos_a_paquete(t_paquete* paquete, t_list* lista, t_log* logger) {
+    int tamanio = list_size(lista);
+    agregar_int_a_paquete(paquete, tamanio);
+
+    for(int i = 0; i < tamanio; i++) {
+        t_archivo_abierto* archivo = list_get(lista, i);
+
+        char* nombreArchivo = (char*)archivo->nombreArchivo;
+        strtok(nombreArchivo, "\n"); // Removemos el salto de linea
+        log_debug(logger, "Agregando nombreArchivo: %s, tamanio %zu", nombreArchivo, strlen(nombreArchivo));
+        agregar_a_paquete(paquete, nombreArchivo, strlen(nombreArchivo));
+
+        log_debug(logger, "Agregando puntero: %d, tamanio %zu", archivo->puntero, sizeof(uint32_t));
+        agregar_a_paquete(paquete, (void*)(intptr_t)(int)archivo->puntero, sizeof(int));
+    }
+}
+
+void agregar_valor_a_paquete(t_paquete* paquete, void* valor, int tamanio) {
+    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + tamanio);
+    memcpy(paquete->buffer->stream + paquete->buffer->size, valor, tamanio);
+    paquete->buffer->size += tamanio;
+}
+
+
+PCB* recibir_pcb(int clienteAceptado) {
+	PCB* pcb = malloc(sizeof(PCB));
+
+	void* buffer;
+	int tamanio = 0;
+	int desplazamiento = 0;
+
+    codigo_operacion codDePrueba1 = recibir_operacion(clienteAceptado);
+
+	buffer = recibir_buffer(&tamanio, clienteAceptado);
+
+	pcb->id_proceso = leer_int(buffer, &desplazamiento);
+
+	pcb->registrosCpu = malloc(sizeof(registros_cpu));
+	strcpy(pcb->registrosCpu->AX, leer_registro_4_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->BX, leer_registro_4_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->CX, leer_registro_4_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->DX, leer_registro_4_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->EAX,  leer_registro_8_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->EBX,  leer_registro_8_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->ECX,  leer_registro_8_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->EDX,  leer_registro_8_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->RAX,  leer_registro_16_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->RBX,  leer_registro_16_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->RCX,  leer_registro_16_bytes(buffer, &desplazamiento));
+	strcpy(pcb->registrosCpu->RDX,  leer_registro_16_bytes(buffer, &desplazamiento));
+
+	pcb->estado = leer_int(buffer, &desplazamiento);
+
+	pcb->lista_instrucciones = leer_string_array(buffer, &desplazamiento);
+
+	pcb->contador_instrucciones = leer_int(buffer, &desplazamiento);
+
+	pcb->estimacion_rafaga = leer_double(buffer, &desplazamiento);
+	pcb->ready_timestamp = leer_double(buffer, &desplazamiento);
+    free(buffer);
+
+    codigo_operacion codAuxOkEliminar = recibir_operacion(clienteAceptado);
+	pcb->lista_segmentos = recibir_lista_segmentos(clienteAceptado);
+
+	return pcb;
+	/*
+	pcb->lista_archivos_abiertos = list_create();
+	int cantidad_de_archivos = leer_int(buffer, &desplazamiento);
+	for (int i = 0; i < cantidad_de_archivos; i++) {
+			t_archivo_abierto* archivo_abierto = malloc(sizeof(t_archivo_abierto));
+
+		    archivo_abierto->nombreArchivo = leer_string(buffer, &desplazamiento);
+		    archivo_abierto->puntero = leer_int(buffer, &desplazamiento);
+
+		    list_add(pcb->lista_archivos_abiertos, archivo_abierto);
+		    free(archivo_abierto);
+	}
+
+*/
+
 }
 
 int crear_conexion(char *ip, char* puerto, char* modulo, t_log* logger) {
@@ -450,26 +775,26 @@ void stream_recv_buffer(int fromSocket, t_buffer *destBuffer)
     return;
 }
 
-void enviar_tabla_segmentos(int conexion, codigo_operacion codOperacion, t_list* tabla_segmento) {
-	if (conexion > 0) {
-        t_buffer* buffer = empaquetar_tabla_segmentos(tabla_segmento,(uint32_t)list_size(tabla_segmento));
-        stream_send_buffer(conexion,codOperacion,buffer);
-		free(buffer);
-	}
-}
+// void enviar_tabla_segmentos(int conexion, codigo_operacion codOperacion, t_list* tabla_segmento) {
+// 	if (conexion > 0) {
+//         t_buffer* buffer = empaquetar_tabla_segmentos(tabla_segmento,(uint32_t)list_size(tabla_segmento));
+//         stream_send_buffer(conexion,codOperacion,buffer);
+// 		free(buffer);
+// 	}
+// }
 
-t_list* recibir_tabla_segmentos(int cliente, int tamanio){
-    t_buffer* buffer = buffer_create();
-    stream_recv_buffer(cliente,buffer);
+// t_list* recibir_tabla_segmentos(int cliente, int tamanio){
+//     t_buffer* buffer = buffer_create();
+//     stream_recv_buffer(cliente,buffer);
 
-    uint32_t tamanio_tabla_segmento;
-    buffer_unpack(buffer,&tamanio_tabla_segmento,sizeof(tamanio_tabla_segmento));
+//     uint32_t tamanio_tabla_segmento;
+//     buffer_unpack(buffer,&tamanio_tabla_segmento,sizeof(tamanio_tabla_segmento));
 
-    t_list* tabla_segmento = desempaquetar_tabla_segmentos(buffer,tamanio_tabla_segmento);
+//     t_list* tabla_segmento = desempaquetar_tabla_segmentos(buffer,tamanio_tabla_segmento);
 
-    free(buffer);
-    return tabla_segmento;
-}
+//     free(buffer);
+//     return tabla_segmento;
+// }
 
 t_list* desempaquetar_tabla_segmentos(t_buffer *bufferTablaSegmentos, uint32_t tamanioTablaSegmentos)
 {

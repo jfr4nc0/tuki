@@ -39,7 +39,6 @@ void cargar_config_memoria(t_config*);
 void ejecutar_file_system_pedido(void *);
 void ejecutar_cpu_pedido(void *);
 void ejecutar_kernel_pedido(void *);
-void iterator(char*);
 void ejecutar_instrucciones(int, char*);
 void atender_conexiones(int);
 void administrar_cliente(void*);

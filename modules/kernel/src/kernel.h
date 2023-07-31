@@ -93,10 +93,8 @@ t_list* procesar_instrucciones(int, t_list*, t_log*, t_config*);
 void cargar_config_kernel(t_config*, t_log*);
 void inicializar_escucha_conexiones_consolas(int);
 void recibir_de_consola(void*);
-void iterator(char* value);
 PCB* nuevo_proceso(t_list* , int);
 void enviar_proceso_a_ready();
-void mostrar_pcb(PCB*);
 
 static bool criterio_hrrn(PCB*, PCB*);
 double calculo_HRRN(PCB*);
@@ -108,6 +106,7 @@ void *manejo_desalojo_pcb();
 codigo_operacion manejo_instrucciones(t_data_desalojo* data);
 void recibir_proceso_desalojado(PCB*, int );
 PCB* recibir_pcb_de_cpu();
+
 
 void crear_hilo_planificadores();
 void proximo_a_ejecutar();
@@ -126,25 +125,6 @@ void inicializar_listas_estados();
 void mover_de_lista_con_sem(int idProceso, int estadoNuevo, int estadoAnterior);
 //////////////////
 
-// Funciones para enviar un pcb a cpu //////////////
-void agregar_pcb_a_paquete(t_paquete* , PCB* );
-void agregar_long_a_paquete(t_paquete* , long );
-void agregar_longlong_a_paquete(t_paquete* , long long );
-void agregar_lista_a_paquete(t_paquete* , t_list* );
-void agregar_int_a_paquete(t_paquete* , int );
-void agregar_arreglo_a_paquete(t_paquete* , char** );
-void agregar_valor_a_paquete(t_paquete* , void* , int );
-void agregar_registros_a_paquete(t_paquete* , registros_cpu* );
-void agregar_registro4bytes_a_paquete(t_paquete* , char[4] );
-void agregar_registro8bytes_a_paquete(t_paquete* , char[8] );
-void agregar_registro16bytes_a_paquete(t_paquete* , char[16] );
-
-void envio_pcb(int , PCB* , codigo_operacion );
-
-// PRUEBAS
-void envio_pcb_a_cpu(int , PCB* , codigo_operacion );
-void agregar_pcb_a_paquete_para_cpu(t_paquete* , PCB* );
-void agregar_registros_a_paquete_cpu(t_paquete* , registros_cpu* );
 PCB* recibir_proceso_desajolado(PCB* pcb_en_ejecucion);
 // t_semaforo_recurso* diccionario_semaforos_recursos_get_semaforo_recurso(tablaArchivosAbiertos, nombreArchivo);
 
@@ -159,10 +139,10 @@ void cambiar_estado_proceso_sin_semaforos(PCB* pcb, pcb_estado estadoNuevo);
 t_archivo_abierto* encontrar_archivo_abierto(t_list* listaArchivosAbiertos, char* nombreArchivo);
 
 int encontrar_index_archivo_abierto(t_list* listaArchivosAbiertos, char* nombreArchivo);
-void agregar_lista_archivos_a_paquete(t_paquete* paquete, t_list* lista);
 t_semaforo_recurso* inicializar_archivo_estado(t_nombre_estado nombreEstado);
-void iterator_debug(char*);
+
 int obtener_index_pcb_de_lista(int estado, int idProceso);
+void mostrarListaSegmentos(t_list* segmentos);
 
 t_list* archivosAbiertosGlobal;
 

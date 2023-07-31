@@ -9,7 +9,8 @@
 #include <shared/shared.h>
 #include "compartido.h"
 
-#define CREACION_DE_SEGMENTO        "PID: %d - Crear Segmento: %d - Base: %p - TAMAÑO: %zu"
+#define CREACION_DE_SEGMENTO        "PID: <%d> - Crear Segmento: %d - Base: %p - TAMAÑO: %zu"
+
 #define ELIMINACION_DE_SEGMENTO     "PID: %d - Eliminar Segmento: %d - Base: %p - TAMAÑO: %zu"
 #define I__SEGMENTO_0_CREADO        "Segmento0 generico creado de tamaño %zu"
 #define INICIO_COMPACTACIÓN         "Solicitud de Compactación"
@@ -60,7 +61,8 @@ codigo_operacion inicializar_proceso(int idProceso, size_t pcbSize);
 void finalizar_proceso(int idProceso);
 void compactar_memoria();
 int guardarSegmentoEnTabla(t_segmento* segmento, int idProceso);
-codigo_operacion crear_segmento_por_pid(t_segmento_tabla*);
+codigo_operacion crear_segmento_por_pid(int pid, t_segmento* segmento);
+
 t_segmento* recibir_segmento_kernel(t_list* pcbRecibido);
 size_t calcular_distancia_entre_direcciones_base(void* start, void* end);
 size_t total_memoria_asignada();
@@ -70,5 +72,5 @@ void iteratorTabla(t_segmento_tabla* elemento);
 void iteratorSegmento(t_segmento* elemento);
 t_list* obtener_tabla_segmentos_por_proceso_id(int procesoId);
 t_algoritmo algoritmo_seleccionado(char* algoritmo);
-
+codigo_operacion adapter_respuesta_segmento(int pid, void* respuesta, size_t size);
 #endif

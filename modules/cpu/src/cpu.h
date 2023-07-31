@@ -24,7 +24,6 @@ cpu_config_t* configCpu;
 extern registros_cpu* registrosCpu;
 
 void atender_kernel(int);
-void mostrar_pcb(PCB* );
 
 void cargar_config(t_config*);
 int ejecutar_instruccion(char** , PCB*);
@@ -34,16 +33,11 @@ char* fetch_instruccion(PCB* pcb);
 void guardar_contexto_de_ejecucion(PCB*);
 void handshake_memoria(int);
 void inicializar_registros();
-void procesar_instruccion(void*);
 void set_registro(char*, char*);
 void set_registros(PCB* pcb);
 void instruccion_set(char* registro,char* valor);
-PCB* recibir_pcb(int);
+
 void enviar_pcb_desalojado_a_kernel(PCB*, int, codigo_operacion);
-void envio_pcb_a_kernel_con_codigo(int , PCB* , codigo_operacion );
-void agregar_pcb_a_paquete(t_paquete* , PCB* );
-void iterator(char* value);
-void agregar_valor_a_paquete(t_paquete* paquete, void* valor, int tamanio);
 
 pthread_mutex_t m_recibir_pcb;
 
@@ -56,13 +50,9 @@ pthread_mutex_t m_recibir_pcb;
 #define DEFAULT_LOG_PATH      "logs/cpu.log"
 #define DEFAULT_CONFIG_PATH   "tuki-pruebas/prueba-memoria/cpu.config"
 
-void devolver_pcb_kernel(PCB*, int, codigo_operacion);
-
-void agregar_registros_a_paquete_para_kernel(t_paquete* , registros_cpu* );
-void agregar_registro4bytes_a_paquete(t_paquete* , char[4] );
-void agregar_registro8bytes_a_paquete(t_paquete* , char[8] );
-void agregar_registro16bytes_a_paquete(t_paquete* , char[16] );
-
-
+uint32_t obtener_direccion_fisica(PCB *pcb,uint32_t dirLogica, uint32_t *numeroSegmento, uint32_t *offset, uint32_t *tamanioSegmento);
+char* convertir_dir_logica_a_fisica(PCB *pcb, char* dirLogica);
+void* obtener_base_segmento(PCB *pcb, uint32_t numeroSegmento,  uint32_t *tamanio);
+void* obtener_puntero_direccion_fisica(PCB *pcb,uint32_t dirLogica, uint32_t *numeroSegmento, uint32_t *offset, uint32_t *tamanioSegmento);
 
 #endif
