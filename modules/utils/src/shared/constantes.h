@@ -34,10 +34,10 @@ int keyFromString(char *key);
 #define MOSTRAR_OCULTAR_MENSAJES_LOG_KERNEL         1
 
 #define LOG_LEVEL_CONSOLA                           LOG_LEVEL_INFO
-#define LOG_LEVEL_CPU                               LOG_LEVEL_INFO
+#define LOG_LEVEL_CPU                               LOG_LEVEL_TRACE
 #define LOG_LEVEL_FILE_SYSTEM                       LOG_LEVEL_INFO
-#define LOG_LEVEL_KERNEL                            LOG_LEVEL_INFO
-#define LOG_LEVEL_MEMORIA                           LOG_LEVEL_INFO
+#define LOG_LEVEL_KERNEL                            LOG_LEVEL_TRACE
+#define LOG_LEVEL_MEMORIA                           LOG_LEVEL_TRACE
 
 /*
  * Si se quiere cambiar todos los modulos a la vez se deberia poder
@@ -83,6 +83,8 @@ int keyFromString(char *key);
 #define D__ESTABLECIENDO_CONEXION   "Estableciendo conexion con %s"
 #define D__CONFIG_INICIAL_CREADO    "Config creado"
 #define D__LOG_CREADO               "Log creado"
+#define D__LOG_SEGMENTO             "Segmento id <%d>, direccion <%p>, size <%zu>\n"
+
 
 // INFO MENSAJES
 #define I__CONEXION_CREATE          "Conexion creada con %s"

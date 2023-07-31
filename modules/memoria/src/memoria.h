@@ -11,6 +11,8 @@
 
 t_log* loggerMemoria;
 
+pthread_mutex_t mutex_memoria_ocupada;
+
 typedef struct {
 	int PUERTO_ESCUCHA;
     int TAM_MEMORIA;
@@ -37,7 +39,6 @@ void cargar_config_memoria(t_config*);
 void ejecutar_file_system_pedido(void *);
 void ejecutar_cpu_pedido(void *);
 void ejecutar_kernel_pedido(void *);
-void iterator(char*);
 void ejecutar_instrucciones(int, char*);
 void atender_conexiones(int);
 void administrar_cliente(void*);

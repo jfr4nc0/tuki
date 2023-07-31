@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <netdb.h>
@@ -150,16 +151,20 @@ typedef struct {
 }t_enviar_archivo_abierto;
 /*--------------------------------- FUNCIONES GENERALES --------------------------------*/
 
+void* calcular_direccion(void* posicionBase, size_t desplazamiento);
+void intervalo_de_pausa(int );
+char** decode_instruccion(char*, t_log*);
+char* encode_instruccion(char** strings);
 char* cantidad_strings_a_mostrar(int);
 char* extraer_string_de_config(t_config*, char*, t_log* logger);
 int extraer_int_de_config(t_config* config, char* property, t_log* logger);
 char* extraer_de_modulo_config(t_config*, char*, char*, t_log* logger);
 char* concatenar_strings(char*, char*);
-t_log* iniciar_logger(char*, int);
-t_config* iniciar_config(char*, t_log*);
-void terminar_programa(int, t_log*, t_config*);
-void liberar_conexion(int);
 bool obtener_valores_para_logger(int, bool*, t_log_level*, char**);
+void mostrarListaSegmentos(t_list* segmentos);
+void mostrar_pcb(PCB* pcb, t_log* logger);
+void iteratorSinLog(char* value);
+
 long leer_long(char* buffer, int* desp);
 long long leer_long_long(char* buffer, int* desp);
 float leer_float(char* buffer, int* desp);
@@ -172,6 +177,13 @@ char* leer_registro_4_bytes(char* , int* );
 char* leer_registro_8_bytes(char* , int* );
 char* leer_registro_16_bytes(char* , int* );
 
+void agregar_lista_a_paquete(t_paquete* paquete, t_list* lista, t_log* logger);
+
+void agregar_registro4bytes_a_paquete(t_paquete* paquete, char valor[4]);
+void agregar_registro8bytes_a_paquete(t_paquete* paquete, char valor[8]);
+void agregar_registro16bytes_a_paquete(t_paquete* paquete, char valor[16]);
+void agregar_registros_a_paquete(t_paquete* paquete, registros_cpu* registrosCpu);
+
 /*--------- BUFFERS ------------*/
 void buffer_pack(t_buffer* self, void* streamToAdd, int size);
 static void __stream_send(int toSocket, void *streamToSend, uint32_t bufferSize);
@@ -182,6 +194,27 @@ void stream_send_buffer(int toSocket, uint8_t header, t_buffer *buffer);
 char *buffer_unpack_string(t_buffer *self);
 void buffer_pack_string(t_buffer *self, char *stringToAdd);
 uint32_t leer_uint32_t(char* buffer, int* desp);
+void enviar_lista_segmentos_del_proceso(int cliente, t_list* segmentosTabla, t_log* logger);
+void agregar_tabla_segmentos(t_paquete* buffer, int cliente, t_list* segmentosTabla, t_log* logger);
+t_list* recibir_lista_segmentos(int cliente);
+
+void enviar_pcb(int conexion, PCB* pcb_a_enviar, codigo_operacion codigo, t_log* log);
+
+t_log* iniciar_logger(char*, int);
+t_config* iniciar_config(char*, t_log*);
+void terminar_programa(int, t_log*, t_config*);
+void liberar_conexion(int);
+
+void agregar_size_a_paquete(t_paquete* paquete, size_t valor);
+void agregar_valor_a_paquete(t_paquete* paquete, void* valor, int tamanio);
+void agregar_lista_archivos_a_paquete(t_paquete* paquete, t_list* lista, t_log* logger);
+void agregar_pcb_a_paquete(t_paquete* paquete, PCB* pcb, t_log* log);
+
+PCB* recibir_pcb(int);
+
+void agregar_int_a_paquete(t_paquete* paquete, int valor);
+void* leer_algo(char* buffer, int* desp, size_t size);
+size_t leer_size(char* buffer, int* desp);
 
 /*----------------------------- FUNCIONES CLIENTE ----------------------------*/
 
@@ -205,11 +238,5 @@ int recibir_operacion(int);
 void* recibir_buffer(int*, int);
 void* leer_de_buffer(char*, int*, size_t);
 char* leer_texto(char* buffer, int* desp, int size);
-
-
-void intervalo_de_pausa(int );
-
-
-char** decode_instruccion(char*, t_log*);
 
 #endif
