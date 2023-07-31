@@ -42,6 +42,18 @@ int keyFromString(char *key) {
 
 /*-------------------- FUNCIONES GENERALES --------------------*/
 
+char* truncar_string(char* str,int size){
+    char* truncado = malloc(size+1);
+    if(truncado==NULL){
+        printf("Error al asignar memoria.\n");
+        return NULL;
+    }
+
+    strncpy(truncado, str, size);
+    truncado[size] = '\0';
+
+    return truncado;
+}
 
 void* calcular_direccion(void* posicionBase, size_t desplazamiento) {
     return (void*)((uintptr_t)posicionBase + desplazamiento);

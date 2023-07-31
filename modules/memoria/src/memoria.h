@@ -44,5 +44,5 @@ void atender_conexiones(int);
 void administrar_cliente(void*);
 void administrar_instrucciones(int cliente, codigo_operacion codigoOperacion);
 void testing_funciones();
-
+void incializar_estructuras();
 #endif

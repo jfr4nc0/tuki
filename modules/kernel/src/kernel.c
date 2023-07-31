@@ -98,9 +98,10 @@ void inicializar_escucha_conexiones_consolas(int servidorKernel) {
 
 void enviar_proceso_a_ready() {
     while(1) {
+        sem_wait(&sem_grado_multiprogamacion);
         sem_wait(&sem_proceso_a_ready_inicializar);
         sem_wait(&sem_lista_estados[ENUM_NEW]);
-        // El tp dice que se obtienen por FIFO
+
         PCB* pcb = list_get(lista_estados[ENUM_NEW], 0);
 
         if (conexionMemoria > 0) {
@@ -162,11 +163,6 @@ void crear_hilo_planificadores() {
 }
 
 void _planificador_largo_plazo() {
-    // TODO: AGREGAR SEMAFOROS ACA, VOS PODES SOFY Y FRAN
-    // pthread_t m_liberar_pcb_de_exit;
-    // pthread_create(&m_liberar_pcb_de_exit, NULL, (void*) liberar_pcb_de_exit, NULL);
-    // pthread_detach(m_liberar_pcb_de_exit);
-
     pthread_t hilo_procesos_a_ready;
     pthread_create(&hilo_procesos_a_ready, NULL, (void*) enviar_proceso_a_ready, NULL);
     pthread_detach(hilo_procesos_a_ready);
@@ -298,45 +294,67 @@ void* manejo_desalojo_pcb() {
          double tiempo_en_cpu = obtener_diferencial_de_tiempo_en_milisegundos(&fin_ejecucion_proceso, &inicio_ejecucion_proceso);
          pcb_estimar_proxima_rafaga(pcb_en_ejecucion, tiempo_en_cpu);
 
-         char* ultimaInstruccion = malloc(sizeof(char*));
-         char** ultimaInstruccionDecodificada = malloc(sizeof(char*));
+         char* ultimaInstruccion;
+         char** ultimaInstruccionDecodificada;
          ultimaInstruccion = string_duplicate((char *)list_get(pcb_en_ejecucion->lista_instrucciones, pcb_en_ejecucion->contador_instrucciones));
          ultimaInstruccionDecodificada = decode_instruccion(ultimaInstruccion, kernelLogger);
 
-         pcb_en_ejecucion->contador_instrucciones++;
 
-         log_info(kernelLogger, "Instruccion a ejecutar %s", ultimaInstruccionDecodificada[0]); // Por ahora
+        t_data_desalojo* data = malloc(sizeof(t_data_desalojo));
+        data->instruccion = ultimaInstruccionDecodificada;
+        data->operacion = operacionRecibida;
+        data->pcb = pcb_en_ejecucion;
 
-         switch(operacionRecibida) {
-            case I_YIELD: {
-                break;
-            }
-            case I_F_OPEN: {
-                char* nombreArchivo = ultimaInstruccionDecodificada[1];
+        codigo_operacion res = manejo_instrucciones(data);
+        if(res==AUX_SOLO_CON_COMPACTACION){
+            data->operacion = AUX_SOLICITUD_COMPACTACION;
+            res = manejo_instrucciones(data);
+        }
+
+         free(ultimaInstruccion);
+         free(ultimaInstruccionDecodificada);
+         free(data);
+        }
+    return NULL;
+    }
+
+codigo_operacion manejo_instrucciones(t_data_desalojo* data){
+	codigo_operacion res;
+	codigo_operacion operacion = data->operacion;
+    PCB* pcb = data->pcb;
+    char** instruccion = data->instruccion;
+
+	switch(operacion) {
+		 	 case I_YIELD: {// TODO mandar el proceso a la cola de ready
+		 		 cambiar_estado_proceso_con_semaforos(pcb, ENUM_READY);
+		 		 break;
+		 	 }
+		 	 case I_F_OPEN: {
+                 char* nombreArchivo = instruccion[1];
                 strtok(nombreArchivo, "\n");
 
                 bool existeSemaforo = dictionary_has_key(tablaArchivosAbiertos, nombreArchivo);
 
                 if (existeSemaforo) {
-                    log_debug(kernelLogger, ABRIR_ARCHIVO_BLOQUEADO, pcb_en_ejecucion->id_proceso, nombreArchivo);
-                    agregar_a_lista_con_sem((void*)pcb_en_ejecucion, ENUM_BLOCKED);
+                    log_debug(kernelLogger, ABRIR_ARCHIVO_BLOQUEADO, pcb->id_proceso, nombreArchivo);
+                    agregar_a_lista_con_sem((void*)pcb, ENUM_BLOCKED);
                  	t_semaforo_recurso* semaforoArchivo = (t_semaforo_recurso*) dictionary_get(tablaArchivosAbiertos, nombreArchivo);
                 	t_estado* estado = semaforoArchivo == NULL ? NULL : semaforoArchivo->estadoRecurso;
 
                     pthread_mutex_lock(estado->mutexEstado);
-                    list_add(estado->listaProcesos, pcb_en_ejecucion);
+                    list_add(estado->listaProcesos, pcb);
                     semaforoArchivo->instancias--;
                     sem_wait(estado->semaforoEstado);
                     pthread_mutex_unlock(estado->mutexEstado);
 
-                    log_info(kernelLogger, ABRIR_ARCHIVO, pcb_en_ejecucion->id_proceso, nombreArchivo);
+                    log_info(kernelLogger, ABRIR_ARCHIVO, pcb->id_proceso, nombreArchivo);
                     sem_post(&sem_proceso_a_ready_terminado);
-                    continue;
+                    break;
                 }
 
                 size_t tamanioPalabra = strlen(nombreArchivo);
 
-                enviar_operacion(conexionFileSystem, operacionRecibida, tamanioPalabra, nombreArchivo);
+                enviar_operacion(conexionFileSystem, operacion, tamanioPalabra, nombreArchivo);
                 codigo_operacion operacionDelFileSystem = recibir_operacion(conexionFileSystem);
                 recibir_operacion(conexionFileSystem); // 0 basura
 
@@ -358,20 +376,20 @@ void* manejo_desalojo_pcb() {
                 archivoAbierto->puntero = 0;
 
                 // abrir archivo proceso
-                list_add(pcb_en_ejecucion->lista_archivos_abiertos, archivoAbierto);
+                list_add(pcb->lista_archivos_abiertos, archivoAbierto);
 
-                agregar_a_lista_con_sem((void*)pcb_en_ejecucion, ENUM_EXECUTING);
+                agregar_a_lista_con_sem((void*)pcb, ENUM_EXECUTING);
 
-                log_info(kernelLogger, ABRIR_ARCHIVO, pcb_en_ejecucion->id_proceso, nombreArchivo);
+                log_info(kernelLogger, ABRIR_ARCHIVO, pcb->id_proceso, nombreArchivo);
                 sem_post(&sem_proceso_a_executing);
                 sem_post(&sem_cpu_disponible);
                 break;
             }
 
             case I_F_CLOSE: {
-                char* nombreArchivo = ultimaInstruccionDecodificada[1];
+                char* nombreArchivo = instruccion[1];
                 strtok(nombreArchivo, "\n");
-                list_remove_element(pcb_en_ejecucion->lista_archivos_abiertos, nombreArchivo);
+                list_remove_element(pcb->lista_archivos_abiertos, nombreArchivo);
 
                 t_semaforo_recurso* semaforoArchivo = (t_semaforo_recurso*) dictionary_get(tablaArchivosAbiertos, nombreArchivo);
                 t_estado* estado = semaforoArchivo->estadoRecurso;
@@ -382,7 +400,7 @@ void* manejo_desalojo_pcb() {
 
                     PCB* pcb = list_remove(estado->listaProcesos, 0);
                     log_info(kernelLogger, CERRAR_ARCHIVO_DESBLOQUEA_PCB,
-                    		pcb_en_ejecucion->id_proceso, nombreArchivo, pcb->id_proceso);
+                    		pcb->id_proceso, nombreArchivo, pcb->id_proceso);
 
                     cambiar_estado_proceso_con_semaforos(pcb, ENUM_READY);
                     sem_post(estado->semaforoEstado);
@@ -391,9 +409,9 @@ void* manejo_desalojo_pcb() {
                     // Ya no quedan procesos que usen el archivo
                     dictionary_remove(tablaArchivosAbiertos, nombreArchivo);
                 }
-                agregar_a_lista_con_sem(pcb_en_ejecucion, ENUM_EXECUTING);
+                agregar_a_lista_con_sem(pcb, ENUM_EXECUTING);
 
-                log_info(kernelLogger, CERRAR_ARCHIVO, pcb_en_ejecucion->id_proceso, nombreArchivo);
+                log_info(kernelLogger, CERRAR_ARCHIVO, pcb->id_proceso, nombreArchivo);
 
                 sem_post(&sem_proceso_a_executing);
                 sem_post(&sem_cpu_disponible);
@@ -401,59 +419,99 @@ void* manejo_desalojo_pcb() {
             }
 
             case I_TRUNCATE: {
-            	agregar_a_lista_con_sem((void*)pcb_en_ejecucion, ENUM_BLOCKED);
+            	agregar_a_lista_con_sem((void*)pcb, ENUM_BLOCKED);
             	sem_post(&sem_cpu_disponible);
-                t_paquete* paquete = crear_paquete(operacionRecibida);
-                agregar_a_paquete(paquete, (void*)ultimaInstruccionDecodificada[1], strlen(ultimaInstruccionDecodificada[1]));
-                agregar_a_paquete(paquete, (void*)ultimaInstruccionDecodificada[2], strlen(ultimaInstruccionDecodificada[2]));
+                t_paquete* paquete = crear_paquete(operacion);
+                agregar_a_paquete(paquete, (void*)instruccion[1], strlen(instruccion[1]));
+                agregar_a_paquete(paquete, (void*)instruccion[2], strlen(instruccion[2]));
 
                 enviar_paquete(paquete, conexionFileSystem);
-                log_info(kernelLogger, "ENVIO TRUNCATE de archivo: %s, tamanio: %s", ultimaInstruccionDecodificada[1], ultimaInstruccionDecodificada[2]);
+                log_info(kernelLogger, "ENVIO TRUNCATE de archivo: %s, tamanio: %s", instruccion[1], instruccion[2]);
                 eliminar_paquete(paquete);
                 codigo_operacion cod1 = recibir_operacion(conexionFileSystem);
-                log_info(kernelLogger, "Exitoso TRUNCATE de archivo: %s, tamanio: %s", ultimaInstruccionDecodificada[1], ultimaInstruccionDecodificada[2]);
+                log_info(kernelLogger, "Exitoso TRUNCATE de archivo: %s, tamanio: %s", instruccion[1], instruccion[2]);
 
                 recibir_operacion(conexionFileSystem); // basura
 
-                cambiar_estado_proceso_con_semaforos(pcb_en_ejecucion, ENUM_READY);
+                cambiar_estado_proceso_con_semaforos(pcb, ENUM_READY);
 
                 sem_post(&sem_proceso_a_ready_terminado);
                 break;
             }
 
             case I_F_SEEK: {
-                char* nombreArchivo = ultimaInstruccionDecodificada[1];
+                char* nombreArchivo = instruccion[1];
                 char *endptr;
-                uint32_t puntero = strtoul(ultimaInstruccionDecodificada[2], &endptr, 10);
-                t_archivo_abierto* archivoAbierto = encontrar_archivo_abierto(pcb_en_ejecucion->lista_archivos_abiertos, nombreArchivo);
+                uint32_t puntero = strtoul(instruccion[2], &endptr, 10);
+                t_archivo_abierto* archivoAbierto = encontrar_archivo_abierto(pcb->lista_archivos_abiertos, nombreArchivo);
                 archivoAbierto->puntero = puntero;
-                log_info(kernelLogger, F_SEEK_HECHO, pcb_en_ejecucion->id_proceso, nombreArchivo, puntero);
-                agregar_a_lista_con_sem((void*)pcb_en_ejecucion, ENUM_EXECUTING);
+                log_info(kernelLogger, F_SEEK_HECHO, pcb->id_proceso, nombreArchivo, puntero);
+                agregar_a_lista_con_sem((void*)pcb, ENUM_EXECUTING);
                 sem_post(&sem_proceso_a_executing);
 
                 break;
             }
             case I_F_READ: {
-            	agregar_a_lista_con_sem((void*)pcb_en_ejecucion, ENUM_BLOCKED);
-                enviar_f_read_write(pcb_en_ejecucion, ultimaInstruccionDecodificada, operacionRecibida);
+            	agregar_a_lista_con_sem((void*)pcb, ENUM_BLOCKED);
+                enviar_f_read_write(pcb, instruccion, operacion);
                 codigo_operacion codRes = recibir_operacion(conexionFileSystem);
 				recibir_operacion(conexionFileSystem);
                 break;
             }
             case I_F_WRITE: {
-            	agregar_a_lista_con_sem((void*)pcb_en_ejecucion, ENUM_BLOCKED);
-            	enviar_f_read_write(pcb_en_ejecucion, ultimaInstruccionDecodificada, operacionRecibida);
+            	agregar_a_lista_con_sem((void*)pcb, ENUM_BLOCKED);
+            	enviar_f_read_write(pcb, instruccion, operacion);
             	codigo_operacion codRes = recibir_operacion(conexionFileSystem);
-            	mover_de_lista_con_sem(pcb_en_ejecucion->id_proceso, ENUM_READY, ENUM_BLOCKED);
+            	mover_de_lista_con_sem(pcb->id_proceso, ENUM_READY, ENUM_BLOCKED);
             	recibir_operacion(conexionFileSystem);
                 break;
             }
+			 case AUX_SOLICITUD_COMPACTACION: {
+				pthread_mutex_lock(&permiso_compactacion);
 
-         free(ultimaInstruccion);
-         free(ultimaInstruccionDecodificada);
-        }
-    }
-    return NULL;
+				log_info(kernelLogger,INICIO_COMPACTACIÓN);
+				enviar_operacion(conexionMemoria, operacion, sizeof(int*),1);
+				res=recibir_operacion(conexionMemoria);
+
+				pthread_mutex_unlock(&permiso_compactacion);
+				if(res==AUX_OK){log_info(kernelLogger,FIN_COMPACTACIÓN);}
+				else{log_error(kernelLogger,"ERROR compactacion");}
+				break;
+			 }
+			 case I_CREATE_SEGMENT: {
+				t_segmento* segmento;
+				segmento->direccionBase = 0;
+				segmento->id = atoi(instruccion[1]);
+				segmento->size = (size_t)instruccion[2];
+
+				enviar_operacion(conexionMemoria, operacion, sizeof(t_segmento*), segmento);
+				res = recibir_operacion(conexionMemoria);
+				if (res == AUX_OK){
+					log_info(kernelConfig,CREAR_SEGMENTO,pcb->id_proceso,segmento->id,segmento->size);
+				} else if(res == AUX_SOLO_CON_COMPACTACION){
+					break;
+				} else {
+					log_error(kernelLogger,E__BAD_REQUEST);
+				}
+				break;
+			 }
+			 case I_DELETE_SEGMENT: {
+				int id_segmento = atoi(instruccion[1]);
+
+				enviar_operacion(conexionMemoria, operacion, sizeof(int), id_segmento);
+				res = recibir_operacion(conexionMemoria);
+				if (res == AUX_OK){
+					log_info(kernelConfig,ELIMINAR_SEGMENTO,pcb->id_proceso,id_segmento);
+				}else{
+					log_error(kernelLogger,E__ELIMINAR_SEGMENTO,pcb->id_proceso,id_segmento);
+				}
+				break;
+			 }
+			 default:
+			 	res=AUX_ERROR;
+			 break;
+		 }
+	return res;
 }
 
 void enviar_f_read_write(PCB* pcb, char** instruccion, codigo_operacion codigoOperacion) {
@@ -771,12 +829,11 @@ void mover_de_lista_con_sem(int idProceso, int estadoNuevo, int estadoAnterior) 
 		int index = obtener_index_pcb_de_lista(estadoAnterior, idProceso);
         PCB* pcb = (PCB*)list_get(lista_estados[estadoAnterior], index);
         pcb->estado = estadoNuevo;
-		/*
+
 		if (pcb->estado == ENUM_READY) {
-			// TODO: FALLA
-			 // set_timespec((timestamp*)(time_t)pcb->ready_timestamp);
+            set_timespec((timestamp*)(time_t)pcb->ready_timestamp);
 		}
-		*/
+
 		PCB* pcbEliminado = (PCB*)list_remove(lista_estados[estadoAnterior], index);
 
 		if (pcbEliminado->id_proceso != pcb->id_proceso) {

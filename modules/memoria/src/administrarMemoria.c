@@ -377,6 +377,23 @@ void* obtener_base_segmento_worst_fit(size_t size){
     }
 
     for (int i = 0; i < cantidad_huecos_libres; i++){
+    recalcular_huecos_libres();
+    list_sort(memoria->huecosLibres, (void*) comparar_segmentos_por_mayor );
+    t_list* aux_huecos_libres = memoria->huecosLibres;
+
+    if(list_size(aux_huecos_libres)==0){
+    	size_t total_memoria = total_memoria_asignada();
+        size_t res = total_memoria-size; // Calcula el total de memoria asignada con el size del segmento a agregar
+        if(res>=0){
+            // Calcular espacio disponible
+            return obtener_base_segmento_first_fit(size);
+        } else {
+            // Segfault
+            return NULL;
+        }
+    }
+
+    for (int i = 0; i < list_size(memoria->huecosLibres); i++){
 
         huecoLibre = list_get(memoria->huecosLibres,i);
         if ((uintptr_t)calcular_direccion(huecoLibre->direccionBase, huecoLibre->size) >=
@@ -384,8 +401,9 @@ void* obtener_base_segmento_worst_fit(size_t size){
             return huecoLibre->direccionBase;
             }
         }
-        return NULL; //Segfault
+    return NULL;
     }
+}
 
 void* obtener_base_segmento_best_fit(size_t size){
     t_hueco_libre* huecoLibre;
@@ -396,9 +414,9 @@ void* obtener_base_segmento_best_fit(size_t size){
     */
     recalcular_huecos_libres();
     list_sort(memoria->huecosLibres, (void*) comparar_segmentos_por_menor );
-    t_list* aux_huecos_libres = memoria->huecosLibres;
+    int aux_huecos_libres = list_size(memoria->huecosLibres);
 
-    if(list_size(aux_huecos_libres)==0){
+    if(aux_huecos_libres==0){
     	size_t total_memoria = total_memoria_asignada();
 		size_t res = total_memoria-size;
         if(res>=0){
@@ -410,7 +428,7 @@ void* obtener_base_segmento_best_fit(size_t size){
         }
     }
 
-    for (int i = 0; i < list_size(aux_huecos_libres); i++){
+    for (int i = 0; i < aux_huecos_libres; i++){
 
         huecoLibre = list_get(memoria->huecosLibres,i);
         if ((uintptr_t)calcular_direccion(huecoLibre->direccionBase, huecoLibre->size) >=

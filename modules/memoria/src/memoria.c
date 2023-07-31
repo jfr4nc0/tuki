@@ -10,9 +10,7 @@ int main() {
 
     int servidorMemoria = iniciar_servidor(configInicial, loggerMemoria);
     inicializar_memoria(memoriaConfig->TAM_MEMORIA, memoriaConfig->TAM_SEGMENTO_0,memoriaConfig->ALGORITMO_ASIGNACION);
-
 	pthread_mutex_init(&mutex_memoria_ocupada,NULL);
-	// testing_funciones();
 
     atender_conexiones(servidorMemoria);
 
@@ -22,6 +20,7 @@ int main() {
 
 	return 0;
 }
+
 
 void testing_funciones(){
 	codigo_operacion res;
@@ -110,7 +109,6 @@ void ejecutar_instrucciones(int cliente, char* modulo) {
 	while(1){
 		codigo_operacion codigoDeOperacion = recibir_operacion(cliente);
 		log_info(loggerMemoria, I__RECIBO_INSTRUCCION, codigoDeOperacion, modulo);
-
 		pthread_mutex_lock(&mutex_memoria_ocupada);
 		administrar_instrucciones(cliente, codigoDeOperacion);
 		pthread_mutex_unlock(&mutex_memoria_ocupada);
