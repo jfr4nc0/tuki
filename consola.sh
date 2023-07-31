@@ -1,3 +1,3 @@
 cd modules/consola/bin
-./consola.out ../consola.config ../../../tuki-pruebas/prueba-$1/$2.txt
+./consola.out ../consola.config ../pruebas/$1/${1}_$2
 cd ../../..

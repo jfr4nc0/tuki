@@ -11,7 +11,7 @@ bool hubo_interrupcion = false;
 
 int main(int argc, char** argv) {
     loggerCpu = iniciar_logger(DEFAULT_LOG_PATH, ENUM_CPU);
-    t_config* config = iniciar_config(DEFAULT_CONFIG_PATH, loggerCpu);
+    t_config* config = iniciar_config(argv[1], loggerCpu);
     cargar_config(config);
 
     conexionCpuMemoria = armar_conexion(config, MEMORIA, loggerCpu);

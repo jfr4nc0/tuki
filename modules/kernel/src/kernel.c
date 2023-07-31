@@ -12,7 +12,7 @@ void liberar_recursos_kernel() {
 int main(int argc, char** argv) {
 
     kernelLogger = iniciar_logger(PATH_LOG_KERNEL, ENUM_KERNEL);
-    t_config* config = iniciar_config(PATH_CONFIG_KERNEL, kernelLogger);
+    t_config* config = iniciar_config(argv[1], kernelLogger);
     conexionMemoria = armar_conexion(config, MEMORIA, kernelLogger);
     conexionCPU = armar_conexion(config, CPU, kernelLogger);
 
@@ -476,7 +476,7 @@ void instruccion_wait(PCB *pcb_en_ejecucion, char *nombre_recurso){
 
 	if (!dictionary_has_key(diccionario_recursos, nombre_recurso)) {
         log_info(kernelLogger, "ERROR - PID: %d - %s NO existe", pcb_en_ejecucion->id_proceso, nombre_recurso);
-        terminar_proceso(pcb_en_ejecucion, EXIT_SUCCESS); //TODO: codigo de inexistencia de recurso
+        terminar_proceso(pcb_en_ejecucion, EXIT_RECURSO_NO_EXISTENTE); //TODO: codigo de inexistencia de recurso
     }
     else{
         t_recurso *recurso = dictionary_get(diccionario_recursos, nombre_recurso);
@@ -506,7 +506,7 @@ void instruccion_signal(PCB *pcb_en_ejecucion, char *nombre_recurso){
 
 	if (!dictionary_has_key(diccionario_recursos, nombre_recurso)) {
 	    log_info(kernelLogger, "ERROR - PID: %u - %s NO existe", pcb_en_ejecucion->id_proceso, nombre_recurso);
-	    terminar_proceso(pcb_en_ejecucion, EXIT_SUCCESS); //TODO: codigo de inexistencia de recurso
+	    terminar_proceso(pcb_en_ejecucion, EXIT_RECURSO_NO_EXISTENTE); //TODO: codigo de inexistencia de recurso
 	}
 	else{
 		t_recurso *recurso = dictionary_get(diccionario_recursos, nombre_recurso);
@@ -786,9 +786,7 @@ double __calcular_valor_hrrn(PCB *pcb, double tiempoActual){
 
 void terminar_proceso(PCB* pcb_para_finalizar, codigo_operacion motivo_finalizacion){
 
-	char* motivo_de_finalizacion = obtener_motivo(motivo_finalizacion);
-	log_info(kernelLogger, "Finaliza el proceso con PID <%d> - Motivo: %s", pcb_para_finalizar->id_proceso, motivo_de_finalizacion);
-	free(motivo_de_finalizacion);
+	log_info(kernelLogger, "Finaliza el proceso con PID %d - Motivo: %s", pcb_para_finalizar->id_proceso, obtener_motivo(motivo_finalizacion));
 
 	destruir_pcb(pcb_para_finalizar);
 
@@ -799,20 +797,23 @@ void terminar_proceso(PCB* pcb_para_finalizar, codigo_operacion motivo_finalizac
 
 char* obtener_motivo(codigo_operacion codigo_motivo){
 
-	int codigo = codigo_motivo;
-	char* respuesta = malloc(strlen("EXIT_SEGMENTATION_FAULT")+1);
-
-	switch(codigo){
+	switch(codigo_motivo){
 		case EXIT__SUCCESS:{
-			strcpy(respuesta, "EXIT_SUCCESS");
+			return "EXIT_SUCCESS";
+			break;
+		}
+		case EXIT_RECURSO_NO_EXISTENTE:{
+			return "EXIT_RECURSO_NO_EXISTENTE";
 			break;
 		}
 		case EXIT_SEGMENTATION_FAULT:{
-			strcpy(respuesta, "EXIT_SEGMENTATION_FAULT");
+			return "EXIT_SEGMENTATION_FAULT";
 			break;
 		}
+		default:
+			break;
 	}
-	return respuesta;
+	return NULL;
 }
 
 

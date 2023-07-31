@@ -223,6 +223,4 @@ t_dictionary* tablaArchivosAbiertos;
 
 
 #define PATH_LOG_KERNEL             "/home/utnso/eclipse-workspace/tp-2023-1c-KernelPanic/logs/kernel.log"
-#define PATH_CONFIG_KERNEL          "/home/utnso/eclipse-workspace/tp-2023-1c-KernelPanic/tuki-pruebas/prueba-deadlock/kernel.config"
-
 #endif
