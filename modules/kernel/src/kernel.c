@@ -10,11 +10,7 @@ void liberar_recursos_kernel() {
 
 
 int main(int argc, char** argv) {
-	/*
-    timestamp * valorTime = (timestamp *)(time_t)5;
-	double valor = 5;
-	set_timespec(valorTime);
-	*/
+
     kernelLogger = iniciar_logger(PATH_LOG_KERNEL, ENUM_KERNEL);
     t_config* config = iniciar_config(PATH_CONFIG_KERNEL, kernelLogger);
     conexionMemoria = armar_conexion(config, MEMORIA, kernelLogger);
@@ -114,6 +110,7 @@ void enviar_proceso_a_ready() {
             }
         }
 
+        sem_wait(&sem_grado_multiprogamacion);
         sem_wait(&sem_lista_estados[ENUM_READY]);
         pcb->ready_timestamp = time(NULL);
         cambiar_estado_proceso_sin_semaforos(pcb, ENUM_READY);
@@ -222,8 +219,7 @@ void _planificador_corto_plazo() {
         PCB* pcbParaEjecutar;
 
         if(string_equals_ignore_case(kernelConfig->ALGORITMO_PLANIFICACION, "FIFO")) {
-            pcbParaEjecutar = elegir_pcb_segun_fifo();
-            //log_info(kernelLogger, "el pcb a ejecutar es %d", pcbParaEjecutar->id_proceso);
+        	pcbParaEjecutar = elegir_pcb_segun_fifo();
         }
         else if (string_equals_ignore_case(kernelConfig->ALGORITMO_PLANIFICACION, "HRRN")) {
         	pcbParaEjecutar = elegir_pcb_segun_hrrn();
@@ -271,6 +267,7 @@ void manejo_desalojo_pcb() {
 
          switch(operacionRecibida) {
             case I_YIELD: {
+            	log_warning(kernelLogger, "EJECUTANDO YIELD con PID <%d>", pcb_en_ejecucion->id_proceso);
             	agregar_a_lista_con_sem((void*)pcb_en_ejecucion, ENUM_READY);
             	pcb_en_ejecucion->ready_timestamp = time(NULL);
             	sem_post(&sem_cpu_disponible);
@@ -413,52 +410,62 @@ void manejo_desalojo_pcb() {
             	recibir_operacion(conexionFileSystem);
                 break;
             }
-		 	 case I_EXIT: {
-		 		 terminar_proceso(pcb_en_ejecucion, EXIT__SUCCESS);
-		 		 break;
-		 	 }
-		 	 case SEGMENTATION_FAULT:{
-		 		 terminar_proceso(pcb_en_ejecucion, EXIT_SEGMENTATION_FAULT);
-		 		 break;
-		 	 }
-		 	 case I_IO: {
+		 	case I_EXIT: {
+		 		terminar_proceso(pcb_en_ejecucion, EXIT__SUCCESS);
+		 		break;
+		 	}
+		 	case SEGMENTATION_FAULT:{
+		 		terminar_proceso(pcb_en_ejecucion, EXIT_SEGMENTATION_FAULT);
+		 		break;
+		 	}
+		 	case I_IO: {
 		 		char* tiempo_de_io_string = ultimaInstruccionDecodificada[1];
 		 		int tiempo_de_io = atoi(tiempo_de_io_string);
-		 		cambiar_estado_proceso_con_semaforos(pcb_en_ejecucion, ENUM_BLOCKED);
-		 		log_info(kernelLogger, "PID: <%u> - Bloqueado por: IO", pcb_en_ejecucion->id_proceso);
+		 		log_info(kernelLogger, LOG_CAMBIO_DE_ESTADO, pcb_en_ejecucion->id_proceso, EXECUTING, BLOCKED);
+		 		agregar_a_lista_con_sem(pcb_en_ejecucion, ENUM_BLOCKED);
+		 		log_info(kernelLogger, "PID: %d - Bloqueado por: IO", pcb_en_ejecucion->id_proceso);
+		 		log_info(kernelLogger, "PID: %d - Ejecuta IO: %d", pcb_en_ejecucion->id_proceso, tiempo_de_io);
+
 		 		intervalo_de_pausa(tiempo_de_io*1000);
-		 		cambiar_estado_proceso_con_semaforos(pcb_en_ejecucion, ENUM_READY);
-		 		log_info(kernelLogger, "PID: <%d> - Ejecuta IO: <%d>", pcb_en_ejecucion->id_proceso, tiempo_de_io);
+
+		 		sem_wait(&sem_lista_estados[ENUM_BLOCKED]);
+		 		list_remove(lista_estados[ENUM_BLOCKED], 0);
+		 		sem_post(&sem_lista_estados[ENUM_BLOCKED]);
+
+		 		agregar_a_lista_con_sem(pcb_en_ejecucion, ENUM_READY);
+		 		pcb_en_ejecucion->ready_timestamp = time(NULL);
+		 		sem_post(&sem_cpu_disponible);
+		 		sem_post(&sem_proceso_a_ready_terminado);
 		 		break;
-		 	 }
-		 	 case I_WAIT:{
-		 		 char* nombre_recurso = ultimaInstruccionDecodificada[1];
-		 		 instruccion_wait(pcb_en_ejecucion, nombre_recurso);
-		 		 free(nombre_recurso);
-		 		 break;
-		 	 }
-		 	 case I_SIGNAL:{
+		 	}
+		 	case I_WAIT:{
+		 		char* nombre_recurso = ultimaInstruccionDecodificada[1];
+		 		instruccion_wait(pcb_en_ejecucion, nombre_recurso);
+		 		free(nombre_recurso);
+		 		break;
+		 	}
+		 	case I_SIGNAL:{
 		 		char* nombre_recurso = ultimaInstruccionDecodificada[1];
 		 		instruccion_signal(pcb_en_ejecucion, nombre_recurso);
 		 		free(nombre_recurso);
-		 		 break;
-		 	 }
-		 	 case I_CREATE_SEGMENT:{
+		 		break;
+		 	}
+		 	case I_CREATE_SEGMENT:{
 
-		 		 break;
-		 	 }
-		 	 case I_DELETE_SEGMENT:{
+		 		break;
+		 	}
+		 	case I_DELETE_SEGMENT:{
 		 		//uint32_t id_segmento;
 
 		 		//TODO: FALTA INSTRUCCION
 
 		 		//log_info(kernelLogger, "PID: <%d> - Eliminar Segmento - Id Segmento: <%d>",pcb_en_ejecucion->id_proceso, id_segmento);
 		 		break;
-		 	 }
-		 	 default:{
-		 		 break;
-		 	 }
-		 }
+		 	}
+		 	default:{
+		 		break;
+		 	}
+         }
 		 free(ultimaInstruccion);
 		 free(ultimaInstruccionDecodificada);
 	}
@@ -466,28 +473,31 @@ void manejo_desalojo_pcb() {
 }
 
 void instruccion_wait(PCB *pcb_en_ejecucion, char *nombre_recurso){
-	log_error(kernelLogger, "llega a la linea 352");
+
 	if (!dictionary_has_key(diccionario_recursos, nombre_recurso)) {
-        log_info(kernelLogger, "ERROR - PID: <%u> - <%s> NO existe", pcb_en_ejecucion->id_proceso, nombre_recurso);
-        cambiar_estado_proceso_con_semaforos(pcb_en_ejecucion, ENUM_EXIT);
-        sem_post(&sem_cpu_disponible);
+        log_info(kernelLogger, "ERROR - PID: %d - %s NO existe", pcb_en_ejecucion->id_proceso, nombre_recurso);
+        terminar_proceso(pcb_en_ejecucion, EXIT_SUCCESS); //TODO: codigo de inexistencia de recurso
     }
     else{
         t_recurso *recurso = dictionary_get(diccionario_recursos, nombre_recurso);
         recurso->instancias--;
-        if (! (recurso->instancias >= 0)) { // Chequea si debe bloquear al proceso por falta de instancias
+        log_info(kernelLogger, "PID: %d - Wait: %s - Instancias: %d", pcb_en_ejecucion->id_proceso, nombre_recurso, recurso->instancias);
+        if (recurso->instancias < 0) { // Chequea si debe bloquear al proceso por falta de instancias
+
         	sem_t semaforo_recurso = recurso->sem_recurso;
         	sem_wait(&semaforo_recurso);
-        	list_add(recurso->procesos_bloqueados, pcb_en_ejecucion);
-        	sem_post(&semaforo_recurso);
-        	cambiar_estado_proceso_con_semaforos(pcb_en_ejecucion, ENUM_BLOCKED);
-            log_info(kernelLogger, "PID: <%u> - Bloqueado por: %s", pcb_en_ejecucion->id_proceso, nombre_recurso);
-            sem_post(&sem_cpu_disponible);
-        } else { // Si el proceso no se bloquea en el if anterior, puede usar el recurso
-        	cambiar_estado_proceso_con_semaforos(pcb_en_ejecucion, ENUM_EXECUTING);
-        }
 
-        log_info(kernelLogger, "PID: <%d> - Wait: <%s> - Instancias: <%d>", pcb_en_ejecucion->id_proceso, nombre_recurso, recurso->instancias);
+        	list_add(recurso->procesos_bloqueados, pcb_en_ejecucion);
+
+        	sem_post(&semaforo_recurso);
+
+            log_info(kernelLogger, "PID: %u - Bloqueado por: %s", pcb_en_ejecucion->id_proceso, nombre_recurso);
+            sem_post(&sem_cpu_disponible);
+
+        } else { // Si el proceso no se bloquea en el if anterior, puede usar el recurso
+        	agregar_a_lista_con_sem((void*)pcb_en_ejecucion, ENUM_EXECUTING);
+        	sem_post(&sem_proceso_a_executing);
+        }
     }
     return;
 }
@@ -495,24 +505,30 @@ void instruccion_wait(PCB *pcb_en_ejecucion, char *nombre_recurso){
 void instruccion_signal(PCB *pcb_en_ejecucion, char *nombre_recurso){
 
 	if (!dictionary_has_key(diccionario_recursos, nombre_recurso)) {
-	    log_info(kernelLogger, "ERROR - PID: <%u> - <%s> NO existe", pcb_en_ejecucion->id_proceso, nombre_recurso);
-	    cambiar_estado_proceso_con_semaforos(pcb_en_ejecucion, ENUM_EXIT);
-	    sem_post(&sem_cpu_disponible);
+	    log_info(kernelLogger, "ERROR - PID: %u - %s NO existe", pcb_en_ejecucion->id_proceso, nombre_recurso);
+	    terminar_proceso(pcb_en_ejecucion, EXIT_SUCCESS); //TODO: codigo de inexistencia de recurso
 	}
 	else{
 		t_recurso *recurso = dictionary_get(diccionario_recursos, nombre_recurso);
 		recurso->instancias++;
-		if((!list_is_empty(recurso->procesos_bloqueados)) && (recurso->instancias == 0)){
+		agregar_a_lista_con_sem((void*)pcb_en_ejecucion, ENUM_EXECUTING);
+		sem_post(&sem_proceso_a_executing);
+
+		log_info(kernelLogger, "PID: %d - Signal: %s - Instancias: %d", pcb_en_ejecucion->id_proceso, nombre_recurso, recurso->instancias);
+		if(recurso->instancias <= 0){
 		    // Desbloquea al primer proceso de la cola de bloqueados del recurso
 			sem_t semaforo_recurso = recurso->sem_recurso;
 			sem_wait(&semaforo_recurso);
-			// PCB* pcb = list_remove(recurso->procesos_bloqueados, 0);
-			list_remove(recurso->procesos_bloqueados, 0);
+
+			PCB* pcb = list_remove(recurso->procesos_bloqueados, 0);
+
 			sem_post(&semaforo_recurso);
-			cambiar_estado_proceso_con_semaforos(pcb_en_ejecucion, ENUM_READY);
+
+			agregar_a_lista_con_sem(pcb, ENUM_READY);
+
+			sem_wait(&sem_proceso_a_ready_terminado);
+
 		}
-		cambiar_estado_proceso_con_semaforos(pcb_en_ejecucion, ENUM_EXECUTING);
-		log_info(kernelLogger, "PID: <%d> - Signal: <%s> - Instancias: <%d>", pcb_en_ejecucion->id_proceso, nombre_recurso, recurso->instancias);
 	}
 	return;
 }
@@ -704,63 +720,10 @@ PCB* recibir_pcb_de_cpu() {
 
     pcb->estimacion_rafaga = leer_double(buffer, &desplazamiento);
     pcb->ready_timestamp = leer_double(buffer, &desplazamiento);
-    //mostrar_pcb(pcb);
-    return pcb;
-}
-
-
-/*
-PCB* recibir_proceso_desalojado(int socket){
-    PCB* pcb = malloc(sizeof(PCB));
-
-    char* buffer;
-    int tamanio = 0;
-    int desplazamiento = 0;
-
-    buffer = recibir_buffer(&tamanio, socket);
-
-    pcb->id_proceso = leer_int(buffer, &desplazamiento);
-
-    pcb->estado = leer_int(buffer, &desplazamiento);
-
-    pcb->lista_instrucciones = leer_string_array(buffer, &desplazamiento); // NO esta funcionando bien
-
-    pcb->contador_instrucciones = leer_int(buffer, &desplazamiento);
-
-    pcb->lista_segmentos = leer_string_array(buffer, &desplazamiento); //TODO: Modificar cuando se mergee memoria
-
-    pcb->lista_archivos_abiertos = list_create();
-    int cantidad_de_archivos = leer_int(buffer, &desplazamiento);
-    for (int i = 0; i < cantidad_de_archivos; i++) {
-    t_archivo_abierto* archivo_abierto = malloc(sizeof(t_archivo_abierto));
-
-    archivo_abierto->id = leer_int(buffer, &desplazamiento);
-    archivo_abierto->puntero = leer_int(buffer, &desplazamiento);
-
-    list_add(pcb->lista_archivos_abiertos, archivo_abierto);
-    free(archivo_abierto);
-    }
-
-    pcb->registrosCpu = malloc(sizeof(registros_cpu));
-    pcb->registrosCpu->AX = leer_registro_4_bytes(buffer, &desplazamiento);
-    pcb->registrosCpu->BX = leer_registro_4_bytes(buffer, &desplazamiento);
-    pcb->registrosCpu->CX = leer_registro_4_bytes(buffer, &desplazamiento);
-    pcb->registrosCpu->DX = leer_registro_4_bytes(buffer, &desplazamiento);
-    pcb->registrosCpu->EAX = leer_registro_8_bytes(buffer, &desplazamiento);
-    pcb->registrosCpu->EBX = leer_registro_8_bytes(buffer, &desplazamiento);
-    pcb->registrosCpu->ECX = leer_registro_8_bytes(buffer, &desplazamiento);
-    pcb->registrosCpu->EDX = leer_registro_8_bytes(buffer, &desplazamiento);
-    pcb->registrosCpu->RAX = leer_registro_16_bytes(buffer, &desplazamiento);
-    pcb->registrosCpu->RBX = leer_registro_16_bytes(buffer, &desplazamiento);
-    pcb->registrosCpu->RCX = leer_registro_16_bytes(buffer, &desplazamiento);
-    pcb->registrosCpu->RDX = leer_registro_16_bytes(buffer, &desplazamiento);
-
-    pcb->estimacion_rafaga = leer_double(buffer, &desplazamiento);
-    pcb->ready_timestamp = leer_double(buffer, &desplazamiento);
 
     return pcb;
 }
-*/
+
 void set_timespec(timestamp *timespec)
 {
     int retVal = clock_gettime(CLOCK_REALTIME, timespec);
@@ -775,11 +738,10 @@ PCB* elegir_pcb_segun_fifo(){
     PCB* pcb;
 
     sem_wait(&sem_lista_estados[ENUM_READY]);
-    //sem_wait(&sem_lista_estados[ENUM_EXECUTING]);
+
     pcb = list_remove(lista_estados[ENUM_READY], 0);
 
     sem_post(&sem_lista_estados[ENUM_READY]);
-    //sem_post(&sem_lista_estados[ENUM_EXECUTING]);
 
     return pcb;
 
@@ -825,7 +787,7 @@ double __calcular_valor_hrrn(PCB *pcb, double tiempoActual){
 void terminar_proceso(PCB* pcb_para_finalizar, codigo_operacion motivo_finalizacion){
 
 	char* motivo_de_finalizacion = obtener_motivo(motivo_finalizacion);
-	log_info(kernelLogger, "Finaliza el proceso con PID %d - Motivo: %s", pcb_para_finalizar->id_proceso, motivo_de_finalizacion);
+	log_info(kernelLogger, "Finaliza el proceso con PID <%d> - Motivo: %s", pcb_para_finalizar->id_proceso, motivo_de_finalizacion);
 	free(motivo_de_finalizacion);
 
 	destruir_pcb(pcb_para_finalizar);
@@ -856,7 +818,7 @@ char* obtener_motivo(codigo_operacion codigo_motivo){
 
 
 void mostrar_pcb(PCB* pcb){
-    log_trace(kernelLogger, "PID: %d", pcb->id_proceso);
+    log_trace(kernelLogger, "PID: <%d>", pcb->id_proceso);
     char* estado = nombres_estados[pcb->estado];
     log_trace(kernelLogger, "ESTADO: %s", estado);
     log_trace(kernelLogger, "INSTRUCCIONES A EJECUTAR: ");
@@ -1032,9 +994,8 @@ void mover_de_lista_con_sem(int idProceso, int estadoNuevo, int estadoAnterior) 
 			log_error(kernelLogger, "ERROR AL MOVER pcb de estado %s a estado %s",
 					nombres_estados[estadoAnterior], nombres_estados[estadoNuevo] );
 		}
-		int indexDevuelto = list_add(lista_estados[estadoNuevo], (void*)pcb);
-		log_info(kernelLogger, "Se ha añadido el pcb <%d> a la lista de estados <%s> devuelve indice %d",
-				pcb->id_proceso, nombres_estados[estadoNuevo], indexDevuelto);
+		//int indexDevuelto = list_add(lista_estados[estadoNuevo], (void*)pcb);
+		//log_info(kernelLogger, "Se ha añadido el pcb <%d> a la lista de estados <%s> devuelve indice %d", pcb->id_proceso, nombres_estados[estadoNuevo], indexDevuelto);
 
 		sem_post(&sem_lista_estados[estadoAnterior]);
 		sem_post(&sem_lista_estados[estadoNuevo]);
@@ -1090,7 +1051,7 @@ void crear_cola_recursos(char* nombre_recurso, int instancias) {
     recurso->procesos_bloqueados = list_create();
 
     sem_t sem;
-    sem_init(&sem, instancias, 0);
+    sem_init(&sem, instancias, 1);
     recurso->sem_recurso = sem;
 
     dictionary_put(diccionario_recursos, nombre_recurso, recurso);

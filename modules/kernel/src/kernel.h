@@ -92,7 +92,6 @@ PCB* nuevo_proceso(t_list* , int);
 void enviar_proceso_a_ready();
 void mostrar_pcb(PCB*);
 
-static bool criterio_hrrn(PCB*, PCB*);
 double calculo_HRRN(PCB*);
 double rafaga_estimada(PCB*);
 void *__ejecucion_desalojo_pcb(void *);
@@ -224,6 +223,6 @@ t_dictionary* tablaArchivosAbiertos;
 
 
 #define PATH_LOG_KERNEL             "/home/utnso/eclipse-workspace/tp-2023-1c-KernelPanic/logs/kernel.log"
-#define PATH_CONFIG_KERNEL          "/home/utnso/eclipse-workspace/tp-2023-1c-KernelPanic/tuki-pruebas/prueba-base/kernel.config"
+#define PATH_CONFIG_KERNEL          "/home/utnso/eclipse-workspace/tp-2023-1c-KernelPanic/tuki-pruebas/prueba-deadlock/kernel.config"
 
 #endif

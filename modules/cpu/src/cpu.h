@@ -98,7 +98,7 @@ pthread_mutex_t m_recibir_pcb;
 ////////////////////////////////
 
 #define DEFAULT_LOG_PATH      "/home/utnso/eclipse-workspace/tp-2023-1c-KernelPanic/logs/cpu.log"
-#define DEFAULT_CONFIG_PATH   "/home/utnso/eclipse-workspace/tp-2023-1c-KernelPanic/tuki-pruebas/prueba-base/cpu.config"
+#define DEFAULT_CONFIG_PATH   "/home/utnso/eclipse-workspace/tp-2023-1c-KernelPanic/tuki-pruebas/prueba-deadlock/cpu.config"
 
 void devolver_pcb_kernel(PCB*, int, codigo_operacion);
 
