@@ -54,7 +54,7 @@ pthread_mutex_t m_recibir_pcb;
 ////////////////////////////////
 
 #define DEFAULT_LOG_PATH      "logs/cpu.log"
-#define DEFAULT_CONFIG_PATH   "tuki-pruebas/prueba-base/cpu.config"
+#define DEFAULT_CONFIG_PATH   "tuki-pruebas/prueba-memoria/cpu.config"
 
 void devolver_pcb_kernel(PCB*, int, codigo_operacion);
 

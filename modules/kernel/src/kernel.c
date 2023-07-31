@@ -470,7 +470,7 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
 				pthread_mutex_lock(&permiso_compactacion);
 
 				log_info(kernelLogger,INICIO_COMPACTACIÓN);
-				enviar_operacion(conexionMemoria, operacion, sizeof(int*),1);
+				enviar_operacion(conexionMemoria, operacion, sizeof(int),1);
 				res=recibir_operacion(conexionMemoria);
 				
 				pthread_mutex_unlock(&permiso_compactacion);
@@ -479,15 +479,19 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
 				break;
 			 }
 			 case I_CREATE_SEGMENT: {
-				t_segmento* segmento;
-				segmento->direccionBase = 0;
-				segmento->id = atoi(instruccion[1]);
-				segmento->size = (size_t)instruccion[2];
-				
-				enviar_operacion(conexionMemoria, operacion, sizeof(t_segmento*), segmento);
+                t_list* lista_segmentos = list_create();
+				t_segmento_tabla* tabla_segmento = malloc(sizeof(tabla_segmento));
+				t_segmento* segmento = malloc(sizeof(segmento));
+				tabla_segmento->idProceso = pcb->id_proceso;
+                segmento->id = atoi(instruccion[1]);
+				segmento->size = strtoul(instruccion[2],NULL,10);
+				tabla_segmento->segmento = segmento;
+                list_add(lista_segmentos,tabla_segmento);
+                enviar_tabla_segmentos(conexionMemoria, operacion, lista_segmentos);
+
 				res = recibir_operacion(conexionMemoria);
 				if (res == AUX_OK){
-					log_info(kernelConfig,CREAR_SEGMENTO,pcb->id_proceso,segmento->id,segmento->size);
+					log_info(kernelConfig,CREAR_SEGMENTO,pcb->id_proceso,tabla_segmento->segmento->id,tabla_segmento->segmento->size);
 				} else if(res == AUX_SOLO_CON_COMPACTACION){
 					break;
 				} else {

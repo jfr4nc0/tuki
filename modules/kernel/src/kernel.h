@@ -216,6 +216,6 @@ t_dictionary* tablaArchivosAbiertos;
 
 
 #define PATH_LOG_KERNEL             "logs/kernel.log"
-#define PATH_CONFIG_KERNEL          "tuki-pruebas/prueba-base/kernel.config"
+#define PATH_CONFIG_KERNEL          "tuki-pruebas/prueba-memoria/kernel.config"
 
 #endif

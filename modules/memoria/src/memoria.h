@@ -24,7 +24,7 @@ typedef struct {
 } t_memoria_config;
 
 #define DEFAULT_LOG_PATH            "logs/memoria.log"
-#define DEFAULT_CONFIG_PATH         "tuki-pruebas/prueba-base/memoria.config"
+#define DEFAULT_CONFIG_PATH         "tuki-pruebas/prueba-memoria/memoria.config"
 
 // LOGS ////////////////////////////////////
 #define CREACION_DE_PROCESO         "Creación de Proceso PID: %d"

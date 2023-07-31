@@ -130,10 +130,10 @@ void compactar_memoria() {
     list_clean(memoria->huecosLibres);
 }
 
-codigo_operacion crear_segmento_por_pid(int pid, t_segmento* segmento){
-    void* respuesta = crear_segmento(pid, segmento->size);
+codigo_operacion crear_segmento_por_pid(t_segmento_tabla* tabla_segmento){
+    void* respuesta = crear_segmento(tabla_segmento->idProceso, tabla_segmento->segmento->size);
 
-    return adapter_respuesta_segmento(pid,segmento,respuesta);
+    return adapter_respuesta_segmento(tabla_segmento->idProceso,tabla_segmento->segmento,respuesta);
 }
 
 void* crear_segmento(int idProceso, size_t size) {

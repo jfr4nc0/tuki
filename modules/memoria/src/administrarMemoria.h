@@ -32,12 +32,6 @@ typedef struct {
     t_algoritmo algoritmo_asignacion;
 } t_memoria;
 
-// Elemento de la tabla segmento
-typedef struct {
-    t_segmento* segmento;
-    int idProceso;
-} t_segmento_tabla;
-
 typedef struct {
     void* direccionBase;
     size_t size;
@@ -66,7 +60,7 @@ codigo_operacion inicializar_proceso(int idProceso, size_t pcbSize);
 void finalizar_proceso(int idProceso);
 void compactar_memoria();
 int guardarSegmentoEnTabla(t_segmento* segmento, int idProceso);
-codigo_operacion crear_segmento_por_pid(int pid, t_segmento* segmento);
+codigo_operacion crear_segmento_por_pid(t_segmento_tabla*);
 t_segmento* recibir_segmento_kernel(t_list* pcbRecibido);
 size_t calcular_distancia_entre_direcciones_base(void* start, void* end);
 size_t total_memoria_asignada();

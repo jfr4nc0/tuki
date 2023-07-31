@@ -140,6 +140,11 @@ typedef struct {
 } t_segmento;
 
 typedef struct {
+    t_segmento* segmento;
+    int idProceso;
+} t_segmento_tabla;
+
+typedef struct {
     char* nombreArchivo;
     uint32_t puntero;
 }t_archivo_abierto;
@@ -195,7 +200,11 @@ void eliminar_paquete(t_paquete*);
 int armar_conexion(t_config*, char*, t_log*);
 void enviar_operacion(int conexion, codigo_operacion, size_t tamanio, void* valor);
 void enviar_codigo_operacion(int, codigo_operacion);
-
+void enviar_tabla_segmentos(int conexion, codigo_operacion codOperacion, t_list* tabla_segmento);
+t_list* recibir_tabla_segmentos(int cliente, int tamnio);
+t_list* desempaquetar_tabla_segmentos(t_buffer *bufferTablaSegmentos, uint32_t tamanioTablaSegmentos);
+t_buffer* empaquetar_tabla_segmentos(t_list* tablaSegmentos, uint32_t tamanioTablaSegmentos);
+void stream_recv_buffer(int fromSocket, t_buffer *destBuffer);
 /*----------------------------- FUNCIONES SERVIDOR ----------------------------*/
 
 int iniciar_servidor(t_config*, t_log*);

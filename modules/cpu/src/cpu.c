@@ -158,7 +158,6 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
 
 	cargar_registros(pcb);
 
-	// ¿Por que se le hace malloc?
 	char* instruccion;
 	char** instruccion_decodificada;
 
@@ -230,7 +229,6 @@ void iterator(char* value) {
     log_info(loggerCpu, "%s ", value);
 }
 
-
 void cargar_registros(PCB* pcb) {
 	strcpy(registrosCpu->AX, pcb->registrosCpu->AX);
 	strcpy(registrosCpu->BX, pcb->registrosCpu->BX);
@@ -296,6 +294,8 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 		case I_F_READ:
 		case I_F_WRITE:
 		case I_TRUNCATE:
+		case I_CREATE_SEGMENT:
+		case I_DELETE_SEGMENT:
 			hubo_interrupcion = true;
 			break;
 		case I_SET:
@@ -323,14 +323,6 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 		case I_SIGNAL:
 			// SIGNAL (Recurso)
 			instruccion_signal(instruccion[1]);
-			break;
-		case I_CREATE_SEGMENT:
-			// CREATE_SEGMENT (Id del Segmento, Tamaño)
-			instruccion_create_segment(instruccion[1],instruccion[2]);
-			break;
-		case I_DELETE_SEGMENT:
-			// DELETE_SEGMENT (Id del Segmento)
-			instruccion_delete_segment(instruccion[1]);
 			break;
 	}
 	return operacion;
