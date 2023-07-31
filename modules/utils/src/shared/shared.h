@@ -195,7 +195,7 @@ char *buffer_unpack_string(t_buffer *self);
 void buffer_pack_string(t_buffer *self, char *stringToAdd);
 uint32_t leer_uint32_t(char* buffer, int* desp);
 void enviar_lista_segmentos_del_proceso(int cliente, t_list* segmentosTabla, t_log* logger);
-void agregar_tabla_segmentos(t_paquete* buffer, int cliente, t_list* segmentosTabla, t_log* logger);
+void agregar_lista_segmentos_del_proceso(t_paquete* buffer, int cliente, t_list* segmentosTabla, t_log* logger);
 t_list* recibir_lista_segmentos(int cliente);
 
 void enviar_pcb(int conexion, PCB* pcb_a_enviar, codigo_operacion codigo, t_log* log);

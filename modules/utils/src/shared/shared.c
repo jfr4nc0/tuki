@@ -474,7 +474,7 @@ void agregar_int_a_paquete(t_paquete* paquete, int valor) {
     paquete->buffer->size += sizeof(int);
 }
 
-void agregar_tabla_segmentos(t_paquete* paquete, int cliente, t_list* segmentosTabla, t_log* logger) {
+void agregar_lista_segmentos_del_proceso(t_paquete* paquete, int cliente, t_list* segmentosTabla, t_log* logger) {
 	// Envio aparte las direcciones
     t_paquete* paqueteDirecciones = crear_paquete(AUX_OK);
 
@@ -497,13 +497,13 @@ void agregar_tabla_segmentos(t_paquete* paquete, int cliente, t_list* segmentosT
 
 void enviar_lista_segmentos_del_proceso(int cliente, t_list* segmentosTabla, t_log* logger) {
 	t_paquete* paquete = crear_paquete(AUX_OK);
-    agregar_tabla_segmentos(paquete, cliente, segmentosTabla, logger);
+    agregar_lista_segmentos_del_proceso(paquete, cliente, segmentosTabla, logger);
     enviar_paquete(paquete, cliente);
     eliminar_paquete(paquete);
     return;
 }
 
-// va de la mano con agregar_tabla_segmentos funcion
+// va de la mano con agregar_lista_segmentos_del_proceso funcion
 t_list* recibir_lista_segmentos(int clienteAceptado) {
 	// Solo obtiene bien la direccion base
     t_list* listaSegmentos = recibir_paquete(clienteAceptado);
