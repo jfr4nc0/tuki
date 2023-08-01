@@ -324,7 +324,6 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 			uint32_t dirFisica = obtener_direccion_fisica(pcb, dirLogica, &numeroSegmento, &offset, &tamanioSegmento);
 			uint32_t tamanioALeer = obtener_tamanio_segun_registro(_registro);
 
-
 			if((tamanioALeer + offset) <= tamanioSegmento){
 
 				t_parametros_lectura* parametros_a_enviar = malloc(sizeof(t_parametros_lectura));
@@ -351,17 +350,16 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 			// MOV_OUT (Dirección Lógica, Registro)
 			//instruccion_mov_out(instruccion[1],instruccion[2],pcb);
 			uint32_t numeroSegmento, offset, tamanioSegmento;
-			char* registro = malloc(strlen(instruccion[1]) + 1);
-			strcpy(registro, instruccion[1]);
+			char* registro = malloc(strlen(instruccion[2]) + 1);
+			strcpy(registro, instruccion[2]);
 
 			char* endptr; // Puntero para manejar errores en la conversión
-			uint32_t dirLogica = strtoul(instruccion[2], &endptr, 10); // Convertir la cadena a un valor numérico uint32_t
+			uint32_t dirLogica = strtoul(instruccion[1], &endptr, 10); // Convertir la cadena a un valor numérico uint32_t
 
 			// Verificar si hubo algún error en la conversión
 			if (*endptr != '\0') {
 				log_error(loggerCpu, "El valor no representa un número válido de direccion logica");
 			}
-
 
 			uint32_t dirFisica = obtener_direccion_fisica(pcb, dirLogica, &numeroSegmento, &offset, &tamanioSegmento);
 			uint32_t tamanioALeer = obtener_tamanio_segun_registro(registro);
@@ -593,7 +591,7 @@ char *registros_cpu_get_valor_registro(char* registro, int tamanioRegistro){
 
 void log_acceso_a_memoria(uint32_t pid, char* modo, uint32_t idSegmento, uint32_t dirFisica, void* valor, uint32_t tamanio){
     char* valorPrinteable = agregarCaracterNulo(valor, tamanio);
-    log_info(loggerCpu, "PID: %d> - Acción: %s - Segmento: %d - Dirección Física: %d - Valor: %s", pid, modo, idSegmento, dirFisica, valorPrinteable);
+    log_info(loggerCpu, "PID: %d - Acción: %s - Segmento: %d - Dirección Física: %d - Valor: %s", pid, modo, idSegmento, dirFisica, valorPrinteable);
     free(valorPrinteable);
     return;
 }

@@ -267,7 +267,6 @@ void manejo_desalojo_pcb() {
 
          switch(operacionRecibida) {
             case I_YIELD: {
-            	log_warning(kernelLogger, "EJECUTANDO YIELD con PID <%d>", pcb_en_ejecucion->id_proceso);
             	agregar_a_lista_con_sem((void*)pcb_en_ejecucion, ENUM_READY);
             	pcb_en_ejecucion->ready_timestamp = time(NULL);
             	sem_post(&sem_cpu_disponible);
