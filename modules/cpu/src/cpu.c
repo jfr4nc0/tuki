@@ -130,7 +130,7 @@ PCB* recibir_pcb(int clienteAceptado) {
 
 	pcb->contador_instrucciones = leer_int(buffer, &desplazamiento);
 
-	pcb->lista_segmentos = leer_string_array(buffer, &desplazamiento);
+	//pcb->lista_segmentos = leer_string_array(buffer, &desplazamiento); TODO: no funciona
 
 	/*
 	pcb->lista_archivos_abiertos = list_create();
@@ -721,7 +721,8 @@ void agregar_pcb_a_paquete(t_paquete* paquete, PCB* pcb) {
 	agregar_lista_a_paquete(paquete, pcb->lista_instrucciones);
 
 	agregar_int_a_paquete(paquete, pcb->contador_instrucciones);
-	agregar_lista_a_paquete(paquete, pcb->lista_segmentos);
+	//agregar_lista_a_paquete(paquete, pcb->lista_segmentos); TODO: no funciona
+
 	// agregar_lista_a_paquete(paquete, pcb->lista_archivos_abiertos);
 	agregar_registros_a_paquete_para_kernel(paquete, pcb->registrosCpu);
 	agregar_valor_a_paquete(paquete, &pcb->estimacion_rafaga, sizeof(double));

@@ -14,6 +14,6 @@
 
 void enviarInstrucciones(char*, int, t_log*);
 
-#define DEFAULT_LOG_PATH             "logs/consola.log"
+#define DEFAULT_LOG_PATH             "../../../logs/consola.log"
 
 #endif

@@ -720,6 +720,39 @@ int esperar_cliente(int socket_servidor, t_log* logger) {
     return clienteAceptado;
 }
 
+void enviar_msj_con_parametros(int socket, int op_code, char** parametros) {
+	int size_payload = 0;
+	int size_total = sizeof(op_code) + sizeof(size_payload);
+
+	for(int i = 0; i < string_array_size(parametros); i++) {
+		size_payload += sizeof(int) + strlen(parametros[i]) + 1; //Tamanio de parametro + longitud de parametro
+	}
+	size_total += size_payload;
+
+	void* stream = malloc(size_total);
+	int desplazamiento = 0;
+
+	memcpy(stream + desplazamiento, &(op_code), sizeof(op_code));
+	desplazamiento += sizeof(op_code);
+
+	memcpy(stream + desplazamiento, &size_payload, sizeof(size_payload));
+	desplazamiento += sizeof(size_payload);
+
+	int size_parametro_de_instruccion;
+	for(int i = 0; i < string_array_size(parametros); i++) {
+		size_parametro_de_instruccion = strlen(parametros[i]) + 1;
+		memcpy(stream + desplazamiento, &(size_parametro_de_instruccion), sizeof(size_parametro_de_instruccion));
+		desplazamiento += sizeof(size_parametro_de_instruccion);
+
+		memcpy(stream + desplazamiento, parametros[i], size_parametro_de_instruccion);
+		desplazamiento += size_parametro_de_instruccion;
+	}
+
+	send(socket, stream, size_total, 0);
+
+	free(stream);
+}
+
 // TODO: en vez de int debería devolver el tipo de dato de codigo_operacion
 int recibir_operacion(int clienteAceptado) {
     codigo_operacion cod_op;

@@ -176,6 +176,7 @@ t_semaforo_recurso* inicializar_archivo_estado(t_nombre_estado nombreEstado);
 void iterator_debug(char*);
 int obtener_index_pcb_de_lista(int estado, int idProceso);
 char* obtener_motivo(codigo_operacion );
+void crear_segmento(PCB* pcb_recibido, char* id_segmento, char* tamanio);
 
 t_list* archivosAbiertosGlobal;
 
@@ -187,6 +188,7 @@ sem_t sem_grado_multiprogamacion;
 sem_t sem_cpu_disponible;
 sem_t proceso_para_finalizar;
 sem_t proceso_en_exit;
+sem_t sem_compactacion;
 
 pthread_t planificador_largo_plazo;
 pthread_t planificador_corto_plazo;
@@ -202,33 +204,31 @@ pthread_mutex_t* mutexTablaAchivosAbiertos;
 t_dictionary* diccionario_recursos;
 t_dictionary* tablaArchivosAbiertos;
 
-
 /*-------------------- LOGS OBLIGATORIOS ------------------*/
-#define ABRIR_ARCHIVO               "PID: <%d> - Abrir Archivo: <%s> realizado"
-#define ABRIR_ARCHIVO_BLOQUEADO     "PID: <%d> - Esperando para abrir Archivo: <%s>"
-#define ACTUALIZAR_PUNTERO_ARCHIVO  "PID: <%d> - Actualizar puntero Archivo: <%s> - Puntero <PUNTERO>" // Nota: El valor del puntero debe ser luego de ejecutar F_SEEK.
-#define CERRAR_ARCHIVO              "PID: <%d> - Cerrar Archivo: <%s> terminado"
-#define CERRAR_ARCHIVO_DESBLOQUEA_PCB "PID: <%d> - Al cerrar el Archivo: <%s> debloquea al PID <%d>"
-#define CREACION_DE_PROCESO         "Se crea el proceso <%d> en NEW"
-#define CREAR_SEGMENTO              "PID: <%d> - Crear Segmento - Id: < id SEGMENTO> - Tamaño: <TAMAÑO>"
-#define ELIMINAR_SEGMENTO           "PID: <%d> - Eliminar Segmento - Id Segmento: < id SEGMENTO>"
-#define ESCRIBIR_ARCHIVO            "PID: <%d> -  Escribir Archivo: <%s> - Puntero <PUNTERO> - Dirección Memoria <DIRECCIÓN MEMORIA> - Tamaño <TAMAÑO>"
+#define ABRIR_ARCHIVO               "PID: %d - Abrir Archivo: %s realizado"
+#define ABRIR_ARCHIVO_BLOQUEADO     "PID: %d - Esperando para abrir Archivo: %s"
+#define ACTUALIZAR_PUNTERO_ARCHIVO  "PID: %d - Actualizar puntero Archivo: %s - Puntero <PUNTERO>" // Nota: El valor del puntero debe ser luego de ejecutar F_SEEK.
+#define CERRAR_ARCHIVO              "PID: %d - Cerrar Archivo: %s terminado"
+#define CERRAR_ARCHIVO_DESBLOQUEA_PCB "PID: %d - Al cerrar el Archivo: %s debloquea al PID %d"
+#define CREACION_DE_PROCESO         "Se crea el proceso %d en NEW"
+#define CREAR_SEGMENTO              "PID: %d - Crear Segmento - Id: %d - Tamaño: %d"
+#define ELIMINAR_SEGMENTO           "PID: %d - Eliminar Segmento - Id Segmento: %d"
+#define ESCRIBIR_ARCHIVO            "PID: %d -  Escribir Archivo: %s - Puntero <PUNTERO> - Dirección Memoria <DIRECCIÓN MEMORIA> - Tamaño <TAMAÑO>"
 #define FIN_COMPACTACIÓN            "Se finalizó el proceso de compactación"
-#define FIN_DE_PROCESO              "Finaliza el proceso <%d> - Motivo: <%s>" // MOTIVOS PUEDEN SER SUCCESS / SEG_FAULT / OUT_OF_MEMORY
-#define I_O                         "PID: <%d> - Ejecuta IO: <TIEMPO>"
+#define FIN_DE_PROCESO              "Finaliza el proceso %d - Motivo: %s" // MOTIVOS PUEDEN SER SUCCESS / SEG_FAULT / OUT_OF_MEMORY
+#define I_O                         "PID: %d - Ejecuta IO: <TIEMPO>"
 #define INGRESO_A_READY             "Cola Ready <ALGORITMO>: [<LISTA DE PIDS>]"
 #define INICIO_COMPACTACIÓN         "Compactación: <Se solicitó compactación / Esperando Fin de Operaciones de FS>"
-#define LEER_ARCHIVO                "PID: <%d> - Leer Archivo: <%s> - Puntero <PUNTERO> - Dirección Memoria <DIRECCIÓN MEMORIA> - Tamaño <TAMAÑO>"
-#define MOTIVO_DE_BLOQUEO           "PID: <%d> - Bloqueado por: <IO / NOMBRE_RECURSO / NOMBRE_ARCHIVO>"
-#define SIGNAL                      "PID: <%d> - Signal: <%s> - Instancias: <INSTANCIAS RECURSO>" // Nota: El valor de las instancias es después de ejecutar el Signal
-#define TRUNCAR_ARCHIVO             "PID: <%d> - Archivo: <%s> - Tamaño: <TAMAÑO>"
-#define WAIT                        "PID: <%d> - Wait: <%s> - Instancias: <INSTANCIAS RECURSO>" // Nota: El valor de las instancias es después de ejecutar el Wait
+#define LEER_ARCHIVO                "PID: %d - Leer Archivo: %s - Puntero <PUNTERO> - Dirección Memoria <DIRECCIÓN MEMORIA> - Tamaño <TAMAÑO>"
+#define MOTIVO_DE_BLOQUEO           "PID: %d - Bloqueado por: <IO / NOMBRE_RECURSO / NOMBRE_ARCHIVO>"
+#define SIGNAL                      "PID: %d - Signal: %s - Instancias: <INSTANCIAS RECURSO>" // Nota: El valor de las instancias es después de ejecutar el Signal
+#define TRUNCAR_ARCHIVO             "PID: %d - Archivo: %s - Tamaño: <TAMAÑO>"
+#define WAIT                        "PID: %d - Wait: %s - Instancias: <INSTANCIAS RECURSO>" // Nota: El valor de las instancias es después de ejecutar el Wait
 #define LOG_CAMBIO_DE_ESTADO        "PID: %d - Estado Anterior: %s - Estado Actual: %s"
-#define F_SEEK_HECHO                "PID <%d> Instruccion F_SEEK hecha correctamente, archivo %s ahora apuntando al puntero %d"
+#define F_SEEK_HECHO                "PID: %d - Instruccion F_SEEK hecha correctamente, archivo %s ahora apuntando al puntero %d"
 #define E__CREAR_SEGMENTO           "PID: %d - ERROR en crear Segmento - Id: %d - Tamaño: %d"
 #define E__ELIMINAR_SEGMENTO        "PID: %d - Eliminar Segmento - Id Segmento: %d"
 ////////////////////////////////////
 
-
-#define PATH_LOG_KERNEL             "/home/utnso/eclipse-workspace/tp-2023-1c-KernelPanic/logs/kernel.log"
+#define PATH_LOG_KERNEL             "../../../logs/kernel.log"
 #endif

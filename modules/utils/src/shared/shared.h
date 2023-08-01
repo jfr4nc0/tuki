@@ -125,7 +125,10 @@ typedef enum {
 	AUX_NEW_PROCESO, // Notifica a kernel que hay un nuevo proceso y se le envia la lista de instrucciones
 	AUX_SOY_CPU, // Notifica a memoria que el modulo que se conectó es CPU
 	AUX_SOY_KERNEL, // Notifica a memoria que el modulo que se conectó es KERNEL
-	AUX_SOY_FILE_SYSTEM // Notifica a memoria que el modulo que se conectó es FILE SYSTEM
+	AUX_SOY_FILE_SYSTEM, // Notifica a memoria que el modulo que se conectó es FILE SYSTEM
+	SEGMENTO_CREADO,
+	OUT_OF_MEMORY,
+	COMPACTACION
 }codigo_operacion;
 
 typedef struct {
@@ -143,6 +146,11 @@ typedef struct {
     size_t size;
     int id;
 } t_segmento;
+
+typedef struct {
+	int id_proceso;
+	t_list* lista_segmentos;
+} t_proceso_actualizado;
 
 typedef struct {
     char* nombreArchivo;
@@ -200,7 +208,7 @@ void eliminar_paquete(t_paquete*);
 int armar_conexion(t_config*, char*, t_log*);
 void enviar_operacion(int conexion, codigo_operacion, size_t tamanio, void* valor);
 void enviar_codigo_operacion(int, codigo_operacion);
-
+void enviar_msj_con_parametros(int socket, int op_code, char** parametros);
 /*----------------------------- FUNCIONES SERVIDOR ----------------------------*/
 
 int iniciar_servidor(t_config*, t_log*);
