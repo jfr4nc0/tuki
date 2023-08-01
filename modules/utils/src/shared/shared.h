@@ -23,6 +23,7 @@
 #include <time.h>
 #include <math.h>
 #include <errno.h>
+#include <string.h>
 
 // Internas
 #include "constantes.h"
@@ -49,6 +50,8 @@ typedef enum {
     ENUM_ARCHIVO_BLOCK,
 }t_nombre_estado;
 
+/*--------------------------------- Estructuras --------------------------------*/
+
 typedef struct {
     // Registros de 4 bytes
     char AX[4];
@@ -68,8 +71,6 @@ typedef struct {
     char RCX[16];
     char RDX[16];
 } registros_cpu;
-
-/*--------------------------------- Estructuras --------------------------------*/
 
 typedef struct {
 	int id_proceso; // Identificador del proceso, unico en todo el sistema
@@ -102,11 +103,15 @@ typedef enum {
     I_DELETE_SEGMENT,
     I_YIELD,
     I_EXIT,
+	SEGMENTATION_FAULT,
     AUX_CREATE_PCB,
 	// Desalojos
 	DESALOJO_YIELD,
 	DESALOJO_EXIT,
 	I_DESCONOCIDA,
+	EXIT__SUCCESS,
+	EXIT_RECURSO_NO_EXISTENTE,
+	EXIT_SEGMENTATION_FAULT,
 	TERMINAR_EJECUCION,
     // Kernel
     KERNEL_CREAR_ARCHIVO,
@@ -174,14 +179,14 @@ char* leer_registro_16_bytes(char* , int* );
 
 /*--------- BUFFERS ------------*/
 void buffer_pack(t_buffer* self, void* streamToAdd, int size);
-static void __stream_send(int toSocket, void *streamToSend, uint32_t bufferSize);
+void __stream_send(int toSocket, void *streamToSend, uint32_t bufferSize);
 t_buffer *buffer_unpack(t_buffer *self, void *dest, int size);
 t_buffer *buffer_create(void);
-static void *__stream_create(uint8_t header, t_buffer *buffer);
+void *__stream_create(uint8_t header, t_buffer *buffer);
 void stream_send_buffer(int toSocket, uint8_t header, t_buffer *buffer);
 char *buffer_unpack_string(t_buffer *self);
 void buffer_pack_string(t_buffer *self, char *stringToAdd);
-uint32_t leer_uint32_t(char* buffer, int* desp);
+uint32_t leer_uint32(char* buffer, int* desp);
 
 /*----------------------------- FUNCIONES CLIENTE ----------------------------*/
 
@@ -205,7 +210,7 @@ int recibir_operacion(int);
 void* recibir_buffer(int*, int);
 void* leer_de_buffer(char*, int*, size_t);
 char* leer_texto(char* buffer, int* desp, int size);
-
+//timestamp* leer_timestamp(char* buffer, int* desp);
 
 void intervalo_de_pausa(int );
 

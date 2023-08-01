@@ -1,7 +1,7 @@
 #include "cpuInstrucciones.h"
 /*
 int get_dir_fisica(t_segmento* segmento ,char* dir_logica, int segment_max){
-	/*	Esquema de memoria: Segmentacion
+		Esquema de memoria: Segmentacion
 	 * 	Direccion Logica: [ Nro Segmento | direccionBase ]
 	 *	@return: La direccion fisica
 	 */

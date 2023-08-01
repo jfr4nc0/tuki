@@ -42,10 +42,11 @@ t_kernel_config* kernelConfig;
 typedef struct {
     char* nombre;
     int instancias;
-    // t_list* lista_procesos;
+    t_list* procesos_bloqueados;
     sem_t sem_recurso;
 }t_recurso;
 
+typedef struct timespec timestamp;
 
 typedef struct ParametrosHiloIO {
     uint32_t idProceso;
@@ -72,15 +73,12 @@ typedef struct {
     t_estado* estadoRecurso;
 }t_semaforo_recurso;
 
-typedef struct timespec timestamp;
-
 pthread_mutex_t permiso_compactacion;
 
 /*----------------- FUNCIONES ------------------*/
 
 void inicializar_estructuras();
 void _planificador_largo_plazo();
-void* liberar_pcb_de_exit();
 void destruir_pcb(PCB* pcb);
 PCB *desencolar_primer_pcb(pcb_estado estado);
 void _planificador_corto_plazo();
@@ -98,14 +96,14 @@ PCB* nuevo_proceso(t_list* , int);
 void enviar_proceso_a_ready();
 void mostrar_pcb(PCB*);
 
-static bool criterio_hrrn(PCB*, PCB*);
 double calculo_HRRN(PCB*);
 double rafaga_estimada(PCB*);
 void *__ejecucion_desalojo_pcb(void *);
 PCB* elegir_pcb_segun_fifo();
 PCB* elegir_pcb_segun_hrrn();
-void *manejo_desalojo_pcb();
+void manejo_desalojo_pcb();
 codigo_operacion manejo_instrucciones(t_data_desalojo* data);
+
 void recibir_proceso_desalojado(PCB*, int );
 PCB* recibir_pcb_de_cpu();
 
@@ -146,15 +144,29 @@ void envio_pcb_a_cpu(int , PCB* , codigo_operacion );
 void agregar_pcb_a_paquete_para_cpu(t_paquete* , PCB* );
 void agregar_registros_a_paquete_cpu(t_paquete* , registros_cpu* );
 PCB* recibir_proceso_desajolado(PCB* pcb_en_ejecucion);
+void destruir_segmento(t_segmento* segmento);
+
+PCB *remover_pcb_segun_maximo_hrrn(pcb_estado *estado);
+PCB *__estado_obtener_pcb_segun_maximo_hrrn_atomic(pcb_estado * estado);
+PCB *__estado_obtener_pcb_segun_maximo_hrrn(pcb_estado *estado);
+double __calcular_valor_hrrn(PCB *pcb, double tiempoActual);
+PCB* obtener_maximo_por_R(t_list* lista_procesos);
+//double obtener_diferencial_de_tiempo_en_milisegundos(timestamp *end, timestamp *start);
+
+
+
 // t_semaforo_recurso* diccionario_semaforos_recursos_get_semaforo_recurso(tablaArchivosAbiertos, nombreArchivo);
 
 t_estado* crear_archivo_estado(t_nombre_estado nombreEstado);
 
+void instruccion_wait(PCB *, char *);
+
 ////////////////////////////////////////////////////
 
 int obtener_recursos(int);
+void terminar_proceso(PCB* , codigo_operacion);
+void instruccion_signal(PCB *pcb_en_ejecucion, char *nombre_recurso);
 void enviar_f_read_write(PCB* pcb, char**, codigo_operacion);
-
 void cambiar_estado_proceso_sin_semaforos(PCB* pcb, pcb_estado estadoNuevo);
 t_archivo_abierto* encontrar_archivo_abierto(t_list* listaArchivosAbiertos, char* nombreArchivo);
 
@@ -163,6 +175,7 @@ void agregar_lista_archivos_a_paquete(t_paquete* paquete, t_list* lista);
 t_semaforo_recurso* inicializar_archivo_estado(t_nombre_estado nombreEstado);
 void iterator_debug(char*);
 int obtener_index_pcb_de_lista(int estado, int idProceso);
+char* obtener_motivo(codigo_operacion );
 
 t_list* archivosAbiertosGlobal;
 
@@ -172,6 +185,8 @@ sem_t sem_proceso_a_ready_terminado;
 sem_t sem_proceso_a_executing;
 sem_t sem_grado_multiprogamacion;
 sem_t sem_cpu_disponible;
+sem_t proceso_para_finalizar;
+sem_t proceso_en_exit;
 
 pthread_t planificador_largo_plazo;
 pthread_t planificador_corto_plazo;
@@ -215,7 +230,5 @@ t_dictionary* tablaArchivosAbiertos;
 ////////////////////////////////////
 
 
-#define PATH_LOG_KERNEL             "logs/kernel.log"
-#define PATH_CONFIG_KERNEL          "tuki-pruebas/prueba-base/kernel.config"
-
+#define PATH_LOG_KERNEL             "/home/utnso/eclipse-workspace/tp-2023-1c-KernelPanic/logs/kernel.log"
 #endif
