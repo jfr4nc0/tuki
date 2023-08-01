@@ -979,7 +979,7 @@ PCB* nuevo_proceso(t_list* listaInstrucciones, int clienteAceptado) {
     strcpy(pcb->registrosCpu->RCX, "");
     strcpy(pcb->registrosCpu->RDX, "");
 
-    pcb->lista_segmentos = list_create();
+    //pcb->lista_segmentos = list_create();
     pcb->lista_archivos_abiertos = list_create();
     pcb->estimacion_rafaga = kernelConfig->ESTIMACION_INICIAL / 1000;
     pcb->ready_timestamp = 0;
