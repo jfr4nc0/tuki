@@ -75,7 +75,6 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
 
 	cargar_registros(pcb);
 
-	// ¿Por que se le hace malloc?
 	char* instruccion;
 	char** instruccion_decodificada;
 
@@ -113,9 +112,6 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
     log_info(loggerCpu, "Se salió de la ejecucion en la instrucción %s. Guardando el contexto de ejecucion...", instruccion);
     guardar_contexto_de_ejecucion(pcb);
 
-    free(instruccion);
-    free(instruccion_decodificada);
-
 	// Si hubo interrupcion de algun tipo se lo comunico a kernel pero sacamos
 	if (hubo_interrupcion) {
 		hubo_interrupcion = false;
@@ -126,7 +122,7 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
 	enviar_pcb(clienteKernel, pcb, ultimaOperacion, loggerCpu);
 }
 
-void cargar_registros(PCB* pcb) {
+void cargar_registros(PCB* pcb) { // Acumula basura
 	strcpy(registrosCpu->AX, pcb->registrosCpu->AX);
 	strcpy(registrosCpu->BX, pcb->registrosCpu->BX);
 	strcpy(registrosCpu->CX, pcb->registrosCpu->CX);
@@ -141,7 +137,7 @@ void cargar_registros(PCB* pcb) {
 	strcpy(registrosCpu->RDX,  pcb->registrosCpu->RDX);
 }
 
-void guardar_contexto_de_ejecucion(PCB* pcb) {
+void guardar_contexto_de_ejecucion(PCB* pcb) { // Acumula basura
 	strcpy(pcb->registrosCpu->AX, registrosCpu->AX);
     strcpy(pcb->registrosCpu->BX, registrosCpu->BX);
     strcpy(pcb->registrosCpu->CX, registrosCpu->CX);
@@ -190,11 +186,13 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 		case I_F_READ:
 		case I_F_WRITE:
 		case I_TRUNCATE:
+		case I_IO:
+		case I_WAIT:
+		case I_SIGNAL:
+		case I_CREATE_SEGMENT:
+		case I_DELETE_SEGMENT:
 			hubo_interrupcion = true;
 		break;
-	}
-
-	switch(operacion) {
 		case I_SET: {
 			// SET (Registro, Valor)
 			int retardo = configCpu->RETARDO_INSTRUCCION;
@@ -202,7 +200,6 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 			instruccion_set(instruccion[1],instruccion[2]);
 			//log_info(loggerCpu, "REGISTRO AX: %s", registrosCpu->AX);
 			break;
-		}
 		case I_MOV_IN:
 			// MOV_IN (Registro, Dirección Lógica)
 			// instruccion_mov_in(instruccion[1],instruccion[2],pcb);
@@ -211,22 +208,13 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 			// MOV_OUT (Dirección Lógica, Registro)
 			// instruccion_mov_out(instruccion[1],instruccion[2],pcb);
 			break;
-		case I_IO:
-			// I/O (Tiempo)
+		default:
+			log_error(loggerCpu,E__CODIGO_INVALIDO);
 			break;
-		case I_WAIT:
-			// WAIT (Recurso)
-			break;
-		case I_SIGNAL:
-			// SIGNAL (Recurso)
-			break;
-		case I_CREATE_SEGMENT:
-			// CREATE_SEGMENT (Id del Segmento, Tamaño)
-			break;
-		case I_DELETE_SEGMENT:
-			// DELETE_SEGMENT (Id del Segmento)
-			break;
+		}
+
 	}
+
 	return operacion;
 }
 

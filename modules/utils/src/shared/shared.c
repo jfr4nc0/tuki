@@ -572,8 +572,8 @@ void enviar_pcb(int conexion, PCB* pcb_a_enviar, codigo_operacion codigo, t_log*
 }
 
 void agregar_pcb_a_paquete(t_paquete* paquete, PCB* pcb, t_log* log) {
-    agregar_int_a_paquete(paquete, pcb->id_proceso);
     agregar_registros_a_paquete(paquete, pcb->registrosCpu);
+    agregar_int_a_paquete(paquete, pcb->id_proceso);
     agregar_int_a_paquete(paquete, pcb->estado);
     agregar_lista_a_paquete(paquete, pcb->lista_instrucciones, log);
     agregar_int_a_paquete(paquete, pcb->contador_instrucciones);
@@ -615,8 +615,6 @@ PCB* recibir_pcb(int clienteAceptado) {
 
 	buffer = recibir_buffer(&tamanio, clienteAceptado);
 
-	pcb->id_proceso = leer_int(buffer, &desplazamiento);
-
 	pcb->registrosCpu = malloc(sizeof(registros_cpu));
 	strcpy(pcb->registrosCpu->AX, leer_registro_4_bytes(buffer, &desplazamiento));
 	strcpy(pcb->registrosCpu->BX, leer_registro_4_bytes(buffer, &desplazamiento));
@@ -631,12 +629,10 @@ PCB* recibir_pcb(int clienteAceptado) {
 	strcpy(pcb->registrosCpu->RCX,  leer_registro_16_bytes(buffer, &desplazamiento));
 	strcpy(pcb->registrosCpu->RDX,  leer_registro_16_bytes(buffer, &desplazamiento));
 
+	pcb->id_proceso = leer_int(buffer, &desplazamiento);
 	pcb->estado = leer_int(buffer, &desplazamiento);
-
 	pcb->lista_instrucciones = leer_string_array(buffer, &desplazamiento);
-
 	pcb->contador_instrucciones = leer_int(buffer, &desplazamiento);
-
 	pcb->estimacion_rafaga = leer_double(buffer, &desplazamiento);
 	pcb->ready_timestamp = leer_double(buffer, &desplazamiento);
     free(buffer);
