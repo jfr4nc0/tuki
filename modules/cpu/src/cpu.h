@@ -75,8 +75,8 @@ char* obtener_valor_registro(char* registro, registros_cpu *registrosCPU);
 char *registros_cpu_get_valor_registro(char* registro, int tamanioRegistro);
 void log_acceso_a_memoria(uint32_t pid, char* modo, uint32_t idSegmento, uint32_t dirFisica, void* valor, uint32_t tamanio);
 void loggear_segmentation_fault(uint32_t pid, uint32_t numSegmento, uint32_t offset, uint32_t tamanio);
-uint32_t obtener_direccion_fisica(PCB *pcb,uint32_t dirLogica, uint32_t *numeroSegmento, uint32_t *offset, uint32_t *tamanioSegmento);
-uint32_t obtener_base_segmento(PCB *pcb, uint32_t numeroSegmento,  uint32_t *tamanio);
+int obtener_direccion_fisica(PCB *pcb, int dirLogica, int *numeroSegmento, int *offset, int *tamanioSegmento);
+int obtener_base_segmento(PCB *pcb, int numeroSegmento,  int *tamanio);
 
 PCB* recibir_pcb(int);
 void enviar_pcb_desalojado_a_kernel(PCB*, int, codigo_operacion);

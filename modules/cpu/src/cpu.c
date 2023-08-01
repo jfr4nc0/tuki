@@ -309,22 +309,15 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 		case I_MOV_IN:{
 			// MOV_IN (Registro, Dirección Lógica)
 			//instruccion_mov_in(instruccion[1],instruccion[2],pcb);
-			uint32_t numeroSegmento, offset, tamanioSegmento;
-			char* _registro = malloc(strlen(instruccion[1]) + 1);
-			strcpy(_registro, instruccion[1]);
+			int numeroSegmento, offset, tamanioSegmento;
 
-			char* endptr; // Puntero para manejar errores en la conversión
-			uint32_t dirLogica = strtoul(instruccion[2], &endptr, 10); // Convertir la cadena a un valor numérico uint32_t
+			int dirLogica = atoi(instruccion[1]); // pasa de string a int
+			char* registro = strdup(instruccion[2]); // hace el malloc y copia en la varible
 
-			// Verificar si hubo algún error en la conversión
-			if (*endptr != '\0') {
-			    log_error(loggerCpu, "El valor no representa un número válido de direccion logica");
-			}
+			int dirFisica = obtener_direccion_fisica(pcb, dirLogica, &numeroSegmento, &offset, &tamanioSegmento);
+			int tamanioALeer = obtener_tamanio_segun_registro(registro);
 
-			uint32_t dirFisica = obtener_direccion_fisica(pcb, dirLogica, &numeroSegmento, &offset, &tamanioSegmento);
-			uint32_t tamanioALeer = obtener_tamanio_segun_registro(_registro);
-
-			if((tamanioALeer + offset) <= tamanioSegmento){
+			if(tamanioALeer + offset <= tamanioSegmento){
 
 				t_parametros_lectura* parametros_a_enviar = malloc(sizeof(t_parametros_lectura));
 
@@ -335,7 +328,7 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 				enviar_operacion(conexionCpuMemoria, I_MOV_IN, sizeof(t_parametros_lectura), parametros_a_enviar);
 				char *valor = recibir_valor_a_escribir(conexionCpuMemoria);
 				log_acceso_a_memoria(pcb->id_proceso, "LEER", numeroSegmento, dirFisica, valor,sizeof(valor));
-			    instruccion_set(_registro, valor);
+			    instruccion_set(registro, valor);
 			    free(valor);
 			    free(parametros_a_enviar);
 			}else {
@@ -343,28 +336,21 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 				loggear_segmentation_fault(pcb->id_proceso, numeroSegmento, offset, tamanioSegmento);
 				hubo_interrupcion = true;
 			}
-			free(_registro);
+			free(registro);
 			break;
 		}
 		case I_MOV_OUT:{
 			// MOV_OUT (Dirección Lógica, Registro)
 			//instruccion_mov_out(instruccion[1],instruccion[2],pcb);
-			uint32_t numeroSegmento, offset, tamanioSegmento;
-			char* registro = malloc(strlen(instruccion[2]) + 1);
-			strcpy(registro, instruccion[2]);
+			int numeroSegmento, offset, tamanioSegmento;
 
-			char* endptr; // Puntero para manejar errores en la conversión
-			uint32_t dirLogica = strtoul(instruccion[1], &endptr, 10); // Convertir la cadena a un valor numérico uint32_t
+			int dirLogica = atoi(instruccion[1]); // pasa de string a int
+			char* registro = strdup(instruccion[2]); // hace el malloc y copia en la varible
 
-			// Verificar si hubo algún error en la conversión
-			if (*endptr != '\0') {
-				log_error(loggerCpu, "El valor no representa un número válido de direccion logica");
-			}
+			int dirFisica = obtener_direccion_fisica(pcb, dirLogica, &numeroSegmento, &offset, &tamanioSegmento);
+			int tamanioALeer = obtener_tamanio_segun_registro(registro);
 
-			uint32_t dirFisica = obtener_direccion_fisica(pcb, dirLogica, &numeroSegmento, &offset, &tamanioSegmento);
-			uint32_t tamanioALeer = obtener_tamanio_segun_registro(registro);
-
-			if((tamanioALeer + offset) <= tamanioSegmento){
+			if(tamanioALeer + offset <= tamanioSegmento){
 				registros_cpu *registrosCPU = pcb->registrosCpu;
 				char* valorRegistro = obtener_valor_registro(registro, registrosCPU);
 				void* bytesAEnviar = malloc(tamanioALeer);
@@ -616,38 +602,34 @@ char* agregarCaracterNulo(void* data, uint32_t length){
     return str;
 }
 
-void loggear_segmentation_fault(uint32_t pid, uint32_t numSegmento, uint32_t offset, uint32_t tamanio){
+void loggear_segmentation_fault(uint32_t pid, uint32_t numSegmento, uint32_t offset, uint32_t tamanio) {
     log_info(loggerCpu, "PID: %u - Error SEG_FAULT- Segmento: %u - Offset: %u - Tamaño: %u", pid, numSegmento, offset, tamanio);
     return;
 }
 
-uint32_t obtener_direccion_fisica(PCB *pcb,uint32_t dirLogica, uint32_t *numeroSegmento, uint32_t *offset, uint32_t *tamanioSegmento){
+int obtener_direccion_fisica(PCB* pcb, int dirLogica, int* numero_segmento, int* offset, int* tamanioSegmento) {
 
-    uint32_t tam_max_segmento;
-    tam_max_segmento = configCpu->TAM_MAX_SEGMENTO;
-    uint32_t numero_de_segmento = (dirLogica / tam_max_segmento);
-    *offset = (uint32_t) dirLogica % tam_max_segmento;
-    uint32_t base = obtener_base_segmento(pcb, numero_de_segmento, tamanioSegmento);
-    uint32_t direccionFisica = base + *offset;
+    int tam_max_segmento = configCpu->TAM_MAX_SEGMENTO;
+    *numero_segmento = dirLogica / tam_max_segmento;
+    *offset = dirLogica % tam_max_segmento;
+    int base = obtener_base_segmento(pcb, *numero_segmento, tamanioSegmento);
+    int direccionFisica = base + *offset;
     return direccionFisica;
 }
 
-uint32_t obtener_base_segmento(PCB *pcb, uint32_t numeroSegmento,  uint32_t *tamanio){
-    uint32_t base;
-    uint32_t i = 0;
+int obtener_base_segmento(PCB* pcb, int numeroSegmento,  int *tamanio){
 
     int cantidadSegmentos = list_size(pcb->lista_segmentos);
-   	t_segmento* segmentoTabla;
+   	t_segmento* segmentoTabla; // TODO: direccionBase deberia ser int
 
-   	while(i < cantidadSegmentos){
+   	for(int i = 0; i < cantidadSegmentos; i++){
    		segmentoTabla = list_get(pcb->lista_segmentos, i);
    		if(segmentoTabla->id == numeroSegmento){
-   			base = *(uint32_t*)(segmentoTabla->direccionBase);
    			*tamanio = segmentoTabla->size;
+   			return *(int*)(segmentoTabla->direccionBase);
    		}
-   		i++;
    	}
-    return base;
+   	return -1;
 }
 
 // void instruccion_set(char* registro,char* valor) {

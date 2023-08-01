@@ -21,7 +21,7 @@ typedef struct {
     char* ALGORITMO_ASIGNACION;
 } t_memoria_config;
 
-#define DEFAULT_LOG_PATH            "logs/memoria.log"
+#define DEFAULT_LOG_PATH            "/home/utnso/eclipse-workspace/tp-2023-1c-KernelPanic/logs/memoria.log"
 #define DEFAULT_CONFIG_PATH         "tuki-pruebas/prueba-base/memoria.config"
 
 // LOGS ////////////////////////////////////
