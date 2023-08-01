@@ -37,9 +37,8 @@ int main(int argc, char** argv) {
 void atender_kernel(int clienteKernel){
 	while(1) {
 		pthread_mutex_lock(&m_recibir_pcb);
-		codigo_operacion codDePrueba1 = recibir_operacion(clienteKernel);
+	    codigo_operacion codDePrueba1 = recibir_operacion(clienteKernel);
 		PCB* pcb_a_ejecutar = recibir_pcb(clienteKernel);
-
 		ejecutar_proceso(pcb_a_ejecutar, clienteKernel);
 		pthread_mutex_unlock(&m_recibir_pcb);
 	}

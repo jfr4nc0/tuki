@@ -425,7 +425,6 @@ void agregar_lista_a_paquete(t_paquete* paquete, t_list* lista, t_log* logger) {
 		void* elemento = list_get(lista, i);
 		char* palabra = (char*)elemento;
 		strtok(palabra, "\n"); // Removemos el salto de linea
-		log_debug(logger, "Agregando instruccion: %s, tamanio %zu", palabra, strlen(palabra));
 		agregar_a_paquete(paquete, palabra, strlen(palabra));
 	}
 
@@ -613,8 +612,6 @@ PCB* recibir_pcb(int clienteAceptado) {
 	void* buffer;
 	int tamanio = 0;
 	int desplazamiento = 0;
-
-    codigo_operacion codDePrueba1 = recibir_operacion(clienteAceptado);
 
 	buffer = recibir_buffer(&tamanio, clienteAceptado);
 
