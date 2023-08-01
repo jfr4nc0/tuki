@@ -482,13 +482,9 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
                 tabla_segmento->idProceso = pcb->id_proceso;
                 tabla_segmento->segmento = segmento;
                 enviar_nuevo_segmento_por_pid(conexionMemoria,tabla_segmento);
-                // t_list* lista_segmento = list_create();
-                // list_add(lista_segmento,segmento);
-                // enviar_tabla_segmento_por_pid(conexionMemoria, &pcb->id_proceso, segmento, kernelLogger);
-				// list_destroy(lista_segmento);
                 res = recibir_operacion(conexionMemoria);
 				if (res == AUX_OK){
-					// log_info(kernelConfig,CREAR_SEGMENTO,pcb->id_proceso,tabla_segmento->segmento->id,tabla_segmento->segmento->size);
+					 log_info(kernelConfig,CREAR_SEGMENTO,pcb->id_proceso,tabla_segmento->segmento->id,tabla_segmento->segmento->size);
 				} else if(res == AUX_SOLO_CON_COMPACTACION){
 					break;
 				} else {

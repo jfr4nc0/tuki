@@ -142,14 +142,11 @@ void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion) 
 		}
 		case I_CREATE_SEGMENT:
 		{
-			// Recibir dos paquetes, uno con el pid y otro con el segmento
-			// int pid = *(int*)list_get(listaRecibida, 0);
-			t_segmento_tabla* tabla_segmento = recibir_nuevo_segmento_por_pid(cliente); // recibe mal la lista de segmentos, probablemente por el codigo de operacion
-			// t_segmento* segmento = list_get(listaSegmentos, 0);
-			// codigoRespuesta = crear_segmento_por_pid(pid, segmento);
-			// t_list* listaSegmentosPorPid = obtener_tabla_segmentos_por_proceso_id(pid);
+			t_segmento_tabla* tabla_segmento = recibir_nuevo_segmento_por_pid(cliente);
+			 codigoRespuesta = crear_segmento_por_pid(tabla_segmento->idProceso, tabla_segmento->segmento);
 			if(codigoRespuesta == AUX_OK){
-				// enviar_lista_segmentos_del_proceso(cliente, AUX_OK, listaSegmentosPorPid, loggerMemoria);
+				t_list* listaSegmentosPorPid = obtener_tabla_segmentos_por_proceso_id(tabla_segmento->idProceso);
+				enviar_lista_segmentos_del_proceso(cliente, AUX_OK, listaSegmentosPorPid, loggerMemoria);
 			} else { enviar_codigo_operacion(cliente, codigoRespuesta);}
 			break;
 		}

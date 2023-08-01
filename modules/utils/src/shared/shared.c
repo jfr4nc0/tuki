@@ -534,6 +534,7 @@ void enviar_lista_segmentos_del_proceso(int cliente, codigo_operacion codOp, t_l
 
 t_segmento_tabla* recibir_nuevo_segmento_por_pid(int cliente){
 	t_segmento_tabla* tabla_segmento = malloc(sizeof(tabla_segmento));
+    t_segmento* segmento = malloc(sizeof(segmento));
 
     void* buffer;
 	int tamanio = 0;
@@ -541,8 +542,9 @@ t_segmento_tabla* recibir_nuevo_segmento_por_pid(int cliente){
 
     buffer = recibir_buffer(&tamanio, cliente);
     tabla_segmento->idProceso = leer_int(buffer,&desp);
-    tabla_segmento->segmento->id = leer_int(buffer,&desp);
-    tabla_segmento->segmento->size = leer_size(buffer,&desp);
+    segmento->id = leer_int(buffer,&desp);
+    segmento->size = leer_size(buffer,&desp);
+    tabla_segmento->segmento = segmento;
 
     free(buffer);
     return tabla_segmento;
