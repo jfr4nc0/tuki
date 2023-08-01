@@ -154,7 +154,7 @@ typedef struct {
     uint32_t puntero;
 }t_enviar_archivo_abierto;
 /*--------------------------------- FUNCIONES GENERALES --------------------------------*/
-
+char* truncar_string(char* str,int size);
 char* cantidad_strings_a_mostrar(int);
 char* extraer_string_de_config(t_config*, char*, t_log* logger);
 int extraer_int_de_config(t_config* config, char* property, t_log* logger);
