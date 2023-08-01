@@ -474,7 +474,7 @@ void agregar_int_a_paquete(t_paquete* paquete, int valor) {
     paquete->buffer->size += sizeof(int);
 }
 
-void agregar_tabla_segmentos(t_paquete* paquete, int cliente, t_list* segmentosTabla, t_log* logger) {
+void agregar_lista_segmentos_del_proceso(t_paquete* paquete, int cliente, t_list* segmentosTabla, t_log* logger) {
 	// Envio aparte las direcciones
     t_paquete* paqueteDirecciones = crear_paquete(AUX_OK);
 
@@ -495,49 +495,96 @@ void agregar_tabla_segmentos(t_paquete* paquete, int cliente, t_list* segmentosT
     return;
 }
 
-void enviar_tabla_segmento_por_pid(int cliente, void* pid, t_list* segmentosTabla, t_log* logger){
-    enviar_operacion(cliente, AUX_PID, sizeof(int), pid);
-	enviar_lista_segmentos_del_proceso(cliente, AUX_TABLA_SEGMENTO, segmentosTabla, logger);
+void enviar_nuevo_segmento_por_pid(int cliente, t_segmento_tabla* tabla_segmento){
+	t_paquete* paquete = crear_paquete(I_CREATE_SEGMENT);
+	agregar_int_a_paquete(paquete, tabla_segmento->idProceso);
+	agregar_int_a_paquete(paquete, tabla_segmento->segmento->id);
+	agregar_size_a_paquete(paquete, tabla_segmento->segmento->size);
+	enviar_paquete(paquete, cliente);
+	eliminar_paquete(paquete);
+	return;
 }
 
 void enviar_lista_segmentos_del_proceso(int cliente, codigo_operacion codOp, t_list* segmentosTabla, t_log* logger) {
 	t_paquete* paquete = crear_paquete(codOp);
-    agregar_tabla_segmentos(paquete, cliente, segmentosTabla, logger);
+    agregar_lista_segmentos_del_proceso(paquete, cliente, segmentosTabla, logger);
     enviar_paquete(paquete, cliente);
     eliminar_paquete(paquete);
     return;
 }
 
-t_list* recibir_tabla_segmentos(int clienteAceptado){
-    recibir_operacion(clienteAceptado);
-    t_list* listaPid = recibir_paquete(clienteAceptado);
-    int pid = *(int*)list_get(listaPid, 0);
-    t_list* lista_tabla_segmentos = recibir_lista_segmentos(clienteAceptado);
-    
-    t_segmento_tabla* tabla_segmento = malloc(sizeof(tabla_segmento));
-    tabla_segmento->idProceso = pid;
-    t_list* lista_resultante = list_create();
-    for (int i = 0; i < list_size(lista_tabla_segmentos); i++)
-    {
-        t_segmento* segmento = (t_segmento*)list_get(lista_tabla_segmentos, i);
-        tabla_segmento->segmento = segmento;
-        list_add(lista_resultante,tabla_segmento);
-    }
-    
-    return lista_resultante;
+//t_list* recibir_tabla_segmentos(int clienteAceptado){
+//    // recibir_operacion(clienteAceptado);
+//    t_list* listaPid = recibir_paquete(clienteAceptado);
+//    int pid = *(int*)list_get(listaPid, 0);
+//    t_list* lista_tabla_segmentos = recibir_lista_segmentos(clienteAceptado);
+//
+//    t_segmento_tabla* tabla_segmento = malloc(sizeof(tabla_segmento));
+//    tabla_segmento->idProceso = pid;
+//    t_list* lista_resultante = list_create();
+//    for (int i = 0; i < list_size(lista_tabla_segmentos); i++)
+//    {
+//        t_segmento* segmento = (t_segmento*)list_get(lista_tabla_segmentos, i);
+//        tabla_segmento->segmento = segmento;
+//        list_add(lista_resultante,tabla_segmento);
+//    }
+//
+//    return lista_resultante;
+//}
+
+t_segmento_tabla* recibir_nuevo_segmento_por_pid(int cliente){
+	t_segmento_tabla* tabla_segmento = malloc(sizeof(tabla_segmento));
+
+    void* buffer;
+	int tamanio = 0;
+	int desp = 0;
+
+    buffer = recibir_buffer(&tamanio, cliente);
+    tabla_segmento->idProceso = leer_int(buffer,&desp);
+    tabla_segmento->segmento->id = leer_int(buffer,&desp);
+    tabla_segmento->segmento->size = leer_size(buffer,&desp);
+
+    free(buffer);
+    return tabla_segmento;
 }
 
-// va de la mano con agregar_tabla_segmentos funcion
+// va de la mano con enviar_lista_segmentos_del_proceso funcion
 t_list* recibir_lista_segmentos(int clienteAceptado) {
 	// Solo obtiene bien la direccion base
     t_list* listaSegmentos = recibir_paquete(clienteAceptado);
 
-    recibir_operacion(clienteAceptado);
+    codigo_operacion op1 = recibir_operacion(clienteAceptado);
+
     void* buffer;
 	int tamanio = 0;
 	int desp = 0;
 
     buffer = recibir_buffer(&tamanio, clienteAceptado);
+//    codigo_operacion op2 = recibir_operacion(clienteAceptado);
+
+    for (int i = 0; i < list_size(listaSegmentos); i++) {
+    	t_segmento* segmento = (t_segmento*)list_get(listaSegmentos, i);
+    	segmento->id = leer_int(buffer, &desp);
+        segmento->size = leer_size(buffer, &desp);
+
+        list_replace(listaSegmentos, i, segmento);
+    }
+    free(buffer);
+    return listaSegmentos;
+}
+
+t_list* recibir_lista_segmentos_2(int clienteAceptado) {
+	// Solo obtiene bien la direccion base
+    t_list* listaSegmentos = recibir_paquete(clienteAceptado);
+
+    codigo_operacion op1 = recibir_operacion(clienteAceptado);
+
+    void* buffer;
+	int tamanio = 0;
+	int desp = 0;
+
+    buffer = recibir_buffer(&tamanio, clienteAceptado);
+    codigo_operacion op2 = recibir_operacion(clienteAceptado);
 
     for (int i = 0; i < list_size(listaSegmentos); i++) {
     	t_segmento* segmento = (t_segmento*)list_get(listaSegmentos, i);
@@ -597,8 +644,8 @@ void enviar_pcb(int conexion, PCB* pcb_a_enviar, codigo_operacion codigo, t_log*
 }
 
 void agregar_pcb_a_paquete(t_paquete* paquete, PCB* pcb, t_log* log) {
-    agregar_int_a_paquete(paquete, pcb->id_proceso);
     agregar_registros_a_paquete(paquete, pcb->registrosCpu);
+    agregar_int_a_paquete(paquete, pcb->id_proceso);
     agregar_int_a_paquete(paquete, pcb->estado);
     agregar_lista_a_paquete(paquete, pcb->lista_instrucciones, log);
     agregar_int_a_paquete(paquete, pcb->contador_instrucciones);
@@ -638,11 +685,7 @@ PCB* recibir_pcb(int clienteAceptado) {
 	int tamanio = 0;
 	int desplazamiento = 0;
 
-    codigo_operacion codDePrueba1 = recibir_operacion(clienteAceptado);
-
 	buffer = recibir_buffer(&tamanio, clienteAceptado);
-
-	pcb->id_proceso = leer_int(buffer, &desplazamiento);
 
 	pcb->registrosCpu = malloc(sizeof(registros_cpu));
 	strcpy(pcb->registrosCpu->AX, leer_registro_4_bytes(buffer, &desplazamiento));
@@ -658,12 +701,10 @@ PCB* recibir_pcb(int clienteAceptado) {
 	strcpy(pcb->registrosCpu->RCX,  leer_registro_16_bytes(buffer, &desplazamiento));
 	strcpy(pcb->registrosCpu->RDX,  leer_registro_16_bytes(buffer, &desplazamiento));
 
+	pcb->id_proceso = leer_int(buffer, &desplazamiento);
 	pcb->estado = leer_int(buffer, &desplazamiento);
-
 	pcb->lista_instrucciones = leer_string_array(buffer, &desplazamiento);
-
 	pcb->contador_instrucciones = leer_int(buffer, &desplazamiento);
-
 	pcb->estimacion_rafaga = leer_double(buffer, &desplazamiento);
 	pcb->ready_timestamp = leer_double(buffer, &desplazamiento);
     free(buffer);

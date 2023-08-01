@@ -120,8 +120,6 @@ void ejecutar_instrucciones(int cliente, char* modulo) {
 void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion) {
     codigo_operacion codigoRespuesta = AUX_ERROR;
 
-	t_list* listaRecibida = recibir_paquete(cliente);
-
 	switch(codigoDeOperacion){
 		case I_F_WRITE:
 		{
@@ -130,6 +128,7 @@ void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion) 
 		}
 		case AUX_CREATE_PCB:
 		{
+			t_list* listaRecibida = recibir_paquete(cliente);
 			int pid = *(int*)list_get(listaRecibida, 0);
 			codigoRespuesta = inicializar_proceso(pid, sizeof(int));
 			t_list* listaSegmentosPorPid = obtener_tabla_segmentos_por_proceso_id(pid);
@@ -144,17 +143,19 @@ void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion) 
 		case I_CREATE_SEGMENT:
 		{
 			// Recibir dos paquetes, uno con el pid y otro con el segmento
-			t_list* listaSegmentos = recibir_tabla_segmentos(cliente);
-			t_segmento_tabla* tabla_segmento = list_get(listaSegmentos, 0);
-			codigoRespuesta = crear_segmento_por_pid(tabla_segmento->idProceso, tabla_segmento->segmento);
-			t_list* listaSegmentosPorPid = obtener_tabla_segmentos_por_proceso_id(tabla_segmento->idProceso);
+			// int pid = *(int*)list_get(listaRecibida, 0);
+			t_segmento_tabla* tabla_segmento = recibir_nuevo_segmento_por_pid(cliente); // recibe mal la lista de segmentos, probablemente por el codigo de operacion
+			// t_segmento* segmento = list_get(listaSegmentos, 0);
+			// codigoRespuesta = crear_segmento_por_pid(pid, segmento);
+			// t_list* listaSegmentosPorPid = obtener_tabla_segmentos_por_proceso_id(pid);
 			if(codigoRespuesta == AUX_OK){
-				enviar_lista_segmentos_del_proceso(cliente, AUX_OK, listaSegmentosPorPid, loggerMemoria);
+				// enviar_lista_segmentos_del_proceso(cliente, AUX_OK, listaSegmentosPorPid, loggerMemoria);
 			} else { enviar_codigo_operacion(cliente, codigoRespuesta);}
 			break;
 		}
 		case I_DELETE_SEGMENT:
 		{
+			t_list* listaRecibida = recibir_paquete(cliente);
 			int pid = *(int*)list_get(listaRecibida, 0);
 			t_list* listaSegmentos = recibir_lista_segmentos(cliente);
 			t_segmento* segmento = list_get(listaSegmentos, 0);
@@ -173,6 +174,7 @@ void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion) 
 		}
 		case AUX_FINALIZAR_PROCESO:
 		{
+			t_list* listaRecibida = recibir_paquete(cliente);
 			int pid = *(int*)list_get(listaRecibida, 0);
 			finalizar_proceso(pid);
 			// enviar_codigo_operacion(cliente,codigoRespuesta);

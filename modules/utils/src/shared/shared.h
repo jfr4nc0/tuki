@@ -123,7 +123,7 @@ typedef enum {
 	AUX_SOY_KERNEL, // Notifica a memoria que el modulo que se conectó es KERNEL
 	AUX_SOY_FILE_SYSTEM, // Notifica a memoria que el modulo que se conectó es FILE SYSTEM
     AUX_PID,
-    AUX_TABLA_SEGMENTO
+	AUX_NUEVO_SEGMENTO
 }codigo_operacion;
 
 typedef struct {
@@ -201,11 +201,12 @@ void stream_send_buffer(int toSocket, uint8_t header, t_buffer *buffer);
 char *buffer_unpack_string(t_buffer *self);
 void buffer_pack_string(t_buffer *self, char *stringToAdd);
 uint32_t leer_uint32_t(char* buffer, int* desp);
+void agregar_lista_segmentos_del_proceso(t_paquete* paquete, int cliente, t_list* segmentosTabla, t_log* logger);
 void enviar_lista_segmentos_del_proceso(int cliente, codigo_operacion, t_list* segmentosTabla, t_log* logger);
-void enviar_tabla_segmento_por_pid(int cliente, void* pid, t_list* segmentosTabla, t_log* logger);
-void agregar_tabla_segmentos(t_paquete* buffer, int cliente, t_list* segmentosTabla, t_log* logger);
+void enviar_nuevo_segmento_por_pid(int cliente, t_segmento_tabla* tabla_segmento);
 t_list* recibir_lista_segmentos(int);
-t_list* recibir_tabla_segmentos(int);
+t_list* recibir_lista_segmentos_2(int);
+t_segmento_tabla* recibir_nuevo_segmento_por_pid(int cliente);
 
 void enviar_pcb(int conexion, PCB* pcb_a_enviar, codigo_operacion codigo, t_log* log);
 
@@ -238,6 +239,7 @@ int armar_conexion(t_config*, char*, t_log*);
 void enviar_operacion(int conexion, codigo_operacion, size_t tamanio, void* valor);
 void enviar_codigo_operacion(int, codigo_operacion);
 void enviar_tabla_segmentos(int conexion, codigo_operacion codOperacion, t_list* tabla_segmento);
+void enviar_nuevo_segmento(int cliente, t_segmento* segmento);
 t_list* desempaquetar_tabla_segmentos(t_buffer *bufferTablaSegmentos, uint32_t tamanioTablaSegmentos);
 t_buffer* empaquetar_tabla_segmentos(t_list* tablaSegmentos, uint32_t tamanioTablaSegmentos);
 void stream_recv_buffer(int fromSocket, t_buffer *destBuffer);

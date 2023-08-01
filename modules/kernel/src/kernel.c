@@ -10,11 +10,6 @@ void liberar_recursos_kernel() {
 
 
 int main(int argc, char** argv) {
-	/*
-    timestamp * valorTime = (timestamp *)(time_t)5;
-	double valor = 5;
-	set_timespec(valorTime);
-	*/
     kernelLogger = iniciar_logger(PATH_LOG_KERNEL, ENUM_KERNEL);
     t_config* config = iniciar_config(PATH_CONFIG_KERNEL, kernelLogger);
     conexionMemoria = armar_conexion(config, MEMORIA, kernelLogger);
@@ -479,15 +474,19 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
 				break;
 			 }
 			 case I_CREATE_SEGMENT: {
+                t_segmento_tabla* tabla_segmento = malloc(sizeof(tabla_segmento));
 				t_segmento* segmento = malloc(sizeof(segmento));
-				segmento->direccionBase = 0;
+				segmento->direccionBase = (void*)(intptr_t)0;
 				segmento->id = atoi(instruccion[1]);
 				segmento->size = strtoul(instruccion[2],NULL,10);
-                t_list* lista_segmento = list_create();
-                list_add(lista_segmento,segmento);
-                
-                enviar_tabla_segmento_por_pid(conexionMemoria, &pcb->id_proceso, lista_segmento, kernelLogger);
-				// res = recibir_operacion(conexionMemoria);
+                tabla_segmento->idProceso = pcb->id_proceso;
+                tabla_segmento->segmento = segmento;
+                enviar_nuevo_segmento_por_pid(conexionMemoria,tabla_segmento);
+                // t_list* lista_segmento = list_create();
+                // list_add(lista_segmento,segmento);
+                // enviar_tabla_segmento_por_pid(conexionMemoria, &pcb->id_proceso, segmento, kernelLogger);
+				// list_destroy(lista_segmento);
+                res = recibir_operacion(conexionMemoria);
 				if (res == AUX_OK){
 					// log_info(kernelConfig,CREAR_SEGMENTO,pcb->id_proceso,tabla_segmento->segmento->id,tabla_segmento->segmento->size);
 				} else if(res == AUX_SOLO_CON_COMPACTACION){
@@ -646,7 +645,7 @@ PCB* recibir_proceso_desajolado(PCB* pcb_en_ejecucion) {
     }
 
     // pcb_recibido->lista_archivos_abiertos = pcb_en_ejecucion->lista_archivos_abiertos;
-    list_add_all(pcb_recibido->lista_archivos_abiertos, pcb_en_ejecucion->lista_archivos_abiertos);
+    // list_add_all(pcb_recibido->lista_archivos_abiertos, pcb_en_ejecucion->lista_archivos_abiertos); // rompe
 
     return pcb_recibido;
 }
