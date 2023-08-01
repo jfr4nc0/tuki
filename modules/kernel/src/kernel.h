@@ -217,7 +217,7 @@ t_dictionary* tablaArchivosAbiertos;
 #define FIN_COMPACTACIÓN            "Se finalizó el proceso de compactación"
 #define FIN_DE_PROCESO              "Finaliza el proceso %d - Motivo: %s" // MOTIVOS PUEDEN SER SUCCESS / SEG_FAULT / OUT_OF_MEMORY
 #define I_O                         "PID: %d - Ejecuta IO: <TIEMPO>"
-#define INGRESO_A_READY             "Cola Ready <ALGORITMO>: [<LISTA DE PIDS>]"
+#define INGRESO_A_READY             "Cola Ready %s: [<LISTA DE PIDS>]"
 #define INICIO_COMPACTACIÓN         "Compactación: <Se solicitó compactación / Esperando Fin de Operaciones de FS>"
 #define LEER_ARCHIVO                "PID: %d - Leer Archivo: %s - Puntero <PUNTERO> - Dirección Memoria <DIRECCIÓN MEMORIA> - Tamaño <TAMAÑO>"
 #define MOTIVO_DE_BLOQUEO           "PID: %d - Bloqueado por: <IO / NOMBRE_RECURSO / NOMBRE_ARCHIVO>"

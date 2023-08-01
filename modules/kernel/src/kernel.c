@@ -138,16 +138,11 @@ void recibir_de_consola(void *clienteAceptado) {
     recibir_operacion(conexionConConsola);
     t_list* listaInstrucciones = recibir_paquete(conexionConConsola);
 
-    //log_info(kernelLogger, "Me llegaron los siguientes valores: ");
-    //list_iterate(listaInstrucciones, (void*) iterator);
-
     nuevo_proceso(listaInstrucciones, conexionConConsola);
 
-    //crear_hilo_planificadores(); //TODO: ESTO ESTA MAL ACA
 
     list_destroy(listaInstrucciones);
 
-    //liberar_conexion(conexionConConsola);
 
     return;
 }
@@ -218,9 +213,11 @@ void _planificador_corto_plazo() {
         sem_wait(&sem_proceso_a_ready_terminado);
         PCB* pcbParaEjecutar;
 
+        log_info(kernelLogger, "Cola Ready %s: %s", kernelConfig->ALGORITMO_PLANIFICACION, pids_on_list(ENUM_READY));
+
         if(string_equals_ignore_case(kernelConfig->ALGORITMO_PLANIFICACION, "FIFO")) {
         	pcbParaEjecutar = elegir_pcb_segun_fifo();
-        	log_warning(kernelLogger, "PCB DE PID %d ELEGIDO PARA EJECUTAR", pcbParaEjecutar->id_proceso);
+
         }
         else if (string_equals_ignore_case(kernelConfig->ALGORITMO_PLANIFICACION, "HRRN")) {
         	pcbParaEjecutar = elegir_pcb_segun_hrrn();
@@ -434,6 +431,7 @@ void manejo_desalojo_pcb() {
         		sem_post(&sem_lista_estados[ENUM_BLOCKED]);
                 agregar_a_lista_con_sem(pcb_recibido, ENUM_READY);
         		pcb_recibido->ready_timestamp = time(NULL);
+        		log_info(kernelLogger, LOG_CAMBIO_DE_ESTADO, pcb_recibido->id_proceso, nombres_estados[ENUM_BLOCKED], nombres_estados[ENUM_READY]);
         		sem_post(&sem_cpu_disponible);
         		sem_post(&sem_proceso_a_ready_terminado);
         		break;
@@ -981,7 +979,7 @@ PCB* nuevo_proceso(t_list* listaInstrucciones, int clienteAceptado) {
     strcpy(pcb->registrosCpu->RCX, "");
     strcpy(pcb->registrosCpu->RDX, "");
 
-    //pcb->lista_segmentos = list_create();
+    pcb->lista_segmentos = list_create();
     pcb->lista_archivos_abiertos = list_create();
     pcb->estimacion_rafaga = kernelConfig->ESTIMACION_INICIAL / 1000;
     pcb->ready_timestamp = 0;
@@ -1356,6 +1354,6 @@ void loggear_cola_lista(pcb_estado estado) {
     char* algoritmo = kernelConfig->ALGORITMO_PLANIFICACION;
     pids_aux = pids_on_list(estado);
     char* estado2 = nombres_estados[estado];
-    log_info(kernelLogger, "Cola %s %s: %s.",estado2, algoritmo, pids_aux);
+    log_info(kernelLogger, "Cola Ready %s: %s.",algoritmo, pids_aux);
     free(pids_aux);
 }
