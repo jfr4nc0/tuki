@@ -130,8 +130,8 @@ void recibir_de_consola(void *clienteAceptado) {
     recibir_operacion(conexionConConsola);
     t_list* listaInstrucciones = recibir_paquete(conexionConConsola);
 
-    log_info(kernelLogger, "Me llegaron los siguientes valores: ");
-    list_iterate(listaInstrucciones, (void*) iteratorSinLog);
+    //log_info(kernelLogger, "Me llegaron los siguientes valores: ");
+    //list_iterate(listaInstrucciones, (void*) iteratorSinLog);
 
     nuevo_proceso(listaInstrucciones, conexionConConsola);
 
@@ -224,12 +224,14 @@ void _planificador_corto_plazo() {
         log_info(kernelLogger,"PID: %d - Estado Anterior: %s - Estado Actual: %s", pcbParaEjecutar->id_proceso, nombres_estados[ENUM_READY], nombres_estados[ENUM_EXECUTING]);
 
         sem_post(&sem_proceso_a_executing);
+
     }
 }
 
 void manejo_desalojo_pcb() {
     while(1) {
         sem_wait(&sem_proceso_a_executing);
+
         sem_wait(&sem_lista_estados[ENUM_EXECUTING]);
 
         PCB* pcb_para_cpu = list_remove(lista_estados[ENUM_EXECUTING], 0);
@@ -249,7 +251,7 @@ void manejo_desalojo_pcb() {
 
         codigo_operacion operacionRecibida = recibir_operacion(conexionCPU);
 
-        log_debug(kernelLogger, "CODIGO DE OPERACION RECIBIDO: %d", operacionRecibida);
+        //log_debug(kernelLogger, "CODIGO DE OPERACION RECIBIDO: %d", operacionRecibida);
 
         PCB* pcb_recibido = recibir_proceso_desajolado(pcb_para_cpu);
         free(pcb_para_cpu);
@@ -539,6 +541,9 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
 				sem_post(&sem_proceso_a_executing);
 				break;
 			 }
+			 default: {
+				 break;
+			 }
         }
 }
 /*
@@ -627,7 +632,7 @@ void instruccion_wait(PCB *pcb_en_ejecucion, char *nombre_recurso){
 
 	if (!dictionary_has_key(diccionario_recursos, nombre_recurso)) {
         log_info(kernelLogger, "ERROR - PID: %d - %s NO existe", pcb_en_ejecucion->id_proceso, nombre_recurso);
-        terminar_proceso(pcb_en_ejecucion, EXIT_RECURSO_NO_EXISTENTE); //TODO: codigo de inexistencia de recurso
+        terminar_proceso(pcb_en_ejecucion, WAIT_RECURSO_NO_EXISTENTE); //TODO: codigo de inexistencia de recurso
     }
     else{
         t_recurso *recurso = dictionary_get(diccionario_recursos, nombre_recurso);
@@ -657,7 +662,7 @@ void instruccion_signal(PCB *pcb_en_ejecucion, char *nombre_recurso){
 
 	if (!dictionary_has_key(diccionario_recursos, nombre_recurso)) {
 	    log_info(kernelLogger, "ERROR - PID: %u - %s NO existe", pcb_en_ejecucion->id_proceso, nombre_recurso);
-	    terminar_proceso(pcb_en_ejecucion, EXIT_RECURSO_NO_EXISTENTE); //TODO: codigo de inexistencia de recurso
+	    terminar_proceso(pcb_en_ejecucion, SIGNAL_RECURSO_NO_EXISTENTE); //TODO: codigo de inexistencia de recurso
 	}
 	else{
 		t_recurso *recurso = dictionary_get(diccionario_recursos, nombre_recurso);
@@ -908,8 +913,12 @@ char* obtener_motivo(codigo_operacion codigo_motivo){
 			return "EXIT_SUCCESS";
 			break;
 		}
-		case EXIT_RECURSO_NO_EXISTENTE:{
+		case WAIT_RECURSO_NO_EXISTENTE:{
 			return "EXIT_RECURSO_NO_EXISTENTE";
+			break;
+		}
+		case SIGNAL_RECURSO_NO_EXISTENTE:{
+			return "SIGNAL_RECURSO_NO_EXISTENTE";
 			break;
 		}
 		case EXIT_SEGMENTATION_FAULT:{

@@ -95,7 +95,7 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
 				posicion_actual++;
 			}
 
-			log_info(loggerCpu, "PROGRAM COUNTER: %d", pcb->contador_instrucciones);
+			//log_info(loggerCpu, "PROGRAM COUNTER: %d", pcb->contador_instrucciones);
 		}
     }
 

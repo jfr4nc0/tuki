@@ -132,10 +132,10 @@ char* cantidad_strings_a_mostrar(int cantidad) {
 char* extraer_string_de_config(t_config* config, char* property, t_log* logger) {
     if(config_has_property(config, property)) {
             char* valor = config_get_string_value(config, property);
-            log_trace(logger, "Se obtuvo el valor -> %s. En el config %s (%s)", valor, config->path, property);
+            //log_trace(logger, "Se obtuvo el valor -> %s. En el config %s (%s)", valor, config->path, property);
             return valor;
     }
-    log_warning(logger, "No se pudo encontrar en el config (%s), la propiedad -> %s", config->path, property);
+    //log_warning(logger, "No se pudo encontrar en el config (%s), la propiedad -> %s", config->path, property);
 
     return NULL;
 }
@@ -143,10 +143,10 @@ char* extraer_string_de_config(t_config* config, char* property, t_log* logger) 
 int extraer_int_de_config(t_config* config, char* property, t_log* logger) {
     if(config_has_property(config, property)) {
             int valor = config_get_int_value(config, property);
-            log_trace(logger, "Se obtuvo el valor -> %d. En el config %s (%s)", valor, config->path, property);
+            //log_trace(logger, "Se obtuvo el valor -> %d. En el config %s (%s)", valor, config->path, property);
             return valor;
     }
-    log_warning(logger, "No se pudo encontrar en el config (%s), la propiedad -> %s", config->path, property);
+    //log_warning(logger, "No se pudo encontrar en el config (%s), la propiedad -> %s", config->path, property);
 
     return -1;
 }
@@ -219,13 +219,13 @@ t_log* iniciar_logger(char* pathLog, int moduloPos) {
         printf(cantidad_strings_a_mostrar(2), E__LOGGER_CREATE, ENTER);
         exit(1);
     }
-
+    /*
     if (valoresPorDefecto) {
     	log_warning(logger, cantidad_strings_a_mostrar(4), D__LOG_CREADO, "-> ", pathLog, " con valores por defecto");
     }else {
         log_debug(logger, cantidad_strings_a_mostrar(3), D__LOG_CREADO, "-> ", pathLog);
     }
-
+	*/
     return logger;
 }
 
@@ -239,7 +239,7 @@ t_config* iniciar_config(char* pathConfig, t_log* logger) {
         exit(1);
     }
 
-    log_debug(logger, cantidad_strings_a_mostrar(3), D__CONFIG_INICIAL_CREADO, "-> ", pathConfig);
+    //log_debug(logger, cantidad_strings_a_mostrar(3), D__CONFIG_INICIAL_CREADO, "-> ", pathConfig);
     return nuevo_config;
 }
 
@@ -478,7 +478,7 @@ int armar_conexion(t_config* config, char* modulo, t_log* logger) {
     char* ip = extraer_de_modulo_config(config, IP_CONFIG, modulo, logger);
     char* puerto = extraer_de_modulo_config(config, PUERTO_CONFIG, modulo, logger);
 
-    log_debug(logger, D__ESTABLECIENDO_CONEXION, modulo);
+    //log_debug(logger, D__ESTABLECIENDO_CONEXION, modulo);
 
     return crear_conexion(ip, puerto, modulo, logger);
 }
