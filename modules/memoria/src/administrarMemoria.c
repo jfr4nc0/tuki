@@ -57,7 +57,7 @@ codigo_operacion adapter_respuesta_segmento(int pid, void* respuesta, size_t siz
 		log_warning(loggerMemoria, "Peticion de proceso %d, para tamaño %zu, solo se puede haciendo compactacion y usando los huecos libres", pid, size);
         return AUX_SOLO_CON_COMPACTACION;
 	}else{
-		log_info(loggerMemoria, "Memoria usada: %p", respuesta);
+		log_info(loggerMemoria, "Memoria usada: %p", calcular_direccion(respuesta, size));
         return AUX_OK;
     }
 }
@@ -181,24 +181,24 @@ int guardarSegmentoEnTabla(t_segmento* segmento, int idProceso) {
     return list_add(memoria->tablaDeSegmentos, segmentoTabla);
 }
 
-t_list* eliminar_segmento(int idProceso, int idSegmento) {
+codigo_operacion eliminar_segmento(int idProceso, t_segmento* segmento) {
     list_sort(memoria->tablaDeSegmentos, (void*) comparar_tabla_segmentos_por_segmento_id);
-    t_segmento_tabla* segmentoTabla = list_get(memoria->tablaDeSegmentos, idSegmento);
+    t_segmento_tabla* segmentoTabla = list_get(memoria->tablaDeSegmentos, segmento->id);
     if (segmentoTabla != NULL) {
         if (segmentoTabla->idProceso == idProceso) {
             list_sort(memoria->tablaDeSegmentos, (void*) comparar_segmentos_por_segmento_id);
-            list_remove(memoria->segmentos, idSegmento);
-            list_remove(memoria->tablaDeSegmentos, idSegmento);
+            list_remove(memoria->segmentos, segmento->id);
+            list_remove(memoria->tablaDeSegmentos, segmento->id);
             log_info(loggerMemoria, ELIMINACION_DE_SEGMENTO,
-                idProceso, idSegmento, segmentoTabla->segmento->direccionBase, segmentoTabla->segmento->size);
+                idProceso, segmento->id, segmentoTabla->segmento->direccionBase, segmentoTabla->segmento->size);
 
-            return memoria->tablaDeSegmentos;
+            return AUX_OK;
         }
         log_error(loggerMemoria, "El proceso: No cuenta con los permisos suficientes para eliminar el segmento numero: %d", idProceso);
-        return NULL;
+        return AUX_PERMISOS_INSUFICIENTES;
     }
-    log_warning(loggerMemoria, "Se pidió eliminar un segmento que no existe, segmento numero: %d", idSegmento);
-    return NULL;
+    log_warning(loggerMemoria, "Se pidió eliminar un segmento que no existe, segmento numero: %d", segmento->id);
+    return AUX_ERROR;
 }
 
 // t_segmento* list_get_segmento(t_list* tablaSegmento, int index){

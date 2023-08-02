@@ -495,8 +495,8 @@ void agregar_lista_segmentos_del_proceso(t_paquete* paquete, int cliente, t_list
     return;
 }
 
-void enviar_nuevo_segmento_por_pid(int cliente, t_segmento_tabla* tabla_segmento){
-	t_paquete* paquete = crear_paquete(I_CREATE_SEGMENT);
+void enviar_segmento_por_pid(int cliente, codigo_operacion codOp,t_segmento_tabla* tabla_segmento){
+	t_paquete* paquete = crear_paquete(codOp);
 	agregar_int_a_paquete(paquete, tabla_segmento->idProceso);
 	agregar_int_a_paquete(paquete, tabla_segmento->segmento->id);
 	agregar_size_a_paquete(paquete, tabla_segmento->segmento->size);
@@ -532,7 +532,7 @@ void enviar_lista_segmentos_del_proceso(int cliente, codigo_operacion codOp, t_l
 //    return lista_resultante;
 //}
 
-t_segmento_tabla* recibir_nuevo_segmento_por_pid(int cliente){
+t_segmento_tabla* recibir_segmento_por_pid(int cliente){
 	t_segmento_tabla* tabla_segmento = malloc(sizeof(tabla_segmento));
     t_segmento* segmento = malloc(sizeof(segmento));
 

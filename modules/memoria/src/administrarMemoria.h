@@ -44,7 +44,7 @@ void inicializar_memoria(size_t sizeMemoriaTotal, size_t sizeSegmento0, char* al
 void liberar_memoria();
 void* calcular_direccion(void*, size_t);
 void* crear_segmento(int idProceso, size_t size);
-t_list* eliminar_segmento(int idProceso, int segmentoId);
+codigo_operacion eliminar_segmento(int idProceso, t_segmento*);
 void* leer_espacio_usuario(void* direccion, size_t size, int demora);
 void* escribir_espacio_usuario(void* direccion, size_t size, void* valor, int demora);
 void simular_tiempo_acceso(int);

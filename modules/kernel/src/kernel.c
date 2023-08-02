@@ -261,7 +261,7 @@ void* manejo_desalojo_pcb() {
     for(;;) {
         sem_wait(&sem_proceso_a_executing);
         sem_wait(&sem_lista_estados[ENUM_EXECUTING]);
-        PCB* pcb_para_cpu = list_remove(lista_estados[ENUM_EXECUTING], 0);
+        PCB* pcb_para_cpu = list_remove(lista_estados[ENUM_EXECUTING], 0);  // leer y no eliminar el pcb ejecutando
         sem_post(&sem_lista_estados[ENUM_EXECUTING]);
 
         timestamp inicio_ejecucion_proceso;
@@ -481,32 +481,49 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
 				segmento->size = strtoul(instruccion[2],NULL,10);
                 tabla_segmento->idProceso = pcb->id_proceso;
                 tabla_segmento->segmento = segmento;
-                enviar_nuevo_segmento_por_pid(conexionMemoria,tabla_segmento);
+                enviar_segmento_por_pid(conexionMemoria,I_CREATE_SEGMENT,tabla_segmento);
                 res = recibir_operacion(conexionMemoria);
 				if (res == AUX_OK){
-					 log_info(kernelConfig,CREAR_SEGMENTO,pcb->id_proceso,tabla_segmento->segmento->id,tabla_segmento->segmento->size);
+                    // Agregar lista de segmentos actualizada al pcb
+                    pcb->lista_segmentos = recibir_lista_segmentos(conexionMemoria);
+					log_info(kernelLogger,CREAR_SEGMENTO,pcb->id_proceso,tabla_segmento->segmento->id,tabla_segmento->segmento->size); // no loguea
 				} else if(res == AUX_SOLO_CON_COMPACTACION){
 					break;
 				} else {
 					log_error(kernelLogger,E__BAD_REQUEST);
 				}
+                pcb->contador_instrucciones = pcb->contador_instrucciones+1;
+				agregar_a_lista_con_sem((void*)pcb, ENUM_EXECUTING);
+				sem_post(&sem_proceso_a_executing);
 				break;
 			 }
 			 case I_DELETE_SEGMENT: {
-				int id_segmento = atoi(instruccion[1]);
-
-				enviar_operacion(conexionMemoria, operacion, sizeof(int), id_segmento);
-				res = recibir_operacion(conexionMemoria);
+				t_segmento_tabla* tabla_segmento = malloc(sizeof(tabla_segmento));
+				t_segmento* segmento = malloc(sizeof(segmento));
+				segmento->direccionBase = (void*)(intptr_t)0;
+				segmento->id = atoi(instruccion[1]);
+				segmento->size = 0;
+				 tabla_segmento->idProceso = pcb->id_proceso;
+				 tabla_segmento->segmento = segmento;
+				 enviar_segmento_por_pid(conexionMemoria,I_DELETE_SEGMENT,tabla_segmento);
+				res = recibir_operacion(conexionMemoria); // Recibe basura y no se bloquea
 				if (res == AUX_OK){
-					log_info(kernelConfig,ELIMINAR_SEGMENTO,pcb->id_proceso,id_segmento);
-				}else{
-					log_error(kernelLogger,E__ELIMINAR_SEGMENTO,pcb->id_proceso,id_segmento);
-				}
+                    // Agregar lista de segmentos actualizada al pcb
+                    pcb->lista_segmentos = recibir_lista_segmentos(conexionMemoria);
+					log_info(kernelConfig,ELIMINAR_SEGMENTO,pcb->id_proceso,segmento->id);
+				} else if (res==AUX_PERMISOS_INSUFICIENTES){
+					log_error(kernelLogger,E__PERMISOS_INSUFICIENTES,pcb->id_proceso);
+				} else {
+                    log_error(kernelLogger,E__ELIMINAR_SEGMENTO,segmento->id);
+                }
+				pcb->contador_instrucciones = pcb->contador_instrucciones+1;
+				agregar_a_lista_con_sem((void*)pcb, ENUM_EXECUTING);
+				sem_post(&sem_proceso_a_executing);
 				break;
 			 }
 			 default:
 			 	res=AUX_ERROR;
-			 break;
+			 	break;
 		 }
 	return res;
 }

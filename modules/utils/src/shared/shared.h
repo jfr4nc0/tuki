@@ -123,7 +123,8 @@ typedef enum {
 	AUX_SOY_KERNEL, // Notifica a memoria que el modulo que se conectó es KERNEL
 	AUX_SOY_FILE_SYSTEM, // Notifica a memoria que el modulo que se conectó es FILE SYSTEM
     AUX_PID,
-	AUX_NUEVO_SEGMENTO
+	AUX_NUEVO_SEGMENTO,
+    AUX_PERMISOS_INSUFICIENTES
 }codigo_operacion;
 
 typedef struct {
@@ -203,10 +204,10 @@ void buffer_pack_string(t_buffer *self, char *stringToAdd);
 uint32_t leer_uint32_t(char* buffer, int* desp);
 void agregar_lista_segmentos_del_proceso(t_paquete* paquete, int cliente, t_list* segmentosTabla, t_log* logger);
 void enviar_lista_segmentos_del_proceso(int cliente, codigo_operacion, t_list* segmentosTabla, t_log* logger);
-void enviar_nuevo_segmento_por_pid(int cliente, t_segmento_tabla* tabla_segmento);
+void enviar_segmento_por_pid(int cliente, codigo_operacion,t_segmento_tabla* tabla_segmento);
 t_list* recibir_lista_segmentos(int);
 t_list* recibir_lista_segmentos_2(int);
-t_segmento_tabla* recibir_nuevo_segmento_por_pid(int cliente);
+t_segmento_tabla* recibir_segmento_por_pid(int cliente);
 
 void enviar_pcb(int conexion, PCB* pcb_a_enviar, codigo_operacion codigo, t_log* log);
 
