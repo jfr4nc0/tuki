@@ -48,7 +48,7 @@ pthread_mutex_t m_recibir_pcb;
 ////////////////////////////////
 
 #define DEFAULT_LOG_PATH      "logs/cpu.log"
-#define DEFAULT_CONFIG_PATH   "tuki-pruebas/prueba-base/cpu.config"
+#define DEFAULT_CONFIG_PATH   "tuki-pruebas/prueba-memoria/cpu.config"
 
 uint32_t obtener_direccion_fisica(PCB *pcb,uint32_t dirLogica, uint32_t *numeroSegmento, uint32_t *offset, uint32_t *tamanioSegmento);
 void* convertir_dir_logica_a_fisica(PCB *pcb, char* dirLogica);

@@ -143,7 +143,7 @@ void cargar_registros(PCB* pcb) { // Acumula basura
 	strcpy(registrosCpu->RDX,  pcb->registrosCpu->RDX);
 }
 
-void guardar_contexto_de_ejecucion(PCB* pcb) { // Acumula basura
+void guardar_contexto_de_ejecucion(PCB* pcb) {
 	strcpy(pcb->registrosCpu->AX, registrosCpu->AX);
     strcpy(pcb->registrosCpu->BX, registrosCpu->BX);
     strcpy(pcb->registrosCpu->CX, registrosCpu->CX);

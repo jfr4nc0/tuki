@@ -512,6 +512,16 @@ void agregar_lista_segmentos_a_paquete(t_paquete* paquete, int cliente, t_list* 
     return;
 }
 
+void enviar_segmento_por_pid(int cliente, codigo_operacion codOp,t_segmento_tabla* tabla_segmento){
+	t_paquete* paquete = crear_paquete(codOp);
+	agregar_int_a_paquete(paquete, tabla_segmento->idProceso);
+	agregar_int_a_paquete(paquete, tabla_segmento->segmento->id);
+	agregar_size_a_paquete(paquete, tabla_segmento->segmento->size);
+	enviar_paquete(paquete, cliente);
+	eliminar_paquete(paquete);
+	return;
+}
+
 void enviar_lista_segmentos_del_proceso(int cliente, t_list* segmentosLista, t_log* logger) {
 	t_paquete* paquete = crear_paquete(AUX_OK);
     agregar_lista_segmentos_a_paquete(paquete, cliente, segmentosLista, logger);
@@ -535,18 +545,66 @@ t_list* recibir_resto_lista_segmentos(void* buffer, int* desp) {
     return listaSegmentos;
 }
 
-// va de la mano con agregar_lista_segmentos_a_paquete funcion
+t_segmento_tabla* recibir_segmento_por_pid(int cliente){
+	t_segmento_tabla* tabla_segmento = malloc(sizeof(tabla_segmento));
+    t_segmento* segmento = malloc(sizeof(segmento));
+
+    void* buffer;
+	int tamanio = 0;
+	int desp = 0;
+
+    buffer = recibir_buffer(&tamanio, cliente);
+    tabla_segmento->idProceso = leer_int(buffer,&desp);
+    segmento->id = leer_int(buffer,&desp);
+    segmento->size = leer_size(buffer,&desp);
+    tabla_segmento->segmento = segmento;
+
+    free(buffer);
+    return tabla_segmento;
+}
+
+// va de la mano con enviar_lista_segmentos_del_proceso funcion
 t_list* recibir_lista_segmentos(int clienteAceptado) {
+	// Solo obtiene bien la direccion base
+    t_list* listaSegmentos = recibir_paquete(clienteAceptado);
+
+    codigo_operacion op1 = recibir_operacion(clienteAceptado);
+
     void* buffer;
 	int tamanio = 0;
 	int desp = 0;
 
     buffer = recibir_buffer(&tamanio, clienteAceptado);
+//    codigo_operacion op2 = recibir_operacion(clienteAceptado);
 
-    t_list* listaSegmentos = recibir_resto_lista_segmentos(buffer, &desp);
+    for (int i = 0; i < list_size(listaSegmentos); i++) {
+    	t_segmento* segmento = (t_segmento*)list_get(listaSegmentos, i);
+    	segmento->id = leer_int(buffer, &desp);
+        segmento->size = leer_size(buffer, &desp);
 
+        list_replace(listaSegmentos, i, segmento);
+    }
     free(buffer);
     return listaSegmentos;
+}
+
+t_list* recibir_lista_segmentos_2(int clienteAceptado) {
+	// Solo obtiene bien la direccion base
+    t_list* listaSegmentos = recibir_paquete(clienteAceptado);
+
+    codigo_operacion op1 = recibir_operacion(clienteAceptado);
+
+    void* buffer;
+	int tamanio = 0;
+	int desp = 0;
+
+    buffer = recibir_buffer(&tamanio, clienteAceptado);
+    codigo_operacion op2 = recibir_operacion(clienteAceptado);
+
+    t_list* listaSegmentos2 = recibir_resto_lista_segmentos(buffer, &desp);
+
+    free(buffer);
+    return listaSegmentos2;
 }
 
 void* leer_puntero(void* buffer, int* desp) {
@@ -757,6 +815,99 @@ t_paquete* crear_paquete(codigo_operacion codigoOperacion) {
     paquete->codigoOperacion = codigoOperacion;
     crear_buffer(paquete);
     return paquete;
+}
+
+void stream_recv_buffer(int fromSocket, t_buffer *destBuffer)
+{
+    // Recibo el size del buffer
+    ssize_t msgBytes = recv(fromSocket, &(destBuffer->size), sizeof(destBuffer->size), 0);
+
+    // Chequeo que el size del buffer se haya recibido correctamente
+    if (msgBytes == -1) {
+        printf("\e[0;31mstream_recv_buffer: Error en la recepción del buffer [%s]\e[0m\n", strerror(errno));
+    }
+    else if (destBuffer->size > 0) {
+        // Recibo el stream del buffer
+        destBuffer->stream = malloc(destBuffer->size);
+        recv(fromSocket, destBuffer->stream, destBuffer->size, 0);
+    }
+
+    return;
+}
+
+// void enviar_tabla_segmentos(int conexion, codigo_operacion codOperacion, t_list* tabla_segmento) {
+// 	if (conexion > 0) {
+//         t_buffer* buffer = empaquetar_tabla_segmentos(tabla_segmento,(uint32_t)list_size(tabla_segmento));
+//         stream_send_buffer(conexion,codOperacion,buffer);
+// 		free(buffer);
+// 	}
+// }
+
+// t_list* recibir_tabla_segmentos(int cliente, int tamanio){
+//     t_buffer* buffer = buffer_create();
+//     stream_recv_buffer(cliente,buffer);
+
+//     uint32_t tamanio_tabla_segmento;
+//     buffer_unpack(buffer,&tamanio_tabla_segmento,sizeof(tamanio_tabla_segmento));
+
+//     t_list* tabla_segmento = desempaquetar_tabla_segmentos(buffer,tamanio_tabla_segmento);
+
+//     free(buffer);
+//     return tabla_segmento;
+// }
+
+t_list* desempaquetar_tabla_segmentos(t_buffer *bufferTablaSegmentos, uint32_t tamanioTablaSegmentos)
+{
+    t_list* tablaSegmentos = list_create();
+
+    for (int i = 0; i < tamanioTablaSegmentos; i++) {
+        t_segmento_tabla* tabla_segmento = malloc(sizeof(t_segmento_tabla));
+
+        uint32_t idProceso;
+        buffer_unpack(bufferTablaSegmentos, &idProceso, sizeof(idProceso));
+        tabla_segmento->idProceso = (int)idProceso;
+
+        uint32_t idSegmento;
+        buffer_unpack(bufferTablaSegmentos, &idSegmento, sizeof(idSegmento));
+        tabla_segmento->segmento->id = (int)idSegmento;
+
+        uint32_t direccionBase;
+        buffer_unpack(bufferTablaSegmentos, &direccionBase, sizeof(direccionBase));
+        tabla_segmento->segmento->direccionBase = (void*)direccionBase;
+
+        uint32_t tamanio;
+        buffer_unpack(bufferTablaSegmentos, &tamanio, sizeof(tamanio));
+        tabla_segmento->segmento->size = (size_t)tamanio;
+
+        list_add(tablaSegmentos,tabla_segmento);
+    }
+
+    return tablaSegmentos;
+}
+
+t_buffer* empaquetar_tabla_segmentos(t_list* tablaSegmentos, uint32_t tamanioTablaSegmentos)
+{
+    t_buffer *bufferTablaSegmentos = buffer_create();
+
+    buffer_pack(bufferTablaSegmentos, &tamanioTablaSegmentos, sizeof(tamanioTablaSegmentos));
+
+    for (int i = 0; i < tamanioTablaSegmentos; i++) {
+        t_segmento_tabla* tabla_segmento = (t_segmento_tabla*)list_get(tablaSegmentos,i);
+
+        uint32_t idProceso = (uint32_t)tabla_segmento->idProceso;
+        buffer_pack(bufferTablaSegmentos, &idProceso, sizeof(idProceso));
+
+        uint32_t idSegmento = (uint32_t)tabla_segmento->segmento->id;
+        buffer_pack(bufferTablaSegmentos, &idSegmento, sizeof(idSegmento));
+
+        uint32_t direccionBase = (uint32_t)tabla_segmento->segmento->direccionBase;
+        buffer_pack(bufferTablaSegmentos, &direccionBase, sizeof(direccionBase));
+
+        uint32_t tamanio = (uint32_t)tabla_segmento->segmento->size;
+        buffer_pack(bufferTablaSegmentos, &tamanio, sizeof(tamanio));
+    }
+
+    return bufferTablaSegmentos;
 }
 
 void agregar_a_paquete(t_paquete* paquete, void* valor, size_t tamanio) {
@@ -976,7 +1127,7 @@ int recibir_operacion(int clienteAceptado) {
 }
 
 void* recibir_buffer(int* size, int clienteAceptado) {
-    void * buffer;
+    void* buffer;
 
     recv(clienteAceptado, size, sizeof(int), MSG_WAITALL);
     buffer = malloc(*size);
@@ -1030,4 +1181,21 @@ void intervalo_de_pausa(int duracionEnMilisegundos) {
     nanosleep(&timeSpec, &timeSpec);
 
     return;
+}
+
+
+/*----------------- MANEJO DE SEGMENTOS -------------------*/
+int get_dir_fisica(t_segmento* segmento ,char* dir_logica, int segment_max){
+	/*	Esquema de memoria: Segmentacion
+	 * 	Direccion Logica: [ Nro Segmento | direccionBase ]
+	 *	@return: La direccion fisica
+	 */
+
+	segmento->id = floor(atoi(dir_logica)/segment_max);
+	segmento->direccionBase = atoi(dir_logica)%segment_max;
+	segmento->size = segmento->id + segmento->direccionBase;
+
+	if(segmento->size > segment_max){
+		return -1;
+	} else { return segmento->size; }
 }

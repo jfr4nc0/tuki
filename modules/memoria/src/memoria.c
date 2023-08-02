@@ -120,8 +120,6 @@ void ejecutar_instrucciones(int cliente, char* modulo) {
 void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion) {
     codigo_operacion codigoRespuesta = AUX_ERROR;
 
-	t_list* listaRecibida = recibir_paquete(cliente);
-
 	switch(codigoDeOperacion){
 		/*
 		case I_F_WRITE:
@@ -141,6 +139,7 @@ void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion) 
 		*/
 		case AUX_CREATE_PCB:
 		{
+			t_list* listaRecibida = recibir_paquete(cliente);
 			int pid = *(int*)list_get(listaRecibida, 0);
 			codigoRespuesta = inicializar_proceso(pid, sizeof(int));
 			t_list* listaSegmentosPorPid = obtener_tabla_segmentos_por_proceso_id(pid);
@@ -154,26 +153,22 @@ void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion) 
 		}
 		case I_CREATE_SEGMENT:
 		{
-			int pid = *(int*)list_get(listaRecibida, 0);
-			t_list* listaSegmentos = recibir_lista_segmentos(cliente);
-			t_segmento* segmento = list_get(listaSegmentos, 0);
-			codigoRespuesta = crear_segmento_por_pid(pid, segmento);
-
+			t_segmento_tabla* tabla_segmento = recibir_segmento_por_pid(cliente);
+			 codigoRespuesta = crear_segmento_por_pid(tabla_segmento->idProceso, tabla_segmento->segmento);
 			if(codigoRespuesta == AUX_OK){
-				enviar_operacion(cliente,codigoRespuesta, sizeof(segmento->direccionBase), segmento->direccionBase);
+				t_list* listaSegmentosPorPid = obtener_tabla_segmentos_por_proceso_id(tabla_segmento->idProceso);
+				enviar_lista_segmentos_del_proceso(cliente, listaSegmentosPorPid, loggerMemoria);
 			} else { enviar_codigo_operacion(cliente, codigoRespuesta);}
 			break;
 		}
 		case I_DELETE_SEGMENT:
 		{
-			int pid = *(int*)list_get(listaRecibida, 0);
-			t_list* listaSegmentos = recibir_lista_segmentos(cliente);
-			t_segmento* segmento = list_get(listaSegmentos, 0);
-
-			if(eliminar_segmento(pid, segmento->id)!=NULL){
-				enviar_codigo_operacion(cliente, AUX_OK);
-			} else {enviar_codigo_operacion(cliente, AUX_ERROR);}
-
+			t_segmento_tabla* tabla_segmento = recibir_segmento_por_pid(cliente);
+			codigoRespuesta = eliminar_segmento(tabla_segmento->idProceso, tabla_segmento->segmento);
+			if(codigoRespuesta == AUX_OK){
+				t_list* listaSegmentosPorPid = obtener_tabla_segmentos_por_proceso_id(tabla_segmento->idProceso);
+				enviar_lista_segmentos_del_proceso(cliente, listaSegmentosPorPid, loggerMemoria);
+			} else { enviar_codigo_operacion(cliente, codigoRespuesta);}
 			break;
 		}
 		case AUX_SOLICITUD_COMPACTACION:
@@ -184,6 +179,7 @@ void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion) 
 		}
 		case AUX_FINALIZAR_PROCESO:
 		{
+			t_list* listaRecibida = recibir_paquete(cliente);
 			int pid = *(int*)list_get(listaRecibida, 0);
 			finalizar_proceso(pid);
 			// enviar_codigo_operacion(cliente,codigoRespuesta);

@@ -175,8 +175,8 @@ t_dictionary* tablaArchivosAbiertos;
 #define CERRAR_ARCHIVO              "PID: <%d> - Cerrar Archivo: <%s> terminado"
 #define CERRAR_ARCHIVO_DESBLOQUEA_PCB "PID: <%d> - Al cerrar el Archivo: <%s> debloquea al PID <%d>"
 #define CREACION_DE_PROCESO         "Se crea el proceso <%d> en NEW"
-#define CREAR_SEGMENTO              "PID: <%d> - Crear Segmento - Id: < id SEGMENTO> - Tamaño: <TAMAÑO>"
-#define ELIMINAR_SEGMENTO           "PID: <%d> - Eliminar Segmento - Id Segmento: < id SEGMENTO>"
+#define CREAR_SEGMENTO              "PID: <%d> - Crear Segmento - Id: <%d> - Tamaño: <%zu>"
+#define ELIMINAR_SEGMENTO           "PID: <%d> - Eliminar Segmento - Id Segmento: <%d>"
 #define ESCRIBIR_ARCHIVO            "PID: <%d> -  Escribir Archivo: <%s> - Puntero <PUNTERO> - Dirección Memoria <DIRECCIÓN MEMORIA> - Tamaño <TAMAÑO>"
 #define FIN_COMPACTACIÓN            "Se finalizó el proceso de compactación"
 #define FIN_DE_PROCESO              "Finaliza el proceso <%d> - Motivo: <%s>" // MOTIVOS PUEDEN SER SUCCESS / SEG_FAULT / OUT_OF_MEMORY
@@ -191,11 +191,12 @@ t_dictionary* tablaArchivosAbiertos;
 #define LOG_CAMBIO_DE_ESTADO        "PID: %d - Estado Anterior: %s - Estado Actual: %s"
 #define F_SEEK_HECHO                "PID <%d> Instruccion F_SEEK hecha correctamente, archivo %s ahora apuntando al puntero %d"
 #define E__CREAR_SEGMENTO           "PID: %d - ERROR en crear Segmento - Id: %d - Tamaño: %d"
-#define E__ELIMINAR_SEGMENTO        "PID: %d - Eliminar Segmento - Id Segmento: %d"
+#define E__ELIMINAR_SEGMENTO        "Error al eliminar el segmento <Id:%d>"
+#define E__PERMISOS_INSUFICIENTES   "Permisos insuficientes para <PID:%d>"
 ////////////////////////////////////
 
 
 #define PATH_LOG_KERNEL             "logs/kernel.log"
-#define PATH_CONFIG_KERNEL          "tuki-pruebas/prueba-base/kernel.config"
+#define PATH_CONFIG_KERNEL          "tuki-pruebas/prueba-memoria/kernel.config"
 
 #endif
