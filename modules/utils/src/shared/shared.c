@@ -563,48 +563,18 @@ t_segmento_tabla* recibir_segmento_por_pid(int cliente){
     return tabla_segmento;
 }
 
-// va de la mano con enviar_lista_segmentos_del_proceso funcion
+// va de la mano con agregar_lista_segmentos_a_paquete funcion
 t_list* recibir_lista_segmentos(int clienteAceptado) {
-	// Solo obtiene bien la direccion base
-    t_list* listaSegmentos = recibir_paquete(clienteAceptado);
-
-    codigo_operacion op1 = recibir_operacion(clienteAceptado);
-
     void* buffer;
 	int tamanio = 0;
 	int desp = 0;
 
     buffer = recibir_buffer(&tamanio, clienteAceptado);
-//    codigo_operacion op2 = recibir_operacion(clienteAceptado);
 
-    for (int i = 0; i < list_size(listaSegmentos); i++) {
-    	t_segmento* segmento = (t_segmento*)list_get(listaSegmentos, i);
-    	segmento->id = leer_int(buffer, &desp);
-        segmento->size = leer_size(buffer, &desp);
+    t_list* listaSegmentos = recibir_resto_lista_segmentos(buffer, &desp);
 
-        list_replace(listaSegmentos, i, segmento);
-    }
     free(buffer);
     return listaSegmentos;
-}
-
-t_list* recibir_lista_segmentos_2(int clienteAceptado) {
-	// Solo obtiene bien la direccion base
-    t_list* listaSegmentos = recibir_paquete(clienteAceptado);
-
-    codigo_operacion op1 = recibir_operacion(clienteAceptado);
-
-    void* buffer;
-	int tamanio = 0;
-	int desp = 0;
-
-    buffer = recibir_buffer(&tamanio, clienteAceptado);
-    codigo_operacion op2 = recibir_operacion(clienteAceptado);
-
-    t_list* listaSegmentos2 = recibir_resto_lista_segmentos(buffer, &desp);
-
-    free(buffer);
-    return listaSegmentos2;
 }
 
 void* leer_puntero(void* buffer, int* desp) {

@@ -211,7 +211,6 @@ void* recibir_puntero(int clienteAceptado);
 
 void agregar_lista_segmentos_del_proceso(t_paquete* paquete, int cliente, t_list* segmentosTabla, t_log* logger);
 void enviar_segmento_por_pid(int cliente, codigo_operacion,t_segmento_tabla* tabla_segmento);
-t_list* recibir_lista_segmentos_2(int);
 t_segmento_tabla* recibir_segmento_por_pid(int cliente);
 
 void enviar_lista_segmentos_del_proceso(int cliente, t_list* segmentosTabla, t_log* logger);

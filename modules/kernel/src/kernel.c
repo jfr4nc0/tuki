@@ -517,7 +517,7 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
 				if (res == AUX_OK){
                     // Agregar lista de segmentos actualizada al pcb
                     pcb->lista_segmentos = recibir_lista_segmentos(conexionMemoria);
-					log_info(kernelConfig,ELIMINAR_SEGMENTO,pcb->id_proceso,segmento->id);
+					log_info(kernelLogger,ELIMINAR_SEGMENTO,pcb->id_proceso,segmento->id);
 				} else if (res==AUX_PERMISOS_INSUFICIENTES){
 					log_error(kernelLogger,E__PERMISOS_INSUFICIENTES,pcb->id_proceso);
 				} else {
