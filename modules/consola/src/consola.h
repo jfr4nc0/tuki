@@ -12,7 +12,6 @@
 
 #include <shared/shared.h>
 
-void validarArgumentos(int, char**);
 void enviarInstrucciones(char*, int, t_log*);
 
 #define DEFAULT_INSTRUCCIONES_PATH   "tuki-pruebas/prueba-memoria/MEMORIA_1.txt"

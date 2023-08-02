@@ -46,9 +46,12 @@ void ejecutar_cpu_pedido(void *);
 void ejecutar_kernel_pedido(void *);
 void ejecutar_instrucciones(int, char*);
 void atender_conexiones(int);
+
+void administrar_instrucciones(int , codigo_operacion , char*);
 void administrar_cliente(void*);
-void administrar_instrucciones(int cliente, codigo_operacion codigoOperacion);
 void testing_funciones();
 void incializar_estructuras();
+void enviar_confirmacion(int conexion, codigo_operacion codOperacion);
 t_parametros_write_read* obtenerParametrosWriteRead(t_list* listaRecibida);
+
 #endif

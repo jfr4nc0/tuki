@@ -32,12 +32,52 @@ static t_symstruct lookUpTable[] = {
 
 int keyFromString(char *key) {
     int i;
+    //int cantidad_de_instrucciones = sizeof(lookUpTable) / sizeof(lookUpTable[0]);
     for (i=0; i < 16; i++) {
         t_symstruct sym = lookUpTable[i];
         if (strcmp(sym.key, key) == 0)
             return sym.val;
     }
     return -1;
+}
+
+int keyFromString_prueba(char *key) {
+	int respuesta;
+
+	if(string_starts_with(key, "SET") == 0){
+		respuesta = I_SET;
+	}else if(string_starts_with(key, "MOV_IN") == 0){
+		respuesta = I_MOV_IN;
+	}else if(string_starts_with(key, "MOV_OUT") == 0){
+		respuesta = I_MOV_OUT;
+	}else if(string_starts_with(key, "I/O") == 0){
+		respuesta = I_IO;
+	}if(string_starts_with(key, "F_OPEN") == 0){
+		respuesta = I_F_OPEN;
+	}else if(string_starts_with(key, "F_CLOSE") == 0){
+		respuesta = I_F_CLOSE;
+	}else if(string_starts_with(key, "F_SEEK") == 0){
+		respuesta = I_F_SEEK;
+	}else if(string_starts_with(key, "F_READ") == 0){
+		respuesta = I_F_READ;
+	}if(string_starts_with(key, "F_WRITE") == 0){
+		respuesta = I_F_WRITE;
+	}else if(string_starts_with(key, "F_TRUNCATE") == 0){
+		respuesta = I_TRUNCATE;
+	}else if(string_starts_with(key, "WAIT") == 0){
+		respuesta = I_WAIT;
+	}else if(string_starts_with(key, "SIGNAL") == 0){
+		respuesta = I_SIGNAL;
+	}if(string_starts_with(key, "CREATE_SEGMENT") == 0){
+		respuesta = I_CREATE_SEGMENT;
+	}else if(string_starts_with(key, "DELETE_SEGMENT") == 0){
+		respuesta = I_DELETE_SEGMENT;
+	}else if(string_starts_with(key, "YIELD") == 0){
+		respuesta = I_YIELD;
+	}else if(string_starts_with(key, "EXIT") == 0){
+		respuesta = I_EXIT;
+	}
+	return respuesta;
 }
 
 /*-------------------- FUNCIONES GENERALES --------------------*/
@@ -174,7 +214,6 @@ t_log* iniciar_logger(char* pathLog, int moduloPos) {
 
     t_log *logger;
     char *directorioActual = get_current_dir_name();
-    printf("Por crear logger desde %s \n", directorioActual);
     free(directorioActual);
     if (( logger = log_create(pathLog, modulo, mostrarConsola, log_level)) == NULL ) {
         printf(cantidad_strings_a_mostrar(2), E__LOGGER_CREATE, ENTER);
@@ -193,7 +232,7 @@ t_log* iniciar_logger(char* pathLog, int moduloPos) {
 t_config* iniciar_config(char* pathConfig, t_log* logger) {
     t_config* nuevo_config;
     char *directorioActual = get_current_dir_name();
-    printf("Por crear config desde %s \n", directorioActual);
+
     free(directorioActual);
     if ((nuevo_config = config_create(pathConfig)) == NULL) {
         log_error(logger, E__CONFIG_CREATE);
@@ -291,7 +330,7 @@ int leer_int(char* buffer, int* desp) {
 	return respuesta;
 }
 
-uint32_t leer_uint32_t(char* buffer, int* desp) {
+uint32_t leer_uint32(char* buffer, int* desp) {
 	uint32_t respuesta;
 	memcpy(&respuesta, buffer + (*desp), sizeof(uint32_t));
 	(*desp)+=sizeof(uint32_t);
@@ -355,9 +394,50 @@ void eliminar_paquete(t_paquete* paquete) {
 }
 
 char** decode_instruccion(char* linea_a_parsear, t_log* logger) {
+
 	char** instruccion = string_split(linea_a_parsear, " ");
+
 	if(instruccion[0] == NULL) {
 	    log_info(logger, "Se ignora linea vacía.");
+	}
+
+	return instruccion;
+}
+
+char** decode_instruccion_prueba(char* linea_a_parsear, t_log* logger) {
+
+	//linea_a_parsear[strcspn(linea_a_parsear, "\n")]='\0';
+	char** instruccion = string_split(linea_a_parsear, " ");
+
+	int instruccion_;
+	log_error(logger, "LA LINEA A PARSEAR ES: %s", linea_a_parsear);
+	if(string_starts_with(linea_a_parsear, "SET") == 0){
+		instruccion_ = I_SET;
+	}else if(string_starts_with(linea_a_parsear, "YIELD") == 0){
+		instruccion_ = I_YIELD;
+	}else if(string_starts_with(linea_a_parsear, "EXIT") == 0){
+		instruccion_ = I_EXIT;
+	}
+
+	switch(instruccion_){
+		case I_SET:{
+			strtok(instruccion[2], "\n");
+			if (instruccion[0] == NULL) {
+				log_info(logger, "Se ignora linea vacía.");
+				return instruccion;
+			}
+			break;
+		}
+		case I_YIELD:{
+			char* instruccion_yield = "YIELD";
+			instruccion = &instruccion_yield;
+			break;
+		}
+		case I_EXIT:{
+			char* instruccion_exit = "EXIT";
+			instruccion = &instruccion_exit;
+			break;
+		}
 	}
 	return instruccion;
 }
@@ -739,7 +819,7 @@ int crear_conexion(char *ip, char* puerto, char* modulo, t_log* logger) {
         uint32_t handshake = 1;
         uint32_t result;
 
-        log_info(logger, I__CONEXION_CREATE, modulo);
+        log_warning(logger, I__CONEXION_CREATE, modulo);
 
         send(clienteAceptado, &handshake, sizeof(uint32_t), 0);
         recv(clienteAceptado, &result, sizeof(uint32_t), MSG_WAITALL);
@@ -954,7 +1034,7 @@ t_buffer *buffer_unpack(t_buffer *self, void *dest, int size) {
     return self;
 }
 
-static void *__stream_create(uint8_t header, t_buffer *buffer)
+void *__stream_create(uint8_t header, t_buffer *buffer)
 {
     void *streamToSend = malloc(sizeof(header) + sizeof(buffer->size) + buffer->size);
 
@@ -977,7 +1057,7 @@ void stream_send_buffer(int toSocket, uint8_t header, t_buffer *buffer) {
     return;
 }
 
-static void __stream_send(int toSocket, void *streamToSend, uint32_t bufferSize) {
+void __stream_send(int toSocket, void *streamToSend, uint32_t bufferSize) {
     // Variables creadas para el sizeof
     uint8_t header = 0;
     uint32_t size = 0;
@@ -1043,12 +1123,15 @@ int iniciar_servidor(t_config* config, t_log* logger) {
            servinfo->ai_socktype,
            servinfo->ai_protocol);
 
+    int my_true = 1; //Defino un true para poder pasarle el puntero al true
+    setsockopt(socket_servidor, SOL_SOCKET, SO_REUSEADDR, &my_true, sizeof(int)); //Para cerrar el socket en cuanto se termine el proceso
+
     // Asociamos el socket a un puerto
     bind(socket_servidor, servinfo->ai_addr, servinfo->ai_addrlen);
 
     // Escuchamos las conexiones entrantes
     listen(socket_servidor, SOMAXCONN);
-    log_info(logger, I__SERVER_READY);
+    //log_warning(logger, I__SERVER_READY);
 
     freeaddrinfo(servinfo);
 
@@ -1060,7 +1143,7 @@ int esperar_cliente(int socket_servidor, t_log* logger) {
     uint32_t resultOk = 0;
     uint32_t resultError = -1;
 
-    log_info(logger, I_ESPERANDO_CONEXION);
+    //log_info(logger, I_ESPERANDO_CONEXION);
 
     // Aceptamos un nuevo cliente
     int clienteAceptado = accept(socket_servidor, NULL, NULL);
@@ -1069,20 +1152,53 @@ int esperar_cliente(int socket_servidor, t_log* logger) {
         return -1;
     }
 
-    log_info(logger, I__CONEXION_ACCEPT);
+    //log_info(logger, I__CONEXION_ACCEPT);
 
     log_debug(logger, "Se realiza un handshake de parte del servidor");
     recv(clienteAceptado, &handshake, sizeof(uint32_t), MSG_WAITALL);
 
     if(handshake == 1) {
         send(clienteAceptado, &resultOk, sizeof(uint32_t), 0);
-        log_info(logger, HANDSHAKE, OK);
+        //log_info(logger, HANDSHAKE, OK);
     } else {
-        log_error(logger, HANDSHAKE, ERROR);
+        //log_error(logger, HANDSHAKE, ERROR);
         send(clienteAceptado, &resultError, sizeof(uint32_t), 0);
     }
 
     return clienteAceptado;
+}
+
+void enviar_msj_con_parametros(int socket, int op_code, char** parametros) {
+	int size_payload = 0;
+	int size_total = sizeof(op_code) + sizeof(size_payload);
+
+	for(int i = 0; i < string_array_size(parametros); i++) {
+		size_payload += sizeof(int) + strlen(parametros[i]) + 1; //Tamanio de parametro + longitud de parametro
+	}
+	size_total += size_payload;
+
+	void* stream = malloc(size_total);
+	int desplazamiento = 0;
+
+	memcpy(stream + desplazamiento, &(op_code), sizeof(op_code));
+	desplazamiento += sizeof(op_code);
+
+	memcpy(stream + desplazamiento, &size_payload, sizeof(size_payload));
+	desplazamiento += sizeof(size_payload);
+
+	int size_parametro_de_instruccion;
+	for(int i = 0; i < string_array_size(parametros); i++) {
+		size_parametro_de_instruccion = strlen(parametros[i]) + 1;
+		memcpy(stream + desplazamiento, &(size_parametro_de_instruccion), sizeof(size_parametro_de_instruccion));
+		desplazamiento += sizeof(size_parametro_de_instruccion);
+
+		memcpy(stream + desplazamiento, parametros[i], size_parametro_de_instruccion);
+		desplazamiento += size_parametro_de_instruccion;
+	}
+
+	send(socket, stream, size_total, 0);
+
+	free(stream);
 }
 
 // TODO: en vez de int debería devolver el tipo de dato de codigo_operacion

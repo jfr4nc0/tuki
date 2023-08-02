@@ -3,7 +3,7 @@
 
 int main(int argc, char** argv) {
     loggerFileSystem = iniciar_logger(DEFAULT_LOG_PATH, ENUM_FILE_SYSTEM);
-    t_config* config = iniciar_config(DEFAULT_CONFIG_PATH, loggerFileSystem);
+    t_config* config = iniciar_config(argv[1], loggerFileSystem);
     inicializar_estructuras(config);
 
     pthread_mutex_init(&m_instruccion, NULL);
@@ -128,7 +128,7 @@ t_archivo_abierto* obtener_archivo_completo_de_socket(int cliente) {
 
     t_archivo_abierto* archivo = malloc(sizeof(t_archivo_abierto));
     archivo->nombreArchivo = leer_string(buffer, &desplazamiento);
-    archivo->puntero = leer_uint32_t(buffer, &desplazamiento);
+    archivo->puntero = leer_uint32(buffer, &desplazamiento);
 	return archivo;
 }
 
@@ -191,7 +191,7 @@ void recibir_buffer_escritura_lectura_archivo(int cliente, char **nombreArchivo,
     *direccionFisica = leer_puntero(buffer, &desp);
     *cantidadBytes = strtoul(leer_string(buffer, &desp), &variableAlmacenadora1, 10);
     *pid = leer_int(buffer, &desp);
-    *puntero = leer_uint32_t(buffer, &desp);
+    *puntero = leer_uint32(buffer, &desp);
     free(buffer);
 }
 

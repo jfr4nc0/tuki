@@ -3,9 +3,9 @@
 
 t_memoria_config* memoriaConfig;
 
-int main() {
+int main(int argc, char** argv) {
     loggerMemoria = iniciar_logger(DEFAULT_LOG_PATH, ENUM_MEMORIA);
-    t_config* configInicial = iniciar_config(DEFAULT_CONFIG_PATH, loggerMemoria);
+    t_config* configInicial = iniciar_config(argv[1], loggerMemoria);
     cargar_config_memoria(configInicial);
 
     int servidorMemoria = iniciar_servidor(configInicial, loggerMemoria);
@@ -110,33 +110,17 @@ void ejecutar_instrucciones(int cliente, char* modulo) {
 		codigo_operacion codigoDeOperacion = recibir_operacion(cliente);
 		log_info(loggerMemoria, I__RECIBO_INSTRUCCION, codigoDeOperacion, modulo);
 		pthread_mutex_lock(&mutex_memoria_ocupada);
-		administrar_instrucciones(cliente, codigoDeOperacion);
+		administrar_instrucciones(cliente, codigoDeOperacion, modulo);
 		pthread_mutex_unlock(&mutex_memoria_ocupada);
-    	}
+    }
 
     return;
 }
 
-void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion) {
+void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion, char* modulo) {
     codigo_operacion codigoRespuesta = AUX_ERROR;
 
 	switch(codigoDeOperacion){
-		/*
-		case I_F_WRITE:
-		{
-			log_info(loggerMemoria, "Memoria entra a F write");
-			t_parametros_write_read* parametrosWriteRead = obtenerParametrosWriteRead(listaRecibida);
-			escribir_espacio_usuario();
-			break;
-		}
-		case I_F_READ:
-		{
-			log_info(loggerMemoria, "Memoria entra a F write");
-			t_parametros_write_read* parametrosWriteRead = obtenerParametrosWriteRead(listaRecibida);
-			// escribir_espacio_usuario();
-			break;
-		}
-		*/
 		case AUX_CREATE_PCB:
 		{
 			t_list* listaRecibida = recibir_paquete(cliente);
@@ -168,7 +152,9 @@ void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion) 
 			if(codigoRespuesta == AUX_OK){
 				t_list* listaSegmentosPorPid = obtener_tabla_segmentos_por_proceso_id(tabla_segmento->idProceso);
 				enviar_lista_segmentos_del_proceso(cliente, listaSegmentosPorPid, loggerMemoria);
-			} else { enviar_codigo_operacion(cliente, codigoRespuesta);}
+			} else {
+				enviar_codigo_operacion(cliente, codigoRespuesta);
+			}
 			break;
 		}
 		case AUX_SOLICITUD_COMPACTACION:
@@ -185,6 +171,41 @@ void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion) 
 			// enviar_codigo_operacion(cliente,codigoRespuesta);
 			break;
 		}
+		case I_MOV_IN:{
+
+			int tamanio = 0;
+			int desplazamiento = 0;
+
+			t_buffer* buffer = recibir_buffer(&tamanio, cliente);
+
+			int id_proceso = leer_int(buffer, &desplazamiento);
+			uint32_t direccionFisica = leer_uint32(buffer, &desplazamiento);
+			uint32_t tamanio_a_leer= leer_uint32(buffer, &desplazamiento);
+
+			leer_espacio_usuario((void*) direccionFisica, (size_t) tamanio_a_leer, memoriaConfig->RETARDO_MEMORIA);
+			log_info(loggerMemoria, LOG_ESCRIBIR_LEER, id_proceso, "LEER", direccionFisica, tamanio_a_leer, modulo);
+			enviar_confirmacion(cliente, AUX_OK);
+
+			break;
+		}
+		case I_MOV_OUT:{
+
+			int tamanio = 0;
+			int desplazamiento = 0;
+
+			t_buffer* buffer = recibir_buffer(&tamanio, cliente);
+
+			int id_proceso = leer_int(buffer, &desplazamiento);
+			uint32_t direccionFisica = leer_uint32(buffer, &desplazamiento);
+			uint32_t tamanio_a_leer= leer_uint32(buffer, &desplazamiento);
+			char* bytes_a_escribir = leer_string(buffer, &desplazamiento);
+
+			escribir_espacio_usuario((void*) direccionFisica, (size_t) tamanio_a_leer, (void*)bytes_a_escribir, memoriaConfig->RETARDO_MEMORIA);
+			log_info(loggerMemoria, LOG_ESCRIBIR_LEER, id_proceso, "ESCRIBIR", direccionFisica, tamanio_a_leer, modulo);
+			enviar_confirmacion(cliente, AUX_OK);
+
+			break;
+		}
 		default:
 		{
 			log_error(loggerMemoria, E__CODIGO_INVALIDO);
@@ -196,11 +217,11 @@ void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion) 
 		}
 	}
 }
-/*
-t_parametros_write_read* obtenerParametrosWriteRead(t_list* listaRecibida) {
-	t_parametros_write_read* parametros = malloc(sizeof(t_parametros_write_read));
-	parametros->idProceso = *(int*)list_get(listaRecibida, 0);
-	parametros->size = strtoul(list_get(listaRecibida, 1), NULL, 10);
-	size_t size =
+
+void enviar_confirmacion(int conexion, codigo_operacion codOperacion) {
+	if (conexion > 0) {
+		t_paquete* paquete = crear_paquete(codOperacion);
+		enviar_paquete(paquete, conexion);
+		free(paquete);
+	}
 }
-*/

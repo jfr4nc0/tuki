@@ -3,6 +3,7 @@
 t_log* loggerCpu;
 cpu_config_t* configCpu;
 
+int conexionCpuMemoria;
 int conexionCpuKernel;
 registros_cpu* registrosCpu;
 
@@ -10,12 +11,11 @@ bool hubo_interrupcion = false;
 
 int main(int argc, char** argv) {
     loggerCpu = iniciar_logger(DEFAULT_LOG_PATH, ENUM_CPU);
-    t_config* config = iniciar_config(DEFAULT_CONFIG_PATH, loggerCpu);
+    t_config* config = iniciar_config(argv[1], loggerCpu);
     cargar_config(config);
 
+    conexionCpuMemoria = armar_conexion(config, MEMORIA, loggerCpu);
 	pthread_mutex_init(&m_recibir_pcb,NULL);
-
-	int conexionCpuMemoria = armar_conexion(config, MEMORIA, loggerCpu);
     enviar_codigo_operacion(conexionCpuMemoria, AUX_SOY_CPU);
 
     int servidorCPU = iniciar_servidor(config, loggerCpu);
@@ -78,7 +78,7 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
 	char* instruccion;
 	char** instruccion_decodificada;
 
-	t_list* data_instruccion; // Array para los parametros que necesite una instruccion
+	//t_list* data_instruccion; // Array para los parametros que necesite una instruccion
 
 	int cantidad_instrucciones = list_size(pcb->lista_instrucciones);
 	int posicion_actual = pcb->contador_instrucciones;
@@ -88,9 +88,8 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
 	    instruccion = (char *)list_get(pcb->lista_instrucciones, pcb->contador_instrucciones);
 		instruccion_decodificada = decode_instruccion(instruccion, loggerCpu);
 		if (instruccion_decodificada[0] != NULL) {
-			log_info(loggerCpu, "Ejecutando instruccion: %s", instruccion);
-			ultimaOperacion = ejecutar_instruccion(instruccion_decodificada, pcb);
-
+			log_info(loggerCpu, "PID: %u - Ejecutando: %s", pcb->id_proceso, instruccion_decodificada[0]);
+        	ultimaOperacion = ejecutar_instruccion(instruccion_decodificada, pcb);
 			if (!hubo_interrupcion) {
 				pcb->contador_instrucciones++;
 				posicion_actual++;
@@ -100,7 +99,6 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
 		}
     }
 
-    log_info(loggerCpu, "Se salió de la ejecucion en la instrucción %s. Guardando el contexto de ejecucion...", instruccion);
     guardar_contexto_de_ejecucion(pcb);
 
 	// Si hubo interrupcion de algun tipo se lo comunico a kernel pero sacamos
@@ -127,6 +125,7 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
 	free(instruccion);
 	free(instruccion_decodificada);
 }
+
 
 void cargar_registros(PCB* pcb) { // Acumula basura
 	strcpy(registrosCpu->AX, pcb->registrosCpu->AX);
@@ -156,36 +155,25 @@ void guardar_contexto_de_ejecucion(PCB* pcb) {
     strcpy(pcb->registrosCpu->RBX,  registrosCpu->RBX);
     strcpy(pcb->registrosCpu->RCX,  registrosCpu->RCX);
     strcpy(pcb->registrosCpu->RDX,  registrosCpu->RDX);
-
-//	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro AX: %s", truncar_string(pcb->registrosCpu->AX,4));
-//	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro BX: %s", truncar_string(pcb->registrosCpu->BX,4));
-//	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro CX: %s", truncar_string(pcb->registrosCpu->CX,4));
-//	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro DX: %s", truncar_string(pcb->registrosCpu->DX,4));
-//	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro EAX: %s", truncar_string(pcb->registrosCpu->EAX,8));
-//	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro ECX: %s", truncar_string(pcb->registrosCpu->ECX,8));
-//	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro EBX: %s", truncar_string(pcb->registrosCpu->EBX,8));
-//	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro EDX: %s", truncar_string(pcb->registrosCpu->EDX,8));
-//	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro RAX: %s", truncar_string(pcb->registrosCpu->RAX,16));
-//	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro RBX: %s", truncar_string(pcb->registrosCpu->RBX,16));
-//	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro RCX: %s", truncar_string(pcb->registrosCpu->RCX,16));
-//	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro RDX: %s", truncar_string(pcb->registrosCpu->RDX,16));
-
 }
 
 int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 
-	char* texto = strtok(instruccion[0], "\n");
-	int operacion = keyFromString(texto);
+	char* instruccion_ = malloc(sizeof(char*));
+	instruccion_ = strtok(instruccion[0], "\n");
+
+	int operacion = keyFromString(instruccion_);
 
 	if (operacion == -1) {
-		log_warning(loggerCpu, "Desconocemos la instruccion %s", instruccion[0]);
+		log_error(loggerCpu, "Desconocemos la instruccion %s", instruccion[0]);
 
 		return -1;
 	}
 
 	switch(operacion) {
-		case I_YIELD:
+		// Si hay interrupcion no hago nada y se lo devuelvo a kernel
 		case I_F_OPEN:
+		case I_YIELD:
 		case I_EXIT:
 		case I_F_CLOSE:
 		case I_F_SEEK:
@@ -204,19 +192,84 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 			int retardo = configCpu->RETARDO_INSTRUCCION;
 			intervalo_de_pausa(retardo);
 			instruccion_set(instruccion[1],instruccion[2]);
-			//log_info(loggerCpu, "REGISTRO AX: %s", registrosCpu->AX);
 			break;
-		case I_MOV_IN:
+		}
+		case I_MOV_IN:{
 			// MOV_IN (Registro, Dirección Lógica)
-			// instruccion_mov_in(instruccion[1],instruccion[2],pcb);
+			//instruccion_mov_in(instruccion[1],instruccion[2],pcb);
+			int numeroSegmento, offset, tamanioSegmento;
+
+			int dirLogica = atoi(instruccion[1]); // pasa de string a int
+			char* registro = strdup(instruccion[2]); // hace el malloc y copia en la varible
+
+			int dirFisica = obtener_direccion_fisica(pcb, dirLogica, &numeroSegmento, &offset, &tamanioSegmento);
+			int tamanioALeer = obtener_tamanio_segun_registro(registro);
+
+			if(tamanioALeer + offset <= tamanioSegmento){
+
+				t_parametros_lectura* parametros_a_enviar = malloc(sizeof(t_parametros_lectura));
+
+				parametros_a_enviar->id_proceso = pcb->id_proceso;
+				parametros_a_enviar->direccionFisica = dirFisica;
+				parametros_a_enviar->tamanio = tamanioALeer;
+
+				enviar_operacion(conexionCpuMemoria, I_MOV_IN, sizeof(t_parametros_lectura), parametros_a_enviar);
+				char *valor = recibir_valor_a_escribir(conexionCpuMemoria);
+				log_acceso_a_memoria(pcb->id_proceso, "LEER", numeroSegmento, dirFisica, valor,sizeof(valor));
+			    instruccion_set(registro, valor);
+			    free(valor);
+			    free(parametros_a_enviar);
+			}else {
+				//TODO: EL MOTIVO DE DESALOJO A ENVIAR A KERNEL ES SEGMENTATION FAULT
+				loggear_segmentation_fault(pcb->id_proceso, numeroSegmento, offset, tamanioSegmento);
+				hubo_interrupcion = true;
+			}
+			free(registro);
 			break;
-		case I_MOV_OUT:
+		}
+		case I_MOV_OUT:{
 			// MOV_OUT (Dirección Lógica, Registro)
-			// instruccion_mov_out(instruccion[1],instruccion[2],pcb);
+			//instruccion_mov_out(instruccion[1],instruccion[2],pcb);
+			int numeroSegmento, offset, tamanioSegmento;
+
+			int dirLogica = atoi(instruccion[1]); // pasa de string a int
+			char* registro = strdup(instruccion[2]); // hace el malloc y copia en la varible
+
+			int dirFisica = obtener_direccion_fisica(pcb, dirLogica, &numeroSegmento, &offset, &tamanioSegmento);
+			int tamanioALeer = obtener_tamanio_segun_registro(registro);
+
+			if(tamanioALeer + offset <= tamanioSegmento){
+				registros_cpu *registrosCPU = pcb->registrosCpu;
+				char* valorRegistro = obtener_valor_registro(registro, registrosCPU);
+				void* bytesAEnviar = malloc(tamanioALeer);
+				memcpy(bytesAEnviar, valorRegistro, tamanioALeer);
+				log_acceso_a_memoria(pcb->id_proceso, "ESCRIBIR", numeroSegmento, dirFisica, bytesAEnviar,tamanioALeer);
+
+				t_parametros_escritura* parametros_a_enviar = malloc(sizeof(t_parametros_lectura));
+
+				parametros_a_enviar->id_proceso = pcb->id_proceso;
+				parametros_a_enviar->direccionFisica = dirFisica;
+				parametros_a_enviar->tamanio = tamanioALeer;
+				strcpy((parametros_a_enviar->bytes_a_enviar), ((char*)bytesAEnviar));
+
+				enviar_operacion(conexionCpuMemoria, I_MOV_OUT, sizeof(t_parametros_escritura), parametros_a_enviar);
+
+				if(recibir_operacion(conexionCpuMemoria) != AUX_OK){
+					log_error(loggerCpu, "No se pudo recibir la confirmacion de escritura");
+					exit(EXIT_FAILURE);
+				}
+
+				free(bytesAEnviar);
+				free(valorRegistro);
+				free(parametros_a_enviar);
+			} else{
+				//TODO: EL MOTIVO DE DESALOJO A ENVIAR A KERNEL ES SEGMENTATION FAULT
+				loggear_segmentation_fault(pcb->id_proceso, numeroSegmento, offset, tamanioSegmento);
+				hubo_interrupcion = true;
+			}
 			break;
 		default:
 			log_error(loggerCpu,E__CODIGO_INVALIDO);
-			break;
 		}
 
 	}
@@ -227,13 +280,6 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 /************** INSTRUCCIONES ***************************/
 
 void instruccion_set(char* registro,char* valor) {
-
-	/*
-	int set_valor = atoi(valor);
-	if(set_valor == 0){
-		log_info(loggerCpu, "Hubo un error.");
-	}
-	*/
 
 	if (strcmp(registro, "AX") == 0) {
 		strcpy(registrosCpu->AX, valor);
@@ -264,6 +310,202 @@ void instruccion_set(char* registro,char* valor) {
 	//sleep(configCpu->RETARDO_INSTRUCCION/1000);
 }
 
+char* recibir_valor_a_escribir(int clienteAceptado){
+
+	char* buffer;
+	int tamanio = 0;
+	int desplazamiento = 0;
+
+	recibir_operacion(clienteAceptado);
+	buffer = recibir_buffer(&tamanio, clienteAceptado);
+
+	return leer_string(buffer, &desplazamiento);
+
+}
+
+uint32_t obtener_tamanio_segun_registro(char* registro){
+    uint32_t tamanio = 0;
+
+    int registro_int = get_int_registro(registro);
+
+    switch(registro_int){
+        case REGISTRO_AX:
+        case REGISTRO_BX:
+        case REGISTRO_CX:
+        case REGISTRO_DX:
+            tamanio = 4;
+            break;
+        case REGISTRO_EAX:
+        case REGISTRO_EBX:
+        case REGISTRO_ECX:
+        case REGISTRO_EDX:
+            tamanio = 8;
+            break;
+        case REGISTRO_RAX:
+        case REGISTRO_RBX:
+        case REGISTRO_RCX:
+        case REGISTRO_RDX:
+            tamanio = 16;
+            break;
+        default:
+        log_error(loggerCpu,"Registro no valido");
+        break;
+    }
+    return tamanio;
+}
+
+char* obtener_valor_registro(char* registro, registros_cpu *registrosCPU){
+		char* valor;
+
+		int registro_int = get_int_registro(registro);
+
+		switch(registro_int){
+	        case REGISTRO_AX:
+	        valor = registros_cpu_get_valor_registro(registrosCpu->AX,4);
+	        break;
+	        case REGISTRO_BX:
+	        valor = registros_cpu_get_valor_registro(registrosCpu->BX,4);
+	        break;
+	        case REGISTRO_CX:
+	        valor = registros_cpu_get_valor_registro(registrosCpu->CX,4);
+	        break;
+	        case REGISTRO_DX:
+	        valor = registros_cpu_get_valor_registro(registrosCpu->DX,4);
+	        break;
+	        case REGISTRO_EAX:
+	        valor = registros_cpu_get_valor_registro(registrosCpu->EAX,8);
+	        break;
+	        case REGISTRO_EBX:
+	        valor = registros_cpu_get_valor_registro(registrosCpu->EBX,8);
+	        break;
+	        case REGISTRO_ECX:
+	        valor = registros_cpu_get_valor_registro(registrosCpu->ECX,8);
+	        break;
+	        case REGISTRO_EDX:
+	        valor = registros_cpu_get_valor_registro(registrosCpu->EDX,8);
+	        break;
+	        case REGISTRO_RAX:
+	        valor = registros_cpu_get_valor_registro(registrosCpu->RAX,16);
+	        break;
+	        case REGISTRO_RBX:
+	        valor = registros_cpu_get_valor_registro(registrosCpu->RBX,16);
+	        break;
+	        case REGISTRO_RCX:
+	        valor = registros_cpu_get_valor_registro(registrosCpu->RCX,16);
+	        break;
+	        case REGISTRO_RDX:
+	        valor = registros_cpu_get_valor_registro(registrosCpu->RDX,16);
+	        break;
+	        default:
+	        log_error(loggerCpu,"Registro no valido");
+	        break;
+	    }
+
+	    return valor;
+}
+
+int get_int_registro(char* registro){
+	if (strcmp(registro, "AX") == 0) {
+		return REGISTRO_AX;
+	} else if (strcmp(registro, "BX") == 0) {
+		return REGISTRO_BX;
+	} else if (strcmp(registro, "CX") == 0) {
+		return REGISTRO_CX;
+	} else if (strcmp(registro, "DX") == 0) {
+		return REGISTRO_DX;
+	} else if (strcmp(registro, "EAX") == 0) {
+		return REGISTRO_EAX;
+	} else if (strcmp(registro, "EBX") == 0) {
+		return REGISTRO_EBX;
+	} else if (strcmp(registro, "ECX") == 0) {
+		return REGISTRO_ECX;
+	} else if (strcmp(registro, "EDX") == 0) {
+		return REGISTRO_EDX;
+	} else if (strcmp(registro, "RAX") == 0) {
+		return REGISTRO_RAX;
+	} else if (strcmp(registro, "RBX") == 0) {
+		return REGISTRO_RBX;
+	} else if (strcmp(registro, "RCX") == 0) {
+		return REGISTRO_RCX;
+	} else if (strcmp(registro, "RDX") == 0) {
+		return REGISTRO_RDX;
+	} else {
+		return -1;
+	}
+}
+
+char *registros_cpu_get_valor_registro(char* registro, int tamanioRegistro){
+	/*
+	if (registro == NULL) {
+        char *registroStringAux = malloc((TAMANIO_STRING_VACIO + 1) * sizeof(*registroStringAux));
+        registroStringAux[0] = '\0';
+        return registroStringAux;
+    }
+    */
+
+    char *registroString = malloc((tamanioRegistro + 1) * sizeof(*registroString));
+    registroString = memcpy(registroString, registro, tamanioRegistro);
+    registroString[tamanioRegistro] = '\0';
+    return registroString;
+}
+
+void log_acceso_a_memoria(uint32_t pid, char* modo, uint32_t idSegmento, uint32_t dirFisica, void* valor, uint32_t tamanio){
+    char* valorPrinteable = agregarCaracterNulo(valor, tamanio);
+    log_info(loggerCpu, "PID: %d - Acción: %s - Segmento: %d - Dirección Física: %d - Valor: %s", pid, modo, idSegmento, dirFisica, valorPrinteable);
+    free(valorPrinteable);
+    return;
+}
+char* agregarCaracterNulo(void* data, uint32_t length){
+    char* charData = (char*)data;
+
+    char* str = (char*)malloc((length + 1) * sizeof(char));
+    if (str == NULL)
+    {
+        return NULL;
+    }
+
+    // Copiar los caracteres al nuevo char*
+    for (uint32_t i = 0; i < length; i++)
+    {
+        str[i] = charData[i];
+    }
+
+    // Agregar el carácter nulo al final
+    str[length] = '\0';
+
+    return str;
+}
+
+void loggear_segmentation_fault(uint32_t pid, uint32_t numSegmento, uint32_t offset, uint32_t tamanio) {
+    log_info(loggerCpu, "PID: %u - Error SEG_FAULT- Segmento: %u - Offset: %u - Tamaño: %u", pid, numSegmento, offset, tamanio);
+    return;
+}
+
+int obtener_direccion_fisica(PCB* pcb, int dirLogica, int* numero_segmento, int* offset, int* tamanioSegmento) {
+
+    int tam_max_segmento = configCpu->TAM_MAX_SEGMENTO;
+    *numero_segmento = dirLogica / tam_max_segmento;
+    *offset = dirLogica % tam_max_segmento;
+    int base = obtener_base_segmento(pcb, *numero_segmento, tamanioSegmento);
+    int direccionFisica = base + *offset;
+    return direccionFisica;
+}
+
+int obtener_base_segmento(PCB* pcb, int numeroSegmento,  int *tamanio){
+
+    int cantidadSegmentos = list_size(pcb->lista_segmentos);
+   	t_segmento* segmentoTabla; // TODO: direccionBase deberia ser int
+
+   	for(int i = 0; i < cantidadSegmentos; i++){
+   		segmentoTabla = list_get(pcb->lista_segmentos, i);
+   		if(segmentoTabla->id == numeroSegmento){
+   			*tamanio = segmentoTabla->size;
+   			return *(int*)(segmentoTabla->direccionBase);
+   		}
+   	}
+   	return -1;
+}
+
 // void instruccion_set(char* registro,char* valor) {
 
 // 	int set_valor = atoi(valor);
@@ -283,6 +525,34 @@ void instruccion_set(char* registro,char* valor) {
 // 	free(registro_cpu);
 // }
 
+void* get_registro_cpu(char* registro, registros_cpu* registrosCpu){
+	if (strcmp(registro, "AX") == 0) {
+		return &(registrosCpu->AX);
+	} else if (strcmp(registro, "BX") == 0) {
+		return &(registrosCpu->BX);
+	} else if (strcmp(registro, "CX") == 0) {
+		return &(registrosCpu->CX);
+	} else if (strcmp(registro, "DX") == 0) {
+		return &(registrosCpu->DX);
+	} else if (strcmp(registro, "EAX") == 0) {
+		return &(registrosCpu->EAX);
+	} else if (strcmp(registro, "EBX") == 0) {
+		return &(registrosCpu->EBX);
+	} else if (strcmp(registro, "ECX") == 0) {
+		return &(registrosCpu->ECX);
+	} else if (strcmp(registro, "EDX") == 0) {
+		return &(registrosCpu->EDX);
+	} else if (strcmp(registro, "RAX") == 0) {
+		return &(registrosCpu->RAX);
+	} else if (strcmp(registro, "RBX") == 0) {
+		return &(registrosCpu->RBX);
+	} else if (strcmp(registro, "RCX") == 0) {
+		return &(registrosCpu->RCX);
+	} else if (strcmp(registro, "RDX") == 0) {
+		return &(registrosCpu->RDX);
+	}
+	return NULL;
+}
 void instruccion_mov_in(char* registro, char* dir_logica, PCB* pcb) {
 	/*
 	 * Lee el valor de memoria corresponfiente a la Direccion Logica y lo almacena en el registro
@@ -301,38 +571,8 @@ void instruccion_mov_in(char* registro, char* dir_logica, PCB* pcb) {
 		}
 		free(registro_cpu);
 	} else {
-		hubo_interrupcion=true;
-		log_error(loggerCpu, ERROR_SEGMENTATION_FAULT, pcb->id_proceso, segmento->id, segmento->direccionBase, segmento->size);
+		return NULL;
 	}
-	free(segmento);
-	free(dir_fisica);
-	*/
-}
-
-void instruccion_mov_out(char* dir_logica, char* registro, PCB* pcb) {
-	/*
-	 * Lee el valor del Registro y lo escribe en la dirección física de memoria obtenida a partir de la Dirección Lógica.
-	t_segmento* segmento;
-	void* dir_fisica = get_dir_fisica(segmento, dir_logica, configCpu->TAM_MAX_SEGMENTO);
-
-	if(dir_fisica!=-1){
-		void* registro_cpu = get_registro_cpu(registro, registrosCpu);
-
-		if(registro_cpu!=-1){
-			*&dir_fisica = registro_cpu;
-			log_info(loggerCpu, "Se leyo el valor del registro %s y se almaceno en la direccion fisica de memoria %s", registro, dir_logica);
-		} else {
-			log_error(loggerCpu, "Registro de CPU no reconocido.");
-			hubo_interrupcion=true;
-		}
-		free(registro_cpu);
-	} else {
-		hubo_interrupcion=true;
-		// flag_seg_fault=true;
-		log_error(loggerCpu, ERROR_SEGMENTATION_FAULT, pcb->id_proceso, segmento->id, segmento->direccionBase, segmento->size);
-	}
-	free(segmento);
-	free(dir_fisica);
 	*/
 }
 
@@ -359,12 +599,12 @@ void* obtener_puntero_direccion_fisica(PCB *pcb,uint32_t dirLogica, uint32_t *nu
     tam_max_segmento = configCpu->TAM_MAX_SEGMENTO;
     uint32_t numero_de_segmento = (dirLogica / tam_max_segmento);
     *offset = (uint32_t) dirLogica % tam_max_segmento;
-    void* base = obtener_base_segmento(pcb, numero_de_segmento, tamanioSegmento);
+    void* base = obtener_base_segmento_puntero(pcb, numero_de_segmento, tamanioSegmento);
     void* direccionFisica = calcular_direccion(base, (size_t)(*offset));
     return direccionFisica;
 }
 
-void* obtener_base_segmento(PCB *pcb, uint32_t numeroSegmento,  uint32_t *tamanio){
+void* obtener_base_segmento_puntero(PCB *pcb, uint32_t numeroSegmento,  uint32_t *tamanio){
     void* base;
     int i = 0;
     uint32_t my_uint32_value;
