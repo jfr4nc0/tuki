@@ -142,18 +142,24 @@ bool leer_archivo(char* nombreArchivo, uint32_t puntero, void* direccionFisica, 
     return true;
 }
 
-
-bool escribir_archivo(char* informacionAEscribir, char *nombreArchivo, uint32_t puntero, uint32_t cantidadBytesAEscribir) {
+bool escribir_archivo(char* informacionAEscribir, char *nombreArchivo, uint32_t puntero, uint32_t cantidadBytesAEscribir, void* direccionFisica) {
     bool primeraVez = true;
     uint32_t bloqueActual, bloqueRelativo, nuevoBloque, espacioDisponible, posicion;
     uint32_t bytesPorEscribir = cantidadBytesAEscribir;
     uint32_t bytesEscritos = 0;
     t_fcb* fcbArchivo = dictionary_get(dictionaryFcbs, nombreArchivo);
-
     bloqueActual = obtener_bloque_absoluto(fcbArchivo, puntero);
     bloqueRelativo = obtener_bloque_relativo(fcbArchivo, puntero);
     posicion = obtener_posicion_absoluta(fcbArchivo, puntero);
     espacioDisponible = SIZE_BLOQUE - obtener_posicion_en_bloque(puntero);
+
+    //informacionAEscribir = leer_espacio_usuario(direccionFisica, cantidadBytesAEscribir, 0);
+    // informacionAEscribir = "sonicthehedgedogTextoExtensoVamosLosPIbesCOnsolasonicthehedgedogTextoExtensoVamosLosPIbesCOnsolasonicthehedgedogTextoExtensoVamosLosPIbesCOnsola";
+    // TODO: OBTENER TEXTO DE MEMORIA
+    informacionAEscribir = "sonicthehedgedog";
+
+    cantidadBytesAEscribir = strlen(informacionAEscribir)-2;
+    log_info(loggerFileSystem, "Lo que tiene que escribir es: %s", informacionAEscribir);
 
     if (cantidadBytesAEscribir <= espacioDisponible)
     {

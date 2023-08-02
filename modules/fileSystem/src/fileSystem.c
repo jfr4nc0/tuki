@@ -93,11 +93,10 @@ void ejecutar_instrucciones_kernel(void* cliente) {
                 int pidProceso;
 				recibir_buffer_escritura_lectura_archivo(clienteKernel, &nombreArchivo, &puntero, &direccionFisica, &cantidadBytes, &pidProceso);
 				log_info(loggerFileSystem, "Llego para escribir nombreArchivo <%s>, cantidadBytes <%d>, puntero<%d>, dir fisica <%p>, pid <%d>", nombreArchivo, cantidadBytes, puntero, direccionFisica, pidProceso);
-				escribir_archivo(respuesta, nombreArchivo, puntero, cantidadBytes);
-				solicitar_informacion_memoria(direccionFisica, cantidadBytes, pidProceso);
+				escribir_archivo(respuesta, nombreArchivo, puntero, cantidadBytes, direccionFisica);
 				char* informacionAEscribir = (char*)recibir_buffer_informacion_memoria(cantidadBytes);
                 log_info(loggerFileSystem, "Escrito %s exitoso", informacionAEscribir);
-				devolver_instruccion_generico(escribir_archivo(informacionAEscribir, nombreArchivo, puntero, cantidadBytes), clienteKernel);
+//				devolver_instruccion_generico(escribir_archivo(informacionAEscribir, nombreArchivo, puntero, cantidadBytes), clienteKernel);
 
 				free(nombreArchivo);
 				// pthread_mutex_unlock(&m_instruccion);

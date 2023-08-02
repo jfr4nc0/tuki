@@ -243,21 +243,19 @@ t_list* recalcular_huecos_libres() {
 }
 
 void* leer_espacio_usuario(void* direccion, size_t size, int demora) {
-    simular_tiempo_acceso(demora);
+    void* valor = malloc(sizeof(direccion));
+    // simular_tiempo_acceso(demora);
 
     // Realizar la lectura en la dirección indicada
-    return memcpy(malloc(sizeof(direccion)), direccion, size);
+    memcpy(valor, direccion, size);
+    return valor;
 }
 
 void* escribir_espacio_usuario(void* direccion, size_t size, void* valor, int demora) {
-    simular_tiempo_acceso(demora);
+    // simular_tiempo_acceso(demora);
 
-    // Realizar la escritura en la dirección indicada
     return memcpy(direccion, valor, size);
 }
-
-
-
 
 /////////////////////////////////////////////// Auxiliares ///////////////////////////////////
 
