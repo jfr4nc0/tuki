@@ -3,7 +3,7 @@
 
 int main(int argc, char** argv) {
     loggerFileSystem = iniciar_logger(DEFAULT_LOG_PATH, ENUM_FILE_SYSTEM);
-    t_config* config = iniciar_config(argv[1], loggerFileSystem);
+    t_config* config = iniciar_config(argv[1], loggerFileSystem); // modules/fileSystem/Configs/fs.config
     inicializar_estructuras(config);
 
     pthread_mutex_init(&m_instruccion, NULL);

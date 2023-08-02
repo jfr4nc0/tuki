@@ -12,7 +12,7 @@ uint32_t SIZE_BLOQUE;
 */
 void inicializar_estructuras(t_config* config) {
     configFileSystem = cargar_config(config);
-    superbloque = crear_superbloque(configFileSystem->PATH_SUPERBLOQUE);
+    superbloque = crear_superbloque(DEFAULT_SUPERBLOQUE_PATH);
 
     SIZE_BLOQUE = superbloque->block_size;
 
@@ -44,7 +44,7 @@ t_config_file_system* cargar_config(t_config* config) {
 t_superbloque* crear_superbloque(char *pathSuperbloque) {
     t_superbloque *superbloque = malloc(sizeof(*superbloque));
 
-    t_config* config = config_create(configFileSystem->PATH_SUPERBLOQUE);
+    t_config* config = config_create(pathSuperbloque);
 
     superbloque->block_size = (uint32_t) extraer_int_de_config(config, "BLOCK_SIZE", loggerFileSystem);
     superbloque->block_count = (uint32_t) extraer_int_de_config(config, "BLOCK_COUNT", loggerFileSystem);
