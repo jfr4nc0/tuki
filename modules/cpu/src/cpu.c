@@ -196,36 +196,6 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
 	enviar_pcb_desalojado_a_kernel(pcb, clienteKernel, ultimaOperacion);
 }
 
-void mostrar_pcb(PCB* pcb){
-	log_trace(loggerCpu, "PID: %d", pcb->id_proceso);
-	char* estado = nombres_estados[pcb->estado];
-	log_trace(loggerCpu, "ESTADO: %s", estado);
-	log_trace(loggerCpu, "INSTRUCCIONES A EJECUTAR: ");
-	list_iterate(pcb->lista_instrucciones, (void*) iterator);
-	log_trace(loggerCpu, "PROGRAM COUNTER: %d", pcb->contador_instrucciones);
-	log_trace(loggerCpu, "Registro AX: %s", pcb->registrosCpu->AX);
-	log_trace(loggerCpu, "Registro BX: %s", pcb->registrosCpu->BX);
-	log_trace(loggerCpu, "Registro CX: %s", pcb->registrosCpu->CX);
-	log_trace(loggerCpu, "Registro DX: %s", pcb->registrosCpu->DX);
-	log_trace(loggerCpu, "Registro EAX: %s", pcb->registrosCpu->EAX);
-	log_trace(loggerCpu, "Registro EBX: %s", pcb->registrosCpu->EBX);
-	log_trace(loggerCpu, "Registro ECX: %s", pcb->registrosCpu->ECX);
-	log_trace(loggerCpu, "Registro EDX: %s", pcb->registrosCpu->EDX);
-	log_trace(loggerCpu, "Registro RAX: %s", pcb->registrosCpu->RAX);
-	log_trace(loggerCpu, "Registro RBX: %s", pcb->registrosCpu->RBX);
-	log_trace(loggerCpu, "Registro RCX: %s", pcb->registrosCpu->RCX);
-	log_trace(loggerCpu, "Registro RDX: %s", pcb->registrosCpu->RDX);
-	log_trace(loggerCpu, "LISTA SEGMENTOS: ");
-	list_iterate(pcb->lista_segmentos, (void*) iterator);
-	log_trace(loggerCpu, "LISTA ARCHIVOS ABIERTOS: ");
-	list_iterate(pcb->lista_archivos_abiertos, (void*) iterator);
-	log_trace(loggerCpu, "ESTIMACION HHRN: %f", pcb->estimacion_rafaga);
-}
-
-void iterator(char* value) {
-    log_info(loggerCpu, "%s ", value);
-}
-
 void cargar_registros(PCB* pcb) {
 	strcpy(registrosCpu->AX, pcb->registrosCpu->AX);
 	strcpy(registrosCpu->BX, pcb->registrosCpu->BX);
@@ -254,20 +224,6 @@ void guardar_contexto_de_ejecucion(PCB* pcb) {
     strcpy(pcb->registrosCpu->RBX,  registrosCpu->RBX);
     strcpy(pcb->registrosCpu->RCX,  registrosCpu->RCX);
     strcpy(pcb->registrosCpu->RDX,  registrosCpu->RDX);
-
-//	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro AX: %s", truncar_string(pcb->registrosCpu->AX,4));
-//	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro BX: %s", truncar_string(pcb->registrosCpu->BX,4));
-//	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro CX: %s", truncar_string(pcb->registrosCpu->CX,4));
-//	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro DX: %s", truncar_string(pcb->registrosCpu->DX,4));
-//	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro EAX: %s", truncar_string(pcb->registrosCpu->EAX,8));
-//	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro ECX: %s", truncar_string(pcb->registrosCpu->ECX,8));
-//	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro EBX: %s", truncar_string(pcb->registrosCpu->EBX,8));
-//	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro EDX: %s", truncar_string(pcb->registrosCpu->EDX,8));
-//	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro RAX: %s", truncar_string(pcb->registrosCpu->RAX,16));
-//	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro RBX: %s", truncar_string(pcb->registrosCpu->RBX,16));
-//	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro RCX: %s", truncar_string(pcb->registrosCpu->RCX,16));
-//	log_trace(loggerCpu, "Guardando contexto de ejecucion: Registro RDX: %s", truncar_string(pcb->registrosCpu->RDX,16));
-
 }
 
 int ejecutar_instruccion(char** instruccion, PCB* pcb) {
@@ -285,11 +241,8 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 
 	switch(operacion) {
 		// Si hay interrupcion no hago nada y se lo devuelvo a kernel
-		case I_YIELD:{
-			hubo_interrupcion = true;
-			break;
-		}
 		case I_F_OPEN:
+		case I_YIELD:
 		case I_EXIT:
 		case I_F_CLOSE:
 		case I_F_SEEK:
@@ -303,7 +256,6 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 			int retardo = configCpu->RETARDO_INSTRUCCION;
 			intervalo_de_pausa(retardo);
 			instruccion_set(instruccion[1],instruccion[2]);
-			//log_info(loggerCpu, "REGISTRO AX: %s", registrosCpu->AX);
 			break;
 		case I_MOV_IN:{
 			// MOV_IN (Registro, Dirección Lógica)
