@@ -85,20 +85,11 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
 	codigo_operacion ultimaOperacion = -1;
 
     while ((posicion_actual < cantidad_instrucciones) && !hubo_interrupcion) {
-	    instruccion = string_duplicate((char *)list_get(pcb->lista_instrucciones, pcb->contador_instrucciones));
+	    instruccion = (char *)list_get(pcb->lista_instrucciones, pcb->contador_instrucciones);
 		instruccion_decodificada = decode_instruccion(instruccion, loggerCpu);
 		if (instruccion_decodificada[0] != NULL) {
 			log_info(loggerCpu, "Ejecutando instruccion: %s", instruccion);
 			ultimaOperacion = ejecutar_instruccion(instruccion_decodificada, pcb);
-
-			if (ultimaOperacion == I_F_READ || ultimaOperacion == I_F_WRITE) {
-				// Reescribo la instruccion usando dir fisica en vez de logica
-				char* instruccionConvertida = convertir_dir_logica_a_fisica(pcb, instruccion_decodificada[2]);
-				instruccion_decodificada[2] = instruccionConvertida;
-				instruccion = encode_instruccion(instruccion_decodificada);
-				list_replace(pcb->lista_instrucciones, pcb->contador_instrucciones, instruccion);
-				free(instruccionConvertida);
-			}
 
 			if (!hubo_interrupcion) {
 				pcb->contador_instrucciones++;
@@ -120,6 +111,21 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
 	//mostrar_pcb(pcb, loggerCpu);
 
 	enviar_pcb(clienteKernel, pcb, ultimaOperacion, loggerCpu);
+
+	// Si tiene que calcular direccion fisica se la mando aparte
+	if (ultimaOperacion == I_F_READ || ultimaOperacion == I_F_WRITE) {
+		// Reescribo la instruccion usando dir fisica en vez de logica
+		void* direccionFisica = convertir_dir_logica_a_fisica(pcb, instruccion_decodificada[2]);
+
+		t_paquete* paquete = crear_paquete(AUX_OK);
+		agregar_puntero_a_paquete(paquete, direccionFisica);
+		enviar_paquete(paquete, clienteKernel);
+		eliminar_paquete(paquete);
+		// enviar_operacion(clienteKernel, AUX_OK, sizeof(uintptr_t), direccionFisica);
+	}
+
+	free(instruccion);
+	free(instruccion_decodificada);
 }
 
 void cargar_registros(PCB* pcb) { // Acumula basura
@@ -330,7 +336,7 @@ void instruccion_mov_out(char* dir_logica, char* registro, PCB* pcb) {
 	*/
 }
 
-char* convertir_dir_logica_a_fisica(PCB *pcb, char* dirLogicaTexto) {
+void* convertir_dir_logica_a_fisica(PCB *pcb, char* dirLogicaTexto) {
 	uint32_t numeroSegmento, offset, tamanioSegmento;
 
 	char* endptr; // Puntero para manejar errores en la conversión
@@ -342,9 +348,10 @@ char* convertir_dir_logica_a_fisica(PCB *pcb, char* dirLogicaTexto) {
 	}
 
 	void* dirFisica = obtener_puntero_direccion_fisica(pcb, dirLogica, &numeroSegmento, &offset, &tamanioSegmento);
-	log_info(loggerCpu, "COnversion de memoria dirLogica <%s> (en numero %d) a fisica <%p> (convertida a texto es: %s)",
-		dirLogicaTexto, dirLogica, dirFisica, (char*)dirFisica);
-    return (char*)dirFisica;
+
+	log_info(loggerCpu, "Conversion de memoria dirLogica <%s>, dirLogica <%d> a dirFisica <%p>",
+		dirLogicaTexto, dirLogica, dirFisica);
+    return dirFisica;
 }
 
 void* obtener_puntero_direccion_fisica(PCB *pcb,uint32_t dirLogica, uint32_t *numeroSegmento, uint32_t *offset, uint32_t *tamanioSegmento){
@@ -359,7 +366,8 @@ void* obtener_puntero_direccion_fisica(PCB *pcb,uint32_t dirLogica, uint32_t *nu
 
 void* obtener_base_segmento(PCB *pcb, uint32_t numeroSegmento,  uint32_t *tamanio){
     void* base;
-    uint32_t i = 0;
+    int i = 0;
+    uint32_t my_uint32_value;
 
     int cantidadSegmentos = list_size(pcb->lista_segmentos);
    	t_segmento* segmentoTabla;
@@ -372,7 +380,8 @@ void* obtener_base_segmento(PCB *pcb, uint32_t numeroSegmento,  uint32_t *tamani
    	while(i < cantidadSegmentos){
    		segmentoTabla = list_get(pcb->lista_segmentos, i);
    		if(segmentoTabla->id == numeroSegmento){
-			log_info(loggerCpu, "Base encontrada, en uint32: %p, en char %s", segmentoTabla->direccionBase, (char*)segmentoTabla->direccionBase);
+   			my_uint32_value = (uint32_t) segmentoTabla->direccionBase;
+			log_info(loggerCpu, "Base encontrada, en void: %p", segmentoTabla->direccionBase);
 			return segmentoTabla->direccionBase;
    		}
    		i++;

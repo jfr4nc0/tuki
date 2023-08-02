@@ -51,7 +51,7 @@ pthread_mutex_t m_recibir_pcb;
 #define DEFAULT_CONFIG_PATH   "tuki-pruebas/prueba-base/cpu.config"
 
 uint32_t obtener_direccion_fisica(PCB *pcb,uint32_t dirLogica, uint32_t *numeroSegmento, uint32_t *offset, uint32_t *tamanioSegmento);
-char* convertir_dir_logica_a_fisica(PCB *pcb, char* dirLogica);
+void* convertir_dir_logica_a_fisica(PCB *pcb, char* dirLogica);
 void* obtener_base_segmento(PCB *pcb, uint32_t numeroSegmento,  uint32_t *tamanio);
 void* obtener_puntero_direccion_fisica(PCB *pcb,uint32_t dirLogica, uint32_t *numeroSegmento, uint32_t *offset, uint32_t *tamanioSegmento);
 

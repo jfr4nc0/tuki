@@ -8,7 +8,7 @@
 
 //// LOGS
 #define ERROR_ABRIR_ARCHIVO                     "No se pudo abrir el archivo: %s"
-#define LEER_ARCHIVO                            "Leer Archivo: <%s> - Puntero: <%u> - Memoria: <%u> - Tamaño: <%u>"
+#define LEER_ARCHIVO                            "Leer Archivo: <%s> - Puntero: <%u> - Memoria: <%p> - Tamaño: <%u>"
 #define FCB_NOT_FOUND                           "No se encontró el fcb en la lista de fcbs. Nombre archivo: %s"
 #define MODIFICADO_BITMAP                       "Acceso a Bitmap - Bloque: <%u> - Estado: <%u>"
 #define LOG_ACCESO_BLOQUE                       "Acceso Bloque - Archivo: <%s> - Bloque Archivo: <%u> - Bloque File System <%u>"

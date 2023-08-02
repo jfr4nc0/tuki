@@ -311,6 +311,8 @@ void* manejo_desalojo_pcb() {
             res = manejo_instrucciones(data);
         }
 
+        pcb_en_ejecucion->contador_instrucciones++;
+
          free(ultimaInstruccion);
          free(ultimaInstruccionDecodificada);
          free(data);
@@ -452,15 +454,20 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
                 break;
             }
             case I_F_READ: {
+            	codigo_operacion cod_op = recibir_operacion(conexionFileSystem); // basura
+
+            	t_list* listaConSegmento = recibir_lista_segmentos(conexionFileSystem);
             	agregar_a_lista_con_sem((void*)pcb, ENUM_BLOCKED);
-                enviar_f_read_write(pcb, instruccion, operacion);
+                enviar_f_read_write(pcb, instruccion, operacion, listaConSegmento);
                 codigo_operacion codRes = recibir_operacion(conexionFileSystem);
 				recibir_operacion(conexionFileSystem);
                 break;
             }
             case I_F_WRITE: {
+                codigo_operacion cod_op = recibir_operacion(conexionCPU); // basura
+                void* direccionFisica = recibir_puntero(conexionCPU);
             	agregar_a_lista_con_sem((void*)pcb, ENUM_BLOCKED);
-            	enviar_f_read_write(pcb, instruccion, operacion);
+            	enviar_f_read_write(pcb, instruccion, operacion, direccionFisica);
             	codigo_operacion codRes = recibir_operacion(conexionFileSystem);
             	mover_de_lista_con_sem(pcb->id_proceso, ENUM_READY, ENUM_BLOCKED);
             	recibir_operacion(conexionFileSystem);
@@ -514,25 +521,30 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
 	return res;
 }
 
-void enviar_f_read_write(PCB* pcb, char** instruccion, codigo_operacion codigoOperacion) {
+void enviar_f_read_write(PCB* pcb, char** instruccion, codigo_operacion codigoOperacion, void* direccionFisica) {
     pthread_mutex_lock(&permiso_compactacion);
     t_paquete* paquete = crear_paquete(codigoOperacion);
 
+    // 1: Nombre Archivo, 2: Dirección Fisica, 3: Cantidad de bytes
     char* nombreArchivo = instruccion[1];
     strtok(nombreArchivo, "\n");
+    char* cantidadBytes = instruccion[3];
+    strtok(cantidadBytes, "\n");
 
     t_archivo_abierto* archivoAbierto = encontrar_archivo_abierto(pcb->lista_archivos_abiertos, nombreArchivo);
 
-    // 1: Nombre Archivo, 2: Dirección Fisica, 3: Cantidad de bytes
-    agregar_a_paquete(paquete, (void*)instruccion[1], strlen(instruccion[1]));
-    agregar_a_paquete(paquete, (void*)instruccion[2], strlen(instruccion[2]));
-    agregar_a_paquete(paquete, (void*)instruccion[3], strlen(instruccion[3]));
-    agregar_a_paquete(paquete, (void*)(intptr_t)pcb->id_proceso, sizeof(pcb->id_proceso));
+    agregar_a_paquete(paquete, (void*)nombreArchivo, strlen(nombreArchivo));
+    agregar_puntero_a_paquete(paquete, direccionFisica);
+    agregar_a_paquete(paquete, (void*)cantidadBytes, strlen(cantidadBytes));
+    agregar_int_a_paquete(paquete, pcb->id_proceso);
+    agregar_uint32_a_paquete(paquete, archivoAbierto->puntero);
     enviar_paquete(paquete, conexionFileSystem);
     eliminar_paquete(paquete);
 
     codigo_operacion codOp = recibir_operacion(conexionFileSystem);
-    recibir_operacion(conexionFileSystem);
+    codigo_operacion codigoRespuesta = recibir_operacion(conexionFileSystem);
+    log_info(kernelLogger, "Codigo respuesta %d", codigoRespuesta);
+    free(archivoAbierto);
     pthread_mutex_unlock(&permiso_compactacion);
 }
 
@@ -644,8 +656,9 @@ PCB* recibir_proceso_desajolado(PCB* pcb_en_ejecucion) {
     }
 
     // pcb_recibido->lista_archivos_abiertos = pcb_en_ejecucion->lista_archivos_abiertos;
-    list_add_all(pcb_recibido->lista_archivos_abiertos, pcb_en_ejecucion->lista_archivos_abiertos); // rompe
-
+    if (list_size(pcb_en_ejecucion->lista_archivos_abiertos) > 0) {
+    	list_add_all(pcb_recibido->lista_archivos_abiertos, pcb_en_ejecucion->lista_archivos_abiertos); // rompe
+    }
     return pcb_recibido;
 }
 
@@ -831,7 +844,7 @@ void mover_de_lista_con_sem(int idProceso, int estadoNuevo, int estadoAnterior) 
         pcb->estado = estadoNuevo;
 
 		if (pcb->estado == ENUM_READY) {
-            set_timespec((timestamp*)(time_t)pcb->ready_timestamp);
+            // set_timespec((timestamp*)(time_t)pcb->ready_timestamp);
 		}
 
 		PCB* pcbEliminado = (PCB*)list_remove(lista_estados[estadoAnterior], index);

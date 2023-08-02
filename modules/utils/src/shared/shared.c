@@ -473,8 +473,23 @@ void agregar_int_a_paquete(t_paquete* paquete, int valor) {
     paquete->buffer->size += sizeof(int);
 }
 
-void agregar_lista_segmentos_del_proceso(t_paquete* paquete, int cliente, t_list* segmentosTabla, t_log* logger) {
+void agregar_puntero_a_paquete(t_paquete* paquete, void* valor) {
+    uintptr_t puntero = (uintptr_t)valor;
+    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(uintptr_t));
+    memcpy(paquete->buffer->stream + paquete->buffer->size, &puntero, sizeof(uintptr_t));
+    paquete->buffer->size += sizeof(uintptr_t);
+}
+
+uint32_t agregar_uint32_a_paquete(t_paquete* paquete, uint32_t valor) {
+    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(uint32_t));
+    memcpy(paquete->buffer->stream + paquete->buffer->size, &valor, sizeof(uint32_t));
+    paquete->buffer->size += sizeof(uint32_t);
+}
+
+void agregar_lista_segmentos_a_paquete(t_paquete* paquete, int cliente, t_list* segmentosTabla, t_log* logger) {
 	// Envio aparte las direcciones
+//    enviar_operacion(cliente, AUX_OK, sizeof(segmentosTabla), (void*)segmentosTabla);
+    /*
     t_paquete* paqueteDirecciones = crear_paquete(AUX_OK);
 
     for (int i = 0; i < list_size(segmentosTabla); i++) {
@@ -483,46 +498,63 @@ void agregar_lista_segmentos_del_proceso(t_paquete* paquete, int cliente, t_list
     }
     enviar_paquete(paqueteDirecciones, cliente);
     eliminar_paquete(paqueteDirecciones);
+    */
 
     // envio el resto
+	agregar_int_a_paquete(paquete, list_size(segmentosTabla));
     for (int i = 0; i < list_size(segmentosTabla); i++) {
         t_segmento* segmento = list_get(segmentosTabla, i);
         log_trace(logger, D__LOG_SEGMENTO, segmento->id, segmento->direccionBase, segmento->size);
         agregar_int_a_paquete(paquete, segmento->id);
         agregar_size_a_paquete(paquete, segmento->size);
+        agregar_puntero_a_paquete(paquete, segmento->direccionBase);
     }
     return;
 }
 
-void enviar_lista_segmentos_del_proceso(int cliente, t_list* segmentosTabla, t_log* logger) {
+void enviar_lista_segmentos_del_proceso(int cliente, t_list* segmentosLista, t_log* logger) {
 	t_paquete* paquete = crear_paquete(AUX_OK);
-    agregar_lista_segmentos_del_proceso(paquete, cliente, segmentosTabla, logger);
+    agregar_lista_segmentos_a_paquete(paquete, cliente, segmentosLista, logger);
     enviar_paquete(paquete, cliente);
     eliminar_paquete(paquete);
     return;
 }
 
-// va de la mano con agregar_lista_segmentos_del_proceso funcion
-t_list* recibir_lista_segmentos(int clienteAceptado) {
-	// Solo obtiene bien la direccion base
-    t_list* listaSegmentos = recibir_paquete(clienteAceptado);
+t_list* recibir_resto_lista_segmentos(void* buffer, int* desp) {
+    t_list* listaSegmentos = list_create();
+    int cantidadSegmentos = leer_int(buffer, desp);
 
-    recibir_operacion(clienteAceptado);
+    for (int i = 0; i < cantidadSegmentos; i++) {
+    	t_segmento* segmento = malloc(sizeof(t_segmento));
+    	segmento->id = leer_int(buffer, desp);
+        segmento->size = leer_size(buffer, desp);
+        segmento->direccionBase = leer_puntero(buffer, desp);
+
+        list_add(listaSegmentos, segmento);
+    }
+    return listaSegmentos;
+}
+
+// va de la mano con agregar_lista_segmentos_a_paquete funcion
+t_list* recibir_lista_segmentos(int clienteAceptado) {
     void* buffer;
 	int tamanio = 0;
 	int desp = 0;
 
     buffer = recibir_buffer(&tamanio, clienteAceptado);
 
-    for (int i = 0; i < list_size(listaSegmentos); i++) {
-    	t_segmento* segmento = (t_segmento*)list_get(listaSegmentos, i);
-    	segmento->id = leer_int(buffer, &desp);
-        segmento->size = leer_size(buffer, &desp);
+    t_list* listaSegmentos = recibir_resto_lista_segmentos(buffer, &desp);
 
-        list_replace(listaSegmentos, i, segmento);
-    }
     free(buffer);
     return listaSegmentos;
+}
+
+void* leer_puntero(void* buffer, int* desp) {
+	uintptr_t respuesta;
+	memcpy(&respuesta, buffer + (*desp), sizeof(uintptr_t));
+	(*desp)+=sizeof(uintptr_t);
+
+	return (void*)respuesta;
 }
 
 void iteratorSinLog(char* value) {
@@ -566,9 +598,9 @@ void mostrar_pcb(PCB* pcb, t_log* logger){
 void enviar_pcb(int conexion, PCB* pcb_a_enviar, codigo_operacion codigo, t_log* log) {
     t_paquete* paquete = crear_paquete(codigo);
     agregar_pcb_a_paquete(paquete, pcb_a_enviar, log);
+    agregar_lista_segmentos_a_paquete(paquete, conexion, pcb_a_enviar->lista_segmentos, log);
     enviar_paquete(paquete, conexion);
     eliminar_paquete(paquete);
-    enviar_lista_segmentos_del_proceso(conexion, pcb_a_enviar->lista_segmentos, log);
 }
 
 void agregar_pcb_a_paquete(t_paquete* paquete, PCB* pcb, t_log* log) {
@@ -635,10 +667,11 @@ PCB* recibir_pcb(int clienteAceptado) {
 	pcb->contador_instrucciones = leer_int(buffer, &desplazamiento);
 	pcb->estimacion_rafaga = leer_double(buffer, &desplazamiento);
 	pcb->ready_timestamp = leer_double(buffer, &desplazamiento);
-    free(buffer);
 
-    codigo_operacion codAuxOkEliminar = recibir_operacion(clienteAceptado);
-	pcb->lista_segmentos = recibir_lista_segmentos(clienteAceptado);
+	pcb->lista_archivos_abiertos = list_create();
+
+	pcb->lista_segmentos = recibir_resto_lista_segmentos(buffer, &desplazamiento);
+    free(buffer);
 
 	return pcb;
 	/*
@@ -950,6 +983,15 @@ void* recibir_buffer(int* size, int clienteAceptado) {
     recv(clienteAceptado, buffer, *size, MSG_WAITALL);
 
     return buffer;
+}
+
+void* recibir_puntero(int clienteAceptado) {
+    int size;
+    int desplazamiento = 0;
+    int tamanio;
+    void * buffer = recibir_buffer(&size, clienteAceptado);
+
+    return leer_puntero(buffer, &desplazamiento);
 }
 
 t_list* recibir_paquete(int clienteAceptado) {

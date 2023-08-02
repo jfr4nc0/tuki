@@ -133,7 +133,7 @@ t_estado* crear_archivo_estado(t_nombre_estado nombreEstado);
 ////////////////////////////////////////////////////
 
 int obtener_recursos(int);
-void enviar_f_read_write(PCB* pcb, char**, codigo_operacion);
+void enviar_f_read_write(PCB* pcb, char** instruccion, codigo_operacion codigoOperacion, void* listaConSegmento);
 
 void cambiar_estado_proceso_sin_semaforos(PCB* pcb, pcb_estado estadoNuevo);
 t_archivo_abierto* encontrar_archivo_abierto(t_list* listaArchivosAbiertos, char* nombreArchivo);

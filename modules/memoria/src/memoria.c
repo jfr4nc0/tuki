@@ -123,11 +123,22 @@ void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion) 
 	t_list* listaRecibida = recibir_paquete(cliente);
 
 	switch(codigoDeOperacion){
+		/*
 		case I_F_WRITE:
 		{
 			log_info(loggerMemoria, "Memoria entra a F write");
+			t_parametros_write_read* parametrosWriteRead = obtenerParametrosWriteRead(listaRecibida);
+			escribir_espacio_usuario();
 			break;
 		}
+		case I_F_READ:
+		{
+			log_info(loggerMemoria, "Memoria entra a F write");
+			t_parametros_write_read* parametrosWriteRead = obtenerParametrosWriteRead(listaRecibida);
+			// escribir_espacio_usuario();
+			break;
+		}
+		*/
 		case AUX_CREATE_PCB:
 		{
 			int pid = *(int*)list_get(listaRecibida, 0);
@@ -189,3 +200,11 @@ void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion) 
 		}
 	}
 }
+/*
+t_parametros_write_read* obtenerParametrosWriteRead(t_list* listaRecibida) {
+	t_parametros_write_read* parametros = malloc(sizeof(t_parametros_write_read));
+	parametros->idProceso = *(int*)list_get(listaRecibida, 0);
+	parametros->size = strtoul(list_get(listaRecibida, 1), NULL, 10);
+	size_t size =
+}
+*/

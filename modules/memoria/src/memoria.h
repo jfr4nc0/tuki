@@ -23,6 +23,11 @@ typedef struct {
     char* ALGORITMO_ASIGNACION;
 } t_memoria_config;
 
+typedef struct {
+	int idProceso;
+    size_t size;
+} t_parametros_write_read;
+
 #define DEFAULT_LOG_PATH            "logs/memoria.log"
 #define DEFAULT_CONFIG_PATH         "tuki-pruebas/prueba-base/memoria.config"
 
@@ -45,4 +50,5 @@ void administrar_cliente(void*);
 void administrar_instrucciones(int cliente, codigo_operacion codigoOperacion);
 void testing_funciones();
 void incializar_estructuras();
+t_parametros_write_read* obtenerParametrosWriteRead(t_list* listaRecibida);
 #endif

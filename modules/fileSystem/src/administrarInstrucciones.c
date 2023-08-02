@@ -70,7 +70,7 @@ Esta operación deberá leer la información correspondiente de los bloques a pa
 Esta información se deberá enviar a la Memoria para ser escrita a partir de la dirección física recibida por parámetro
 y esperar su finalización para poder confirmar el éxito de la operación al Kernel.
 */
-bool leer_archivo(char* nombreArchivo, uint32_t puntero, uint32_t direccionFisica, uint32_t bytesQueFaltanPorLeer, uint32_t pidProceso) {
+bool leer_archivo(char* nombreArchivo, uint32_t puntero, void* direccionFisica, uint32_t bytesQueFaltanPorLeer, uint32_t pidProceso) {
     log_info(loggerFileSystem, LEER_ARCHIVO, nombreArchivo, puntero, direccionFisica, bytesQueFaltanPorLeer);
 
     t_fcb* fcb = dictionary_get(dictionaryFcbs, nombreArchivo);

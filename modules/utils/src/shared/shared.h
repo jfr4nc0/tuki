@@ -194,9 +194,11 @@ void stream_send_buffer(int toSocket, uint8_t header, t_buffer *buffer);
 char *buffer_unpack_string(t_buffer *self);
 void buffer_pack_string(t_buffer *self, char *stringToAdd);
 uint32_t leer_uint32_t(char* buffer, int* desp);
+t_list* recibir_resto_lista_segmentos(void* buffer, int* desp);
 void enviar_lista_segmentos_del_proceso(int cliente, t_list* segmentosTabla, t_log* logger);
-void agregar_lista_segmentos_del_proceso(t_paquete* buffer, int cliente, t_list* segmentosTabla, t_log* logger);
+void agregar_lista_segmentos_a_paquete(t_paquete* buffer, int cliente, t_list* segmentosTabla, t_log* logger);
 t_list* recibir_lista_segmentos(int cliente);
+void* recibir_puntero(int clienteAceptado);
 
 void enviar_pcb(int conexion, PCB* pcb_a_enviar, codigo_operacion codigo, t_log* log);
 
@@ -213,6 +215,7 @@ void agregar_pcb_a_paquete(t_paquete* paquete, PCB* pcb, t_log* log);
 PCB* recibir_pcb(int);
 
 void agregar_int_a_paquete(t_paquete* paquete, int valor);
+uint32_t agregar_uint32_a_paquete(t_paquete* paquete, uint32_t valor);
 void* leer_algo(char* buffer, int* desp, size_t size);
 size_t leer_size(char* buffer, int* desp);
 
@@ -238,5 +241,7 @@ int recibir_operacion(int);
 void* recibir_buffer(int*, int);
 void* leer_de_buffer(char*, int*, size_t);
 char* leer_texto(char* buffer, int* desp, int size);
+void* leer_puntero(void* buffer, int* desp);
+void agregar_puntero_a_paquete(t_paquete* paquete, void* valor);
 
 #endif
