@@ -121,10 +121,38 @@ void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion, 
     codigo_operacion codigoRespuesta = AUX_ERROR;
 
 	switch(codigoDeOperacion){
+		case I_F_WRITE: {
+			int tamanio = 0;
+			int desp = 0;
+//			recibir_operacion(cliente);
+			void* buffer = recibir_buffer(&tamanio, cliente);
+			int pid = leer_int(buffer, &desp);
+			void* direccionFisica = leer_puntero(buffer, &desp);
+			uint32_t cantidadBytes = leer_uint32(buffer, &desp);
+			void* respuesta = leer_espacio_usuario(direccionFisica, cantidadBytes, memoriaConfig->RETARDO_MEMORIA);
+
+			t_paquete* paquete = crear_paquete(AUX_OK);
+			agregar_puntero_a_paquete(paquete, respuesta);
+			enviar_paquete(paquete, cliente);
+			eliminar_paquete(paquete);
+			/*
+				agregar_int_a_paquete(paquete, pidProceso);
+				agregar_puntero_a_paquete(paquete, direccionFisica);
+				agregar_uint32_a_paquete(paquete, cantidadBytes);
+				enviar_paquete(paquete, cliente);
+			 */
+		}
+		case I_F_READ: {
+
+		}
 		case AUX_CREATE_PCB:
 		{
-			t_list* listaRecibida = recibir_paquete(cliente);
-			int pid = *(int*)list_get(listaRecibida, 0);
+			void* buffer;
+			int tamanio = 0;
+			int desplazamiento = 0;
+
+			buffer = recibir_buffer(&tamanio, cliente);
+			int pid = leer_int(buffer, &desplazamiento);
 			codigoRespuesta = inicializar_proceso(pid, sizeof(int));
 			t_list* listaSegmentosPorPid = obtener_tabla_segmentos_por_proceso_id(pid);
 			log_info(loggerMemoria, CREACION_DE_PROCESO, pid);

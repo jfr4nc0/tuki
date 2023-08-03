@@ -95,7 +95,11 @@ void enviar_proceso_a_ready() {
 
         if (conexionMemoria > 0) {
             // Creo el pcb en memoria
-            enviar_operacion(conexionMemoria, AUX_CREATE_PCB, sizeof(int), string_itoa(pcb->id_proceso));
+            // enviar_operacion(conexionMemoria, AUX_CREATE_PCB, sizeof(int), string_itoa(pcb->id_proceso));
+        	t_paquete* paquete = crear_paquete(AUX_CREATE_PCB);
+        	agregar_int_a_paquete(paquete, pcb->id_proceso);
+        	enviar_paquete(paquete, conexionMemoria);
+        	eliminar_paquete(paquete);
             codigo_operacion codigoRespuesta = recibir_operacion(conexionMemoria);
             if (codigoRespuesta == AUX_ERROR) {
                 log_error(kernelLogger, "Segmentation fault la creacion del proceso %d, ", pcb->id_proceso);
@@ -344,7 +348,7 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
 
                 t_archivo_abierto* archivoAbierto = malloc(sizeof(t_archivo_abierto));
                 archivoAbierto->nombreArchivo = nombreArchivo;
-                archivoAbierto->puntero = 0;
+                archivoAbierto->puntero = NULL;
 
                 // abrir archivo proceso
                 list_add(pcb->lista_archivos_abiertos, archivoAbierto);
@@ -391,6 +395,7 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
 
             case I_TRUNCATE: {
             	agregar_a_lista_con_sem((void*)pcb, ENUM_BLOCKED);
+            	PCB* pcbBlocked = list_get(lista_estados[ENUM_BLOCKED], 0);
             	sem_post(&sem_cpu_disponible);
                 t_paquete* paquete = crear_paquete(operacion);
                 agregar_a_paquete(paquete, (void*)instruccion[1], strlen(instruccion[1]));
@@ -405,6 +410,7 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
                 recibir_operacion(conexionFileSystem); // basura
 
                 cambiar_estado_proceso_con_semaforos(pcb, ENUM_READY);
+                PCB* pcbReady = list_get(lista_estados[ENUM_READY], 0);
 
                 sem_post(&sem_proceso_a_ready_terminado);
                 break;
@@ -1081,6 +1087,7 @@ void mover_de_lista_con_sem(int idProceso, int estadoNuevo, int estadoAnterior) 
 			log_error(kernelLogger, "ERROR AL MOVER pcb de estado %s a estado %s",
 					nombres_estados[estadoAnterior], nombres_estados[estadoNuevo] );
 		}
+		list_add(lista_estados[estadoNuevo], pcb);
 		//int indexDevuelto = list_add(lista_estados[estadoNuevo], (void*)pcb);
 		//log_info(kernelLogger, "Se ha añadido el pcb <%d> a la lista de estados <%s> devuelve indice %d", pcb->id_proceso, nombres_estados[estadoNuevo], indexDevuelto);
 

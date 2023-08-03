@@ -248,6 +248,7 @@ void* leer_espacio_usuario(void* direccion, size_t size, int demora) {
 
     // Realizar la lectura en la dirección indicada
     memcpy(valor, direccion, size);
+    log_debug(loggerMemoria, "Se pidio leer el texto %s", (char*)valor);
     return valor;
 }
 

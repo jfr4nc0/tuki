@@ -217,7 +217,7 @@ t_dictionary* tablaArchivosAbiertos;
 #define E__PERMISOS_INSUFICIENTES   "Permisos insuficientes para <PID:%d>"
 ////////////////////////////////////
 
-#define PATH_LOG_KERNEL             "../../../logs/kernel.log"
+#define PATH_LOG_KERNEL             "logs/kernel.log"
 #define PATH_CONFIG_KERNEL          "tuki-pruebas/prueba-memoria/kernel.config"
 
 #endif

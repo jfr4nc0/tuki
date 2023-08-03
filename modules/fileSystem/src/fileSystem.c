@@ -93,6 +93,26 @@ void ejecutar_instrucciones_kernel(void* cliente) {
                 int pidProceso;
 				recibir_buffer_escritura_lectura_archivo(clienteKernel, &nombreArchivo, &puntero, &direccionFisica, &cantidadBytes, &pidProceso);
 				log_info(loggerFileSystem, "Llego para escribir nombreArchivo <%s>, cantidadBytes <%d>, puntero<%d>, dir fisica <%p>, pid <%d>", nombreArchivo, cantidadBytes, puntero, direccionFisica, pidProceso);
+
+				// Envia a memoria para saber que tiene que escribir
+				t_paquete* paquete = crear_paquete(I_F_WRITE);
+				agregar_int_a_paquete(paquete, pidProceso);
+				agregar_puntero_a_paquete(paquete, direccionFisica);
+				agregar_uint32_a_paquete(paquete, cantidadBytes);
+				enviar_paquete(paquete, conexionMemoria);
+				eliminar_paquete(paquete);
+
+                int tamanio = 0;
+	            int desplazamiento = 0;
+
+	            recibir_operacion(conexionMemoria);
+                void* buffer = recibir_buffer(&tamanio, conexionMemoria);
+                respuesta = leer_puntero(buffer, &desplazamiento);
+
+                log_debug(loggerFileSystem, "Se va a escribir en los bloques el puntero %p", respuesta);
+                
+                log_debug(loggerFileSystem, "Respuesta es : %s", respuesta);
+
 				escribir_archivo(respuesta, nombreArchivo, puntero, cantidadBytes, direccionFisica);
 				char* informacionAEscribir = (char*)recibir_buffer_informacion_memoria(cantidadBytes);
                 log_info(loggerFileSystem, "Escrito %s exitoso", informacionAEscribir);

@@ -156,10 +156,7 @@ bool escribir_archivo(char* informacionAEscribir, char *nombreArchivo, uint32_t 
     //informacionAEscribir = leer_espacio_usuario(direccionFisica, cantidadBytesAEscribir, 0);
     // informacionAEscribir = "sonicthehedgedogTextoExtensoVamosLosPIbesCOnsolasonicthehedgedogTextoExtensoVamosLosPIbesCOnsolasonicthehedgedogTextoExtensoVamosLosPIbesCOnsola";
     // TODO: OBTENER TEXTO DE MEMORIA
-    informacionAEscribir = "sonicthehedgedog";
 
-    cantidadBytesAEscribir = strlen(informacionAEscribir)-2;
-    log_info(loggerFileSystem, "Lo que tiene que escribir es: %s", informacionAEscribir);
 
     if (cantidadBytesAEscribir <= espacioDisponible)
     {
@@ -231,17 +228,17 @@ uint32_t obtener_bloque_relativo(t_fcb* fcbArchivo, uint32_t punteroFseek) {
     if ( ( punteroFseek % SIZE_BLOQUE == 0) && punteroFseek != 0) {
         return (punteroFseek / SIZE_BLOQUE)+1;
     }
-    return redondear_hacia(punteroFseek, ARRIBA);
+    return dividir_por_size_bloque_y_redondear_hacia(punteroFseek, ARRIBA);
 }
 
 uint32_t obtener_bloque_absoluto(t_fcb* fcb, uint32_t punteroFseek) {
-    uint32_t bloque = redondear_hacia(punteroFseek, ABAJO);
+    uint32_t bloque = dividir_por_size_bloque_y_redondear_hacia(punteroFseek, ABAJO);
     return (bloque == 0) ? fcb->puntero_directo:
             archivo_de_bloques_leer_n_puntero_de_bloque_de_punteros(fcb->puntero_indirecto, bloque-1);
 }
 
 uint32_t obtener_posicion_en_bloque(uint32_t punteroFseek) {
-    return punteroFseek - SIZE_BLOQUE * redondear_hacia(punteroFseek, ABAJO);
+    return punteroFseek - SIZE_BLOQUE * dividir_por_size_bloque_y_redondear_hacia(punteroFseek, ABAJO);
 }
 
 // Funcion que sirve para saber desde donde empezar a leer/escribir.
