@@ -129,7 +129,7 @@ void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion, 
 			int pid = leer_int(buffer, &desp);
 			void* direccionFisica = leer_puntero(buffer, &desp);
 			uint32_t cantidadBytes = leer_uint32(buffer, &desp);
-			void* respuesta = leer_espacio_usuario(direccionFisica, cantidadBytes, memoriaConfig->RETARDO_MEMORIA);
+			char* respuesta = leer_espacio_usuario(direccionFisica, cantidadBytes, memoriaConfig->RETARDO_MEMORIA);
 
 			t_paquete* paquete = crear_paquete(AUX_OK);
 			agregar_puntero_a_paquete(paquete, respuesta);

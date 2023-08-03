@@ -113,7 +113,7 @@ void ejecutar_instrucciones_kernel(void* cliente) {
 
 				escribir_archivo((char*)direccionFisica, nombreArchivo, puntero, cantidadBytes, direccionFisica);
 				// char* informacionAEscribir = (char*)recibir_buffer_informacion_memoria(cantidadBytes);
-                log_info(loggerFileSystem, "Escrito %s exitoso", informacionAEscribir);
+                // log_info(loggerFileSystem, "Escrito %s exitoso", informacionAEscribir);
 //				devolver_instruccion_generico(escribir_archivo(informacionAEscribir, nombreArchivo, puntero, cantidadBytes), clienteKernel);
 
 				free(nombreArchivo);
