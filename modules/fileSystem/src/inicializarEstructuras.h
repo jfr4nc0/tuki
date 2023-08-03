@@ -18,6 +18,8 @@
 #include <shared/shared.h>
 #include "constantes.h"
 
+#define DEFAULT_SUPERBLOQUE_PATH     "modules/fileSystem/Configs/superbloque.config"
+
 typedef struct {
 	int RETARDO_ACCESO_BLOQUE;
 	char* IP_MEMORIA;

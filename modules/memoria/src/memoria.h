@@ -23,8 +23,13 @@ typedef struct {
     char* ALGORITMO_ASIGNACION;
 } t_memoria_config;
 
-#define DEFAULT_LOG_PATH            "/home/utnso/eclipse-workspace/tp-2023-1c-KernelPanic/logs/memoria.log"
-#define DEFAULT_CONFIG_PATH         "tuki-pruebas/prueba-base/memoria.config"
+typedef struct {
+	int idProceso;
+    size_t size;
+} t_parametros_write_read;
+
+#define DEFAULT_LOG_PATH            "../../../logs/memoria.log"
+#define DEFAULT_CONFIG_PATH         "tuki-pruebas/prueba-memoria/memoria.config"
 
 // LOGS ////////////////////////////////////
 #define CREACION_DE_PROCESO         "Creación de Proceso PID: %d"
@@ -39,7 +44,6 @@ void cargar_config_memoria(t_config*);
 void ejecutar_file_system_pedido(void *);
 void ejecutar_cpu_pedido(void *);
 void ejecutar_kernel_pedido(void *);
-void iterator(char*);
 void ejecutar_instrucciones(int, char*);
 void atender_conexiones(int);
 
@@ -47,5 +51,7 @@ void administrar_instrucciones(int , codigo_operacion , char*);
 void administrar_cliente(void*);
 void testing_funciones();
 void incializar_estructuras();
+void enviar_confirmacion(int conexion, codigo_operacion codOperacion);
+t_parametros_write_read* obtenerParametrosWriteRead(t_list* listaRecibida);
 
 #endif

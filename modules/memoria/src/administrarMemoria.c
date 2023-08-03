@@ -49,26 +49,23 @@ void iteratorSegmento(t_segmento* elemento) {
 /*
 ** Maneja el flujo de respuesta de la funcion crear_segmento
 */
-codigo_operacion adapter_respuesta_segmento(int pid, t_segmento* segmento, void* respuesta){
+codigo_operacion adapter_respuesta_segmento(int pid, void* respuesta, size_t size){
     if (respuesta == (void*)-1) {
-		log_error(loggerMemoria, "Segmentation Fault (no hay memoria), para proceso %d, por peticion de tamaño: %zu", pid, segmento->size);
+		log_error(loggerMemoria, "Segmentation Fault (no hay memoria), para proceso %d, por peticion de tamaño: %zu", pid, size);
         return AUX_ERROR;
 	}else if(respuesta == NULL) {
-		log_warning(loggerMemoria, "Peticion de proceso %d, para tamaño %zu, solo se puede haciendo compactacion y usando los huecos libres", pid, segmento->size);
+		log_warning(loggerMemoria, "Peticion de proceso %d, para tamaño %zu, solo se puede haciendo compactacion y usando los huecos libres", pid, size);
         return AUX_SOLO_CON_COMPACTACION;
 	}else{
-        segmento->direccionBase = respuesta;
-		log_info(loggerMemoria, "Memoria usada: %p", respuesta);
+		log_info(loggerMemoria, "Memoria usada: %p", calcular_direccion(respuesta, size));
         return AUX_OK;
     }
 }
 
 codigo_operacion inicializar_proceso(int pid, size_t pcbSize) {
-    t_segmento* segmento;
-    segmento->size = pcbSize;
-    void* respuesta = crear_segmento(pid, segmento->size);
+    void* respuesta = crear_segmento(pid, pcbSize);
 
-    return adapter_respuesta_segmento(pid,segmento,respuesta);
+    return adapter_respuesta_segmento(pid,respuesta, pcbSize);
 }
 
 void finalizar_proceso(int idProceso) {
@@ -132,8 +129,9 @@ void compactar_memoria() {
 
 codigo_operacion crear_segmento_por_pid(int pid, t_segmento* segmento){
     void* respuesta = crear_segmento(pid, segmento->size);
+    segmento->direccionBase = respuesta;
 
-    return adapter_respuesta_segmento(pid,segmento,respuesta);
+    return adapter_respuesta_segmento(pid, respuesta, segmento->size);
 }
 
 void* crear_segmento(int idProceso, size_t size) {
@@ -183,24 +181,24 @@ int guardarSegmentoEnTabla(t_segmento* segmento, int idProceso) {
     return list_add(memoria->tablaDeSegmentos, segmentoTabla);
 }
 
-t_list* eliminar_segmento(int idProceso, int idSegmento) {
+codigo_operacion eliminar_segmento(int idProceso, t_segmento* segmento) {
     list_sort(memoria->tablaDeSegmentos, (void*) comparar_tabla_segmentos_por_segmento_id);
-    t_segmento_tabla* segmentoTabla = list_get(memoria->tablaDeSegmentos, idSegmento);
+    t_segmento_tabla* segmentoTabla = list_get(memoria->tablaDeSegmentos, segmento->id);
     if (segmentoTabla != NULL) {
         if (segmentoTabla->idProceso == idProceso) {
             list_sort(memoria->tablaDeSegmentos, (void*) comparar_segmentos_por_segmento_id);
-            list_remove(memoria->segmentos, idSegmento);
-            list_remove(memoria->tablaDeSegmentos, idSegmento);
+            list_remove(memoria->segmentos, segmento->id);
+            list_remove(memoria->tablaDeSegmentos, segmento->id);
             log_info(loggerMemoria, ELIMINACION_DE_SEGMENTO,
-                idProceso, idSegmento, segmentoTabla->segmento->direccionBase, segmentoTabla->segmento->size);
+                idProceso, segmento->id, segmentoTabla->segmento->direccionBase, segmentoTabla->segmento->size);
 
-            return memoria->tablaDeSegmentos;
+            return AUX_OK;
         }
         log_error(loggerMemoria, "El proceso: No cuenta con los permisos suficientes para eliminar el segmento numero: %d", idProceso);
-        return NULL;
+        return AUX_PERMISOS_INSUFICIENTES;
     }
-    log_warning(loggerMemoria, "Se pidió eliminar un segmento que no existe, segmento numero: %d", idSegmento);
-    return NULL;
+    log_warning(loggerMemoria, "Se pidió eliminar un segmento que no existe, segmento numero: %d", segmento->id);
+    return AUX_ERROR;
 }
 
 // t_segmento* list_get_segmento(t_list* tablaSegmento, int index){
@@ -245,21 +243,19 @@ t_list* recalcular_huecos_libres() {
 }
 
 void* leer_espacio_usuario(void* direccion, size_t size, int demora) {
-    simular_tiempo_acceso(demora);
+    void* valor = malloc(sizeof(direccion));
+    // simular_tiempo_acceso(demora);
 
     // Realizar la lectura en la dirección indicada
-    return memcpy(malloc(sizeof(direccion)), direccion, size);
+    memcpy(valor, direccion, size);
+    return valor;
 }
 
 void* escribir_espacio_usuario(void* direccion, size_t size, void* valor, int demora) {
-    simular_tiempo_acceso(demora);
+    // simular_tiempo_acceso(demora);
 
-    // Realizar la escritura en la dirección indicada
     return memcpy(direccion, valor, size);
 }
-
-
-
 
 /////////////////////////////////////////////// Auxiliares ///////////////////////////////////
 
@@ -295,7 +291,7 @@ t_list* obtener_tabla_segmentos_por_proceso_id(int procesoId) {
     for(int i = 0; i < list_size(memoria->tablaDeSegmentos); i++) {
         segmentoTabla = list_get(memoria->tablaDeSegmentos, i);
 
-        if (segmentoTabla->idProceso == procesoId) {
+        if (segmentoTabla->idProceso == procesoId || segmentoTabla->idProceso == 0) {
             list_add(segmentos, segmentoTabla->segmento);
         }
     }
@@ -303,19 +299,7 @@ t_list* obtener_tabla_segmentos_por_proceso_id(int procesoId) {
     return segmentos;
 }
 
-// TODO Implementar recibir el segmento enviado por el kernel
-t_segmento* recibir_segmento_kernel(t_list* pcbRecibido){
-    t_segmento* segmento;
-    
-
-    return segmento;
-}
-
 ////////////////////////////////////////////////
-
-void* calcular_direccion(void* posicionBase, size_t desplazamiento) {
-    return (void*)((uintptr_t)posicionBase + desplazamiento);
-}
 
 void simular_tiempo_acceso(int demora) {
     // Para convertir milisegundos a segundos, se divide el valor por 1000.
@@ -381,11 +365,20 @@ void* obtener_base_segmento_worst_fit(size_t size){
     ** Comparar lista con el solicitado o espacio de hueco restante,
     ** ahora se compara todos los segmentos (huecos libres) que encontro, habria que comparar con el tamaño del segmento solicitado
     */
-    
+
+    recalcular_huecos_libres();
+    list_sort(memoria->huecosLibres, (void*) comparar_segmentos_por_mayor );
+    int cantidad_huecos_libres = list_size(memoria->huecosLibres);
+
+    if(cantidad_huecos_libres==0){
+    	return obtener_base_segmento_first_fit(size);
+    }
+
+    for (int i = 0; i < cantidad_huecos_libres; i++){
     recalcular_huecos_libres();
     list_sort(memoria->huecosLibres, (void*) comparar_segmentos_por_mayor );
     t_list* aux_huecos_libres = memoria->huecosLibres;
-    
+
     if(list_size(aux_huecos_libres)==0){
     	size_t total_memoria = total_memoria_asignada();
         size_t res = total_memoria-size; // Calcula el total de memoria asignada con el size del segmento a agregar
@@ -406,8 +399,9 @@ void* obtener_base_segmento_worst_fit(size_t size){
             return huecoLibre->direccionBase;
             }
         }
-        return NULL; //Segfault 
+    return NULL;
     }
+}
 
 void* obtener_base_segmento_best_fit(size_t size){
     t_hueco_libre* huecoLibre;
@@ -418,9 +412,9 @@ void* obtener_base_segmento_best_fit(size_t size){
     */
     recalcular_huecos_libres();
     list_sort(memoria->huecosLibres, (void*) comparar_segmentos_por_menor );
-    t_list* aux_huecos_libres = memoria->huecosLibres;
-    
-    if(list_size(aux_huecos_libres)==0){
+    int aux_huecos_libres = list_size(memoria->huecosLibres);
+
+    if(aux_huecos_libres==0){
     	size_t total_memoria = total_memoria_asignada();
 		size_t res = total_memoria-size;
         if(res>=0){
@@ -432,7 +426,7 @@ void* obtener_base_segmento_best_fit(size_t size){
         }
     }
 
-    for (int i = 0; i < list_size(aux_huecos_libres); i++){
+    for (int i = 0; i < aux_huecos_libres; i++){
 
         huecoLibre = list_get(memoria->huecosLibres,i);
         if ((uintptr_t)calcular_direccion(huecoLibre->direccionBase, huecoLibre->size) >=
@@ -447,14 +441,14 @@ void* obtener_base_segmento_best_fit(size_t size){
  * @param size_t size Tamaño pedido de memoria
  * Recorre memoria en busca de un espacio continuado libre con el tamaño dado,
  * aplicando uno de los algoritmos de asignacion de memoria
- * 
+ *
  * En caso de encontrarlo devuelve la posicion de memoria, sino devuelve NULL (segmentation fault)
  *
  * return void*
  */
 void* buscar_espacio_contiguo(size_t size) {
     void* direccionBase;
-    
+
    switch (memoria->algoritmo_asignacion) {
 		case FIRST_FIT:
 			direccionBase = obtener_base_segmento_first_fit(size);

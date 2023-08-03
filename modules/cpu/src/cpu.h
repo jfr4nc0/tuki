@@ -55,7 +55,6 @@ typedef struct ParametrosEScritura {
 extern registros_cpu* registrosCpu;
 
 void atender_kernel(int);
-void mostrar_pcb(PCB* );
 
 void cargar_config(t_config*);
 int ejecutar_instruccion(char** , PCB*);
@@ -65,10 +64,10 @@ char* fetch_instruccion(PCB* pcb);
 void guardar_contexto_de_ejecucion(PCB*);
 void handshake_memoria(int);
 void inicializar_registros();
-void procesar_instruccion(void*);
 void set_registro(char*, char*);
 void set_registros(PCB* pcb);
 void instruccion_set(char* registro,char* valor);
+
 char* recibir_valor_a_escribir(int clienteAceptado);
 uint32_t obtener_tamanio_segun_registro(char* registro);
 char* obtener_valor_registro(char* registro, registros_cpu *registrosCPU);
@@ -81,12 +80,10 @@ int obtener_base_segmento(PCB *pcb, int numeroSegmento,  int *tamanio);
 PCB* recibir_pcb(int);
 void enviar_pcb_desalojado_a_kernel(PCB*, int, codigo_operacion);
 void envio_pcb_a_kernel_con_codigo(int , PCB* , codigo_operacion );
-void agregar_pcb_a_paquete(t_paquete* , PCB* );
 
 void* get_registro_cpu(char* registro, registros_cpu* registrosCpu);
 
 void iterator(char* value);
-void agregar_valor_a_paquete(t_paquete* paquete, void* valor, int tamanio);
 
 pthread_mutex_t m_recibir_pcb;
 
@@ -97,21 +94,20 @@ pthread_mutex_t m_recibir_pcb;
 #define ERROR_SEGMENTATION_FAULT     "PID: <%d> - Error SEG_FAULT- Segmento: <NUMERO SEGMENTO> - Offset: <OFFSET> - Tamaño: <TAMAÑO>"
 ////////////////////////////////
 
-#define DEFAULT_LOG_PATH      "/home/utnso/eclipse-workspace/tp-2023-1c-KernelPanic/logs/cpu.log"
-#define DEFAULT_CONFIG_PATH   "/home/utnso/eclipse-workspace/tp-2023-1c-KernelPanic/tuki-pruebas/prueba-deadlock/cpu.config"
+#define DEFAULT_LOG_PATH      "../../../logs/cpu.log"
+#define DEFAULT_CONFIG_PATH   "tuki-pruebas/prueba-memoria/cpu.config"
+
 
 void devolver_pcb_kernel(PCB*, int, codigo_operacion);
 
 void agregar_registros_a_paquete_para_kernel(t_paquete* , registros_cpu* );
-void agregar_registro4bytes_a_paquete(t_paquete* , char[4] );
-void agregar_registro8bytes_a_paquete(t_paquete* , char[8] );
-void agregar_registro16bytes_a_paquete(t_paquete* , char[16] );
 
-void agregar_valor_a_paquete(t_paquete* , void* , int );
-void agregar_int_a_paquete(t_paquete* , int );
-void agregar_lista_a_paquete(t_paquete* , t_list* );
 char* agregarCaracterNulo(void* , uint32_t );
 int get_int_registro(char* );
 
+// uint32_t obtener_direccion_fisica(PCB *pcb,uint32_t dirLogica, uint32_t *numeroSegmento, uint32_t *offset, uint32_t *tamanioSegmento);
+void* convertir_dir_logica_a_fisica(PCB *pcb, char* dirLogica);
+void* obtener_base_segmento_puntero(PCB *pcb, uint32_t numeroSegmento,  uint32_t *tamanio);
+void* obtener_puntero_direccion_fisica(PCB *pcb,uint32_t dirLogica, uint32_t *numeroSegmento, uint32_t *offset, uint32_t *tamanioSegmento);
 
 #endif

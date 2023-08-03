@@ -10,9 +10,7 @@ int main(int argc, char** argv) {
 
     int servidorMemoria = iniciar_servidor(configInicial, loggerMemoria);
     inicializar_memoria(memoriaConfig->TAM_MEMORIA, memoriaConfig->TAM_SEGMENTO_0,memoriaConfig->ALGORITMO_ASIGNACION);
-
-	incializar_estructuras();
-//	testing_funciones();
+	pthread_mutex_init(&mutex_memoria_ocupada,NULL);
 
     atender_conexiones(servidorMemoria);
 
@@ -23,13 +21,10 @@ int main(int argc, char** argv) {
 	return 0;
 }
 
-void incializar_estructuras(){
-	pthread_mutex_init(&mutex_memoria_ocupada,NULL);
-}
 
 void testing_funciones(){
 	codigo_operacion res;
-	// res = inicializar_proceso(1,128);
+	res = inicializar_proceso(1, 128);
 	// res = crear_segmento_por_pid(1,100);
 	// res = crear_segmento_por_pid(1,80);
 }
@@ -114,54 +109,52 @@ void ejecutar_instrucciones(int cliente, char* modulo) {
 	while(1){
 		codigo_operacion codigoDeOperacion = recibir_operacion(cliente);
 		log_info(loggerMemoria, I__RECIBO_INSTRUCCION, codigoDeOperacion, modulo);
-    
 		pthread_mutex_lock(&mutex_memoria_ocupada);
-		administrar_instrucciones(cliente, codigoDeOperacion);
+		administrar_instrucciones(cliente, codigoDeOperacion, modulo);
 		pthread_mutex_unlock(&mutex_memoria_ocupada);
-  }
+    }
+
+    return;
 }
 
 void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion, char* modulo) {
     codigo_operacion codigoRespuesta = AUX_ERROR;
 
 	switch(codigoDeOperacion){
-		case AUX_CREATE_PCB: 
+		case AUX_CREATE_PCB:
 		{
 			t_list* listaRecibida = recibir_paquete(cliente);
 			int pid = *(int*)list_get(listaRecibida, 0);
-
 			codigoRespuesta = inicializar_proceso(pid, sizeof(int));
-			t_list* obtenerSegmentosPorIdProceso = obtener_tabla_segmentos_por_proceso_id(pid);
-
+			t_list* listaSegmentosPorPid = obtener_tabla_segmentos_por_proceso_id(pid);
+			log_info(loggerMemoria, CREACION_DE_PROCESO, pid);
 			if (codigoRespuesta == AUX_OK) {
-				log_info(loggerMemoria, CREACION_DE_PROCESO, pid);
-				enviar_operacion(cliente, codigoRespuesta, sizeof(obtenerSegmentosPorIdProceso), obtenerSegmentosPorIdProceso);
-			} else { enviar_codigo_operacion(cliente, codigoRespuesta); }
+				enviar_lista_segmentos_del_proceso(cliente, listaSegmentosPorPid, loggerMemoria);
+			} else {
+				enviar_codigo_operacion(cliente, codigoRespuesta);
+			}
 			break;
 		}
 		case I_CREATE_SEGMENT:
 		{
-			t_list* listaRecibida = recibir_paquete(cliente);
-			int pid = *(int*)list_get(listaRecibida, 0);
-
-			t_segmento* segmento = recibir_segmento_kernel(listaRecibida);
-			codigoRespuesta = crear_segmento_por_pid(pid, segmento);
-
+			t_segmento_tabla* tabla_segmento = recibir_segmento_por_pid(cliente);
+			 codigoRespuesta = crear_segmento_por_pid(tabla_segmento->idProceso, tabla_segmento->segmento);
 			if(codigoRespuesta == AUX_OK){
-				enviar_operacion(cliente,codigoRespuesta, sizeof(segmento->direccionBase), segmento->direccionBase);
+				t_list* listaSegmentosPorPid = obtener_tabla_segmentos_por_proceso_id(tabla_segmento->idProceso);
+				enviar_lista_segmentos_del_proceso(cliente, listaSegmentosPorPid, loggerMemoria);
 			} else { enviar_codigo_operacion(cliente, codigoRespuesta);}
 			break;
 		}
 		case I_DELETE_SEGMENT:
 		{
-			t_list* listaRecibida = recibir_paquete(cliente);
-			int pid = *(int*)list_get(listaRecibida, 0);
-
-			t_segmento* segmento = recibir_segmento_kernel(listaRecibida);
-			if(eliminar_segmento(pid, segmento->id)!=NULL){
-				enviar_codigo_operacion(cliente, AUX_OK);
-			} else {enviar_codigo_operacion(cliente, AUX_ERROR);}
-
+			t_segmento_tabla* tabla_segmento = recibir_segmento_por_pid(cliente);
+			codigoRespuesta = eliminar_segmento(tabla_segmento->idProceso, tabla_segmento->segmento);
+			if(codigoRespuesta == AUX_OK){
+				t_list* listaSegmentosPorPid = obtener_tabla_segmentos_por_proceso_id(tabla_segmento->idProceso);
+				enviar_lista_segmentos_del_proceso(cliente, listaSegmentosPorPid, loggerMemoria);
+			} else {
+				enviar_codigo_operacion(cliente, codigoRespuesta);
+			}
 			break;
 		}
 		case AUX_SOLICITUD_COMPACTACION:
@@ -172,7 +165,9 @@ void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion, 
 		}
 		case AUX_FINALIZAR_PROCESO:
 		{
-			// finalizar_proceso(pid); TODO
+			t_list* listaRecibida = recibir_paquete(cliente);
+			int pid = *(int*)list_get(listaRecibida, 0);
+			finalizar_proceso(pid);
 			// enviar_codigo_operacion(cliente,codigoRespuesta);
 			break;
 		}
@@ -181,11 +176,11 @@ void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion, 
 			int tamanio = 0;
 			int desplazamiento = 0;
 
-			t_buffer* buffer = recibir_buffer(tamanio, cliente);
+			t_buffer* buffer = recibir_buffer(&tamanio, cliente);
 
-			int id_proceso = leer_int(buffer, desplazamiento);
-			uint32_t direccionFisica = leer_uint32(buffer, desplazamiento);
-			uint32_t tamanio_a_leer= leer_uint32(buffer, desplazamiento);
+			int id_proceso = leer_int(buffer, &desplazamiento);
+			uint32_t direccionFisica = leer_uint32(buffer, &desplazamiento);
+			uint32_t tamanio_a_leer= leer_uint32(buffer, &desplazamiento);
 
 			leer_espacio_usuario((void*) direccionFisica, (size_t) tamanio_a_leer, memoriaConfig->RETARDO_MEMORIA);
 			log_info(loggerMemoria, LOG_ESCRIBIR_LEER, id_proceso, "LEER", direccionFisica, tamanio_a_leer, modulo);
@@ -198,12 +193,12 @@ void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion, 
 			int tamanio = 0;
 			int desplazamiento = 0;
 
-			t_buffer* buffer = recibir_buffer(tamanio, cliente);
+			t_buffer* buffer = recibir_buffer(&tamanio, cliente);
 
-			int id_proceso = leer_int(buffer, desplazamiento);
-			uint32_t direccionFisica = leer_uint32(buffer, desplazamiento);
-			uint32_t tamanio_a_leer= leer_uint32(buffer, desplazamiento);
-			char* bytes_a_escribir = leer_string(buffer, desplazamiento);
+			int id_proceso = leer_int(buffer, &desplazamiento);
+			uint32_t direccionFisica = leer_uint32(buffer, &desplazamiento);
+			uint32_t tamanio_a_leer= leer_uint32(buffer, &desplazamiento);
+			char* bytes_a_escribir = leer_string(buffer, &desplazamiento);
 
 			escribir_espacio_usuario((void*) direccionFisica, (size_t) tamanio_a_leer, (void*)bytes_a_escribir, memoriaConfig->RETARDO_MEMORIA);
 			log_info(loggerMemoria, LOG_ESCRIBIR_LEER, id_proceso, "ESCRIBIR", direccionFisica, tamanio_a_leer, modulo);
@@ -213,8 +208,11 @@ void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion, 
 		}
 		default:
 		{
-			log_error(loggerMemoria,E__CODIGO_INVALIDO);
+			log_error(loggerMemoria, E__CODIGO_INVALIDO);
 			enviar_codigo_operacion(cliente, AUX_ERROR);
+			liberar_conexion(cliente);
+			exit(EXIT_FAILURE);
+			return;
 			break;
 		}
 	}

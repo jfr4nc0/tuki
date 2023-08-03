@@ -91,10 +91,8 @@ t_list* procesar_instrucciones(int, t_list*, t_log*, t_config*);
 void cargar_config_kernel(t_config*, t_log*);
 void inicializar_escucha_conexiones_consolas(int);
 void recibir_de_consola(void*);
-void iterator(char* value);
 PCB* nuevo_proceso(t_list* , int);
 void enviar_proceso_a_ready();
-void mostrar_pcb(PCB*);
 
 double calculo_HRRN(PCB*);
 double rafaga_estimada(PCB*);
@@ -106,6 +104,7 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data);
 
 void recibir_proceso_desalojado(PCB*, int );
 PCB* recibir_pcb_de_cpu();
+
 
 void crear_hilo_planificadores();
 void proximo_a_ejecutar();
@@ -124,25 +123,6 @@ void inicializar_listas_estados();
 void mover_de_lista_con_sem(int idProceso, int estadoNuevo, int estadoAnterior);
 //////////////////
 
-// Funciones para enviar un pcb a cpu //////////////
-void agregar_pcb_a_paquete(t_paquete* , PCB* );
-void agregar_long_a_paquete(t_paquete* , long );
-void agregar_longlong_a_paquete(t_paquete* , long long );
-void agregar_lista_a_paquete(t_paquete* , t_list* );
-void agregar_int_a_paquete(t_paquete* , int );
-void agregar_arreglo_a_paquete(t_paquete* , char** );
-void agregar_valor_a_paquete(t_paquete* , void* , int );
-void agregar_registros_a_paquete(t_paquete* , registros_cpu* );
-void agregar_registro4bytes_a_paquete(t_paquete* , char[4] );
-void agregar_registro8bytes_a_paquete(t_paquete* , char[8] );
-void agregar_registro16bytes_a_paquete(t_paquete* , char[16] );
-
-void envio_pcb(int , PCB* , codigo_operacion );
-
-// PRUEBAS
-void envio_pcb_a_cpu(int , PCB* , codigo_operacion );
-void agregar_pcb_a_paquete_para_cpu(t_paquete* , PCB* );
-void agregar_registros_a_paquete_cpu(t_paquete* , registros_cpu* );
 PCB* recibir_proceso_desajolado(PCB* pcb_en_ejecucion);
 void destruir_segmento(t_segmento* segmento);
 
@@ -164,19 +144,23 @@ void instruccion_wait(PCB *, char *);
 ////////////////////////////////////////////////////
 
 int obtener_recursos(int);
+
+void enviar_f_read_write(PCB* pcb, char** instruccion, codigo_operacion codigoOperacion, void* direccionFisica);
+
 void terminar_proceso(PCB* , codigo_operacion);
 void instruccion_signal(PCB *pcb_en_ejecucion, char *nombre_recurso);
-void enviar_f_read_write(PCB* pcb, char**, codigo_operacion);
+
 void cambiar_estado_proceso_sin_semaforos(PCB* pcb, pcb_estado estadoNuevo);
 t_archivo_abierto* encontrar_archivo_abierto(t_list* listaArchivosAbiertos, char* nombreArchivo);
 
 int encontrar_index_archivo_abierto(t_list* listaArchivosAbiertos, char* nombreArchivo);
-void agregar_lista_archivos_a_paquete(t_paquete* paquete, t_list* lista);
 t_semaforo_recurso* inicializar_archivo_estado(t_nombre_estado nombreEstado);
-void iterator_debug(char*);
+
 int obtener_index_pcb_de_lista(int estado, int idProceso);
+
 char* obtener_motivo(codigo_operacion );
 void crear_segmento(PCB* pcb_recibido, char* id_segmento, char* tamanio);
+
 
 t_list* archivosAbiertosGlobal;
 
@@ -205,19 +189,21 @@ t_dictionary* diccionario_recursos;
 t_dictionary* tablaArchivosAbiertos;
 
 /*-------------------- LOGS OBLIGATORIOS ------------------*/
-#define ABRIR_ARCHIVO               "PID: %d - Abrir Archivo: %s realizado"
-#define ABRIR_ARCHIVO_BLOQUEADO     "PID: %d - Esperando para abrir Archivo: %s"
-#define ACTUALIZAR_PUNTERO_ARCHIVO  "PID: %d - Actualizar puntero Archivo: %s - Puntero <PUNTERO>" // Nota: El valor del puntero debe ser luego de ejecutar F_SEEK.
-#define CERRAR_ARCHIVO              "PID: %d - Cerrar Archivo: %s terminado"
-#define CERRAR_ARCHIVO_DESBLOQUEA_PCB "PID: %d - Al cerrar el Archivo: %s debloquea al PID %d"
-#define CREACION_DE_PROCESO         "Se crea el proceso %d en NEW"
-#define CREAR_SEGMENTO              "PID: %d - Crear Segmento - Id: %d - Tamaño: %d"
-#define ELIMINAR_SEGMENTO           "PID: %d - Eliminar Segmento - Id Segmento: %d"
-#define ESCRIBIR_ARCHIVO            "PID: %d -  Escribir Archivo: %s - Puntero <PUNTERO> - Dirección Memoria <DIRECCIÓN MEMORIA> - Tamaño <TAMAÑO>"
+#define ABRIR_ARCHIVO               "PID: <%d> - Abrir Archivo: <%s> realizado"
+#define ABRIR_ARCHIVO_BLOQUEADO     "PID: <%d> - Esperando para abrir Archivo: <%s>"
+#define ACTUALIZAR_PUNTERO_ARCHIVO  "PID: <%d> - Actualizar puntero Archivo: <%s> - Puntero <%d>" // Nota: El valor del puntero debe ser luego de ejecutar F_SEEK.
+#define CERRAR_ARCHIVO              "PID: <%d> - Cerrar Archivo: <%s> terminado"
+#define CERRAR_ARCHIVO_DESBLOQUEA_PCB "PID: <%d> - Al cerrar el Archivo: <%s> debloquea al PID <%d>"
+#define CREACION_DE_PROCESO         "Se crea el proceso <%d> en NEW"
+#define CREAR_SEGMENTO              "PID: <%d> - Crear Segmento - Id: <%d> - Tamaño: <%zu>"
+#define ELIMINAR_SEGMENTO           "PID: <%d> - Eliminar Segmento - Id Segmento: <%d>"
+#define ESCRIBIR_ARCHIVO            "PID: <%d> -  Escribir Archivo: <%s> - Puntero <%d> - Dirección Memoria <%p> - Tamaño <%zu>"
+
+
 #define FIN_COMPACTACIÓN            "Se finalizó el proceso de compactación"
 #define FIN_DE_PROCESO              "Finaliza el proceso %d - Motivo: %s" // MOTIVOS PUEDEN SER SUCCESS / SEG_FAULT / OUT_OF_MEMORY
 #define I_O                         "PID: %d - Ejecuta IO: <TIEMPO>"
-#define INGRESO_A_READY             "Cola Ready <ALGORITMO>: [<LISTA DE PIDS>]"
+#define INGRESO_A_READY             "Cola Ready %s: [<LISTA DE PIDS>]"
 #define INICIO_COMPACTACIÓN         "Compactación: <Se solicitó compactación / Esperando Fin de Operaciones de FS>"
 #define LEER_ARCHIVO                "PID: %d - Leer Archivo: %s - Puntero <PUNTERO> - Dirección Memoria <DIRECCIÓN MEMORIA> - Tamaño <TAMAÑO>"
 #define MOTIVO_DE_BLOQUEO           "PID: %d - Bloqueado por: <IO / NOMBRE_RECURSO / NOMBRE_ARCHIVO>"
@@ -227,8 +213,11 @@ t_dictionary* tablaArchivosAbiertos;
 #define LOG_CAMBIO_DE_ESTADO        "PID: %d - Estado Anterior: %s - Estado Actual: %s"
 #define F_SEEK_HECHO                "PID: %d - Instruccion F_SEEK hecha correctamente, archivo %s ahora apuntando al puntero %d"
 #define E__CREAR_SEGMENTO           "PID: %d - ERROR en crear Segmento - Id: %d - Tamaño: %d"
-#define E__ELIMINAR_SEGMENTO        "PID: %d - Eliminar Segmento - Id Segmento: %d"
+#define E__ELIMINAR_SEGMENTO        "Error al eliminar el segmento <Id:%d>"
+#define E__PERMISOS_INSUFICIENTES   "Permisos insuficientes para <PID:%d>"
 ////////////////////////////////////
 
 #define PATH_LOG_KERNEL             "../../../logs/kernel.log"
+#define PATH_CONFIG_KERNEL          "tuki-pruebas/prueba-memoria/kernel.config"
+
 #endif
