@@ -78,15 +78,30 @@ void ejecutar_instrucciones_kernel(void* cliente) {
                 void* direccionFisica;
                 int pidProceso;
 				recibir_buffer_escritura_lectura_archivo(clienteKernel, &nombreArchivo, &puntero, &direccionFisica, &cantidadBytes, &pidProceso);
-				log_info(loggerFileSystem, "Llego para escribir nombreArchivo <%s>, cantidadBytes <%d>, puntero<%d>, dir fisica <%p>, pid <%d>", nombreArchivo, cantidadBytes, direccionFisica, pidProceso);
-                devolver_instruccion_generico(leer_archivo(nombreArchivo, puntero, direccionFisica, cantidadBytes, pidProceso), clienteKernel);
+				log_info(loggerFileSystem, "Llego para LEER nombreArchivo <%s>, cantidadBytes <%d>, puntero<%d>, dir fisica <%p>, pid <%d>",
+                         nombreArchivo, cantidadBytes, puntero, direccionFisica, pidProceso);
+
+                char* lecturaHecha = leer_archivo(nombreArchivo, puntero, direccionFisica, cantidadBytes, pidProceso);
+                log_debug(loggerFileSystem, "Se leyo del archivo de bloques: <%s>. Escribiendo dicho valor en memoria...", (char*)lecturaHecha);
+
+                t_paquete* paquete = crear_paquete(I_F_WRITE);
+				agregar_int_a_paquete(paquete, pidProceso);
+				agregar_puntero_a_paquete(paquete, direccionFisica);
+				agregar_uint32_a_paquete(paquete, cantidadBytes);
+				agregar_a_paquete(paquete, lecturaHecha, strlen(lecturaHecha)+1);
+				enviar_paquete(paquete, conexionMemoria);
+				eliminar_paquete(paquete);
+
+	            codigo_operacion cod_op  = recibir_operacion(conexionMemoria);
+
+                enviar_codigo_operacion(clienteKernel, AUX_OK);
+                // devolver_instruccion_generico();
 				free(nombreArchivo);
 				// pthread_mutex_unlock(&m_instruccion);
 				break;
 			}
 			case I_F_WRITE: {
 				// pthread_mutex_lock(&m_instruccion);
-				char* respuesta;
 				char *nombreArchivo = NULL;
 				uint32_t cantidadBytes, puntero;
                 void* direccionFisica;
@@ -94,8 +109,8 @@ void ejecutar_instrucciones_kernel(void* cliente) {
 				recibir_buffer_escritura_lectura_archivo(clienteKernel, &nombreArchivo, &puntero, &direccionFisica, &cantidadBytes, &pidProceso);
 				log_info(loggerFileSystem, "Llego para escribir nombreArchivo <%s>, cantidadBytes <%d>, puntero<%d>, dir fisica <%p>, pid <%d>", nombreArchivo, cantidadBytes, puntero, direccionFisica, pidProceso);
 
-				// Envia a memoria para saber que tiene que escribir
-				t_paquete* paquete = crear_paquete(I_F_WRITE);
+				// Pide lectura a memoria para saber que tiene que escribir
+				t_paquete* paquete = crear_paquete(I_F_READ);
 				agregar_int_a_paquete(paquete, pidProceso);
 				agregar_puntero_a_paquete(paquete, direccionFisica);
 				agregar_uint32_a_paquete(paquete, cantidadBytes);
@@ -105,18 +120,19 @@ void ejecutar_instrucciones_kernel(void* cliente) {
                 int tamanio = 0;
 	            int desplazamiento = 0;
 
-	            recibir_operacion(conexionMemoria);
+	            codigo_operacion operacionOK = recibir_operacion(conexionMemoria);
                 void* buffer = recibir_buffer(&tamanio, conexionMemoria);
-                respuesta = leer_puntero(buffer, &desplazamiento);
+                char* respuesta = leer_string(buffer, &desplazamiento);
 
-                log_debug(loggerFileSystem, "Se va a escribir en los bloques el puntero %p", respuesta);
+                log_debug(loggerFileSystem, "Se va a escribir en los bloques el texto %s", respuesta);
 
-				escribir_archivo((char*)direccionFisica, nombreArchivo, puntero, cantidadBytes, direccionFisica);
+                devolver_instruccion_generico(escribir_archivo((char*)direccionFisica, nombreArchivo, puntero, cantidadBytes, direccionFisica), clienteKernel);
 				// char* informacionAEscribir = (char*)recibir_buffer_informacion_memoria(cantidadBytes);
                 // log_info(loggerFileSystem, "Escrito %s exitoso", informacionAEscribir);
 //				devolver_instruccion_generico(escribir_archivo(informacionAEscribir, nombreArchivo, puntero, cantidadBytes), clienteKernel);
 
 				free(nombreArchivo);
+				free(buffer);
 				// pthread_mutex_unlock(&m_instruccion);
 				break;
 			}

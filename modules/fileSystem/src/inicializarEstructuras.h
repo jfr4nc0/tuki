@@ -55,6 +55,7 @@ extern t_config_file_system* configFileSystem;
 extern t_bitmap* bitmap;
 extern t_dictionary* dictionaryFcbs;
 extern uint32_t SIZE_BLOQUE;
+extern uint32_t CANTIDAD_BLOQUES;
 
 void inicializar_estructuras(t_config* config);
 

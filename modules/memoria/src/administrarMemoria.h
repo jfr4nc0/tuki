@@ -46,7 +46,7 @@ void* calcular_direccion(void*, size_t);
 void* crear_segmento(int idProceso, size_t size);
 codigo_operacion eliminar_segmento(int idProceso, t_segmento*);
 char* leer_espacio_usuario(void* direccion, size_t size, int demora);
-void* escribir_espacio_usuario(void* direccion, size_t size, void* valor, int demora);
+void escribir_espacio_usuario(void* direccion, size_t size, void* valor, int demora);
 void simular_tiempo_acceso(int);
 void* buscar_espacio_contiguo(size_t);
 t_hueco_libre* proximo_hueco_libre(t_list*, void*);

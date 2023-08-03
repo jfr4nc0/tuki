@@ -6,6 +6,7 @@ t_config_file_system* configFileSystem;
 t_bitmap* bitmap;
 t_dictionary* dictionaryFcbs;
 uint32_t SIZE_BLOQUE;
+uint32_t CANTIDAD_BLOQUES;
 
 /*
 * Funciona como un main, usa todas las funciones que estan debajo
@@ -15,6 +16,7 @@ void inicializar_estructuras(t_config* config) {
     superbloque = crear_superbloque(DEFAULT_SUPERBLOQUE_PATH);
 
     SIZE_BLOQUE = superbloque->block_size;
+    CANTIDAD_BLOQUES = superbloque->block_count;
 
     abrir_bitmap(configFileSystem->PATH_BITMAP, superbloque->block_count);
 

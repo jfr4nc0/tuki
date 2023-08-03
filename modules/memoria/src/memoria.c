@@ -7,10 +7,11 @@ int main(int argc, char** argv) {
     loggerMemoria = iniciar_logger(DEFAULT_LOG_PATH, ENUM_MEMORIA);
     t_config* configInicial = iniciar_config(argv[1], loggerMemoria);
     cargar_config_memoria(configInicial);
-
-    int servidorMemoria = iniciar_servidor(configInicial, loggerMemoria);
+	int servidorMemoria = iniciar_servidor(configInicial, loggerMemoria);
     inicializar_memoria(memoriaConfig->TAM_MEMORIA, memoriaConfig->TAM_SEGMENTO_0,memoriaConfig->ALGORITMO_ASIGNACION);
 	pthread_mutex_init(&mutex_memoria_ocupada,NULL);
+	// crear_segmento(0, 6);
+	// void* probar = leer_espacio_usuario(0, 5, 0);
 
     atender_conexiones(servidorMemoria);
 
@@ -124,17 +125,17 @@ void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion, 
 		case I_F_WRITE: {
 			int tamanio = 0;
 			int desp = 0;
-//			recibir_operacion(cliente);
 			char* buffer = recibir_buffer(&tamanio, cliente);
 			int pid = leer_int(buffer, &desp);
 			void* direccionFisica = leer_puntero(buffer, &desp);
 			uint32_t cantidadBytes = leer_uint32(buffer, &desp);
-			char* respuesta = leer_espacio_usuario(direccionFisica, cantidadBytes, memoriaConfig->RETARDO_MEMORIA);
+			char* valorParaEscribir = leer_string(buffer, &desp);
+			escribir_espacio_usuario(direccionFisica, cantidadBytes, valorParaEscribir, memoriaConfig->RETARDO_MEMORIA);
 
 			t_paquete* paquete = crear_paquete(AUX_OK);
-			agregar_puntero_a_paquete(paquete, respuesta);
 			enviar_paquete(paquete, cliente);
 			eliminar_paquete(paquete);
+			break;
 			/*
 				agregar_int_a_paquete(paquete, pidProceso);
 				agregar_puntero_a_paquete(paquete, direccionFisica);
@@ -143,7 +144,20 @@ void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion, 
 			 */
 		}
 		case I_F_READ: {
+			int tamanio = 0;
+			int desp = 0;
+			char* buffer = recibir_buffer(&tamanio, cliente);
+			int pid = leer_int(buffer, &desp);
+			void* direccionFisica = leer_puntero(buffer, &desp);
+			uint32_t cantidadBytes = leer_uint32(buffer, &desp);
+			free(buffer);
+			char* respuesta = leer_espacio_usuario(direccionFisica, cantidadBytes, memoriaConfig->RETARDO_MEMORIA);
 
+			t_paquete* paquete = crear_paquete(AUX_OK);
+			agregar_a_paquete(paquete, (void*) respuesta, strlen(respuesta)+1);
+			enviar_paquete(paquete, cliente);
+			eliminar_paquete(paquete);
+			break;
 		}
 		case AUX_CREATE_PCB:
 		{

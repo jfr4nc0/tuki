@@ -348,7 +348,7 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
 
                 t_archivo_abierto* archivoAbierto = malloc(sizeof(t_archivo_abierto));
                 archivoAbierto->nombreArchivo = nombreArchivo;
-                archivoAbierto->puntero = NULL;
+                archivoAbierto->puntero = 0;
 
                 // abrir archivo proceso
                 list_add(pcb->lista_archivos_abiertos, archivoAbierto);
@@ -421,20 +421,20 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
                 uint32_t puntero = strtoul(instruccion[2], &endptr, 10);
                 t_archivo_abierto* archivoAbierto = encontrar_archivo_abierto(pcb->lista_archivos_abiertos, nombreArchivo);
                 archivoAbierto->puntero = puntero;
-                log_info(kernelLogger, F_SEEK_HECHO, pcb->id_proceso, nombreArchivo, puntero);
+                log_debug(kernelLogger, F_SEEK_HECHO, pcb->id_proceso, nombreArchivo, puntero);
                 agregar_a_lista_con_sem((void*)pcb, ENUM_EXECUTING);
                 sem_post(&sem_proceso_a_executing);
-
+                sem_post(&sem_cpu_disponible);
                 break;
             }
             case I_F_READ: {
-            	codigo_operacion cod_op = recibir_operacion(conexionFileSystem); // basura
-
-            	t_list* listaConSegmento = recibir_lista_segmentos(conexionFileSystem);
-            	agregar_a_lista_con_sem((void*)pcb, ENUM_BLOCKED);
-                enviar_f_read_write(pcb, instruccion, operacion, listaConSegmento);
-                codigo_operacion codRes = recibir_operacion(conexionFileSystem);
-				recibir_operacion(conexionFileSystem);
+            	codigo_operacion cod_op = recibir_operacion(conexionCPU); // basura
+				void* direccionFisica = recibir_puntero(conexionCPU);
+				agregar_a_lista_con_sem((void*)pcb, ENUM_BLOCKED);
+				enviar_f_read_write(pcb, instruccion, operacion, direccionFisica);
+				mover_de_lista_con_sem(pcb->id_proceso, ENUM_READY, ENUM_BLOCKED);
+				sem_post(&sem_proceso_a_ready_terminado);
+                sem_post(&sem_cpu_disponible);
                 break;
             }
             case I_F_WRITE: {
@@ -442,9 +442,9 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
                 void* direccionFisica = recibir_puntero(conexionCPU);
             	agregar_a_lista_con_sem((void*)pcb, ENUM_BLOCKED);
             	enviar_f_read_write(pcb, instruccion, operacion, direccionFisica);
-            	codigo_operacion codRes = recibir_operacion(conexionFileSystem);
             	mover_de_lista_con_sem(pcb->id_proceso, ENUM_READY, ENUM_BLOCKED);
-            	recibir_operacion(conexionFileSystem);
+            	sem_post(&sem_proceso_a_ready_terminado);
+                sem_post(&sem_cpu_disponible);
                 break;
             }
         	case I_EXIT: {
@@ -717,8 +717,7 @@ void enviar_f_read_write(PCB* pcb, char** instruccion, codigo_operacion codigoOp
 
     codigo_operacion codOp = recibir_operacion(conexionFileSystem);
     codigo_operacion codigoRespuesta = recibir_operacion(conexionFileSystem);
-    log_info(kernelLogger, "Codigo respuesta %d", codigoRespuesta);
-    free(archivoAbierto);
+
     pthread_mutex_unlock(&permiso_compactacion);
 }
 
