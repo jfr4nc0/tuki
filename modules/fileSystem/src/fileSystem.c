@@ -110,11 +110,9 @@ void ejecutar_instrucciones_kernel(void* cliente) {
                 respuesta = leer_puntero(buffer, &desplazamiento);
 
                 log_debug(loggerFileSystem, "Se va a escribir en los bloques el puntero %p", respuesta);
-                
-                log_debug(loggerFileSystem, "Respuesta es : %s", respuesta);
 
-				escribir_archivo(respuesta, nombreArchivo, puntero, cantidadBytes, direccionFisica);
-				char* informacionAEscribir = (char*)recibir_buffer_informacion_memoria(cantidadBytes);
+				escribir_archivo((char*)direccionFisica, nombreArchivo, puntero, cantidadBytes, direccionFisica);
+				// char* informacionAEscribir = (char*)recibir_buffer_informacion_memoria(cantidadBytes);
                 log_info(loggerFileSystem, "Escrito %s exitoso", informacionAEscribir);
 //				devolver_instruccion_generico(escribir_archivo(informacionAEscribir, nombreArchivo, puntero, cantidadBytes), clienteKernel);
 

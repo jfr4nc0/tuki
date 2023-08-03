@@ -125,7 +125,7 @@ void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion, 
 			int tamanio = 0;
 			int desp = 0;
 //			recibir_operacion(cliente);
-			void* buffer = recibir_buffer(&tamanio, cliente);
+			char* buffer = recibir_buffer(&tamanio, cliente);
 			int pid = leer_int(buffer, &desp);
 			void* direccionFisica = leer_puntero(buffer, &desp);
 			uint32_t cantidadBytes = leer_uint32(buffer, &desp);

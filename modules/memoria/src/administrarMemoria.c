@@ -242,8 +242,8 @@ t_list* recalcular_huecos_libres() {
     return memoria->huecosLibres;
 }
 
-void* leer_espacio_usuario(void* direccion, size_t size, int demora) {
-    void* valor = malloc(sizeof(direccion));
+char* leer_espacio_usuario(void* direccion, size_t size, int demora) {
+    char *valor = malloc(size * sizeof(char *));
     // simular_tiempo_acceso(demora);
 
     // Realizar la lectura en la dirección indicada
