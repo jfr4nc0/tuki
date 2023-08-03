@@ -15,12 +15,17 @@ int main(int argc, char** argv) {
     cargar_config(config);
 
     conexionCpuMemoria = armar_conexion(config, MEMORIA, loggerCpu);
-	pthread_mutex_init(&m_recibir_pcb,NULL);
-    enviar_codigo_operacion(conexionCpuMemoria, AUX_SOY_CPU);
+
+    //enviar_codigo_operacion(conexionCpuMemoria, AUX_SOY_CPU);
+
+    if (conexionCpuMemoria > 0) {
+    		enviar_operacion(conexionCpuMemoria, AUX_SOY_CPU, 0, 0);
+    }
 
     int servidorCPU = iniciar_servidor(config, loggerCpu);
     int clienteKernel = esperar_cliente(servidorCPU, loggerCpu);
 
+    pthread_mutex_init(&m_recibir_pcb,NULL);
     inicializar_registros();
 
     atender_kernel(clienteKernel);
@@ -38,7 +43,9 @@ void atender_kernel(int clienteKernel){
 	while(1) {
 		pthread_mutex_lock(&m_recibir_pcb);
 	    codigo_operacion codDePrueba1 = recibir_operacion(clienteKernel);
+	    //log_warning(loggerCpu, "el codigo recibido en cpu es %d", codDePrueba1);
 		PCB* pcb_a_ejecutar = recibir_pcb(clienteKernel);
+		//log_warning(loggerCpu, "SE RECIBIO EL PCB DE PID %d EN CPU", pcb_a_ejecutar->id_proceso);
 		ejecutar_proceso(pcb_a_ejecutar, clienteKernel);
 		pthread_mutex_unlock(&m_recibir_pcb);
 	}
@@ -195,17 +202,43 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 			break;
 		}
 		case I_MOV_IN:{
-			// MOV_IN (Registro, Dirección Lógica)
-			//instruccion_mov_in(instruccion[1],instruccion[2],pcb);
-			int numeroSegmento, offset, tamanioSegmento;
 
-			int dirLogica = atoi(instruccion[1]); // pasa de string a int
+			int dirLogica = atoi(instruccion[2]); // pasa de string a int
 			log_warning(loggerCpu, "la direccion logica obtenida por parametro es %d", dirLogica);
-			char* registro = strdup(instruccion[2]); // hace el malloc y copia en la varible
+			char* registro = strdup(instruccion[1]); // hace el malloc y copia en la varible
 			log_warning(loggerCpu, "el registro obtenido por parametro es %s", registro);
 
-			int dirFisica = obtener_direccion_fisica(pcb, dirLogica, &numeroSegmento, &offset, &tamanioSegmento);
+			int tamanio_registro = obtener_tamanio_registro(registro);
+
+			int dirFisica = obtener_direcc_fisica(pcb, dirLogica, tamanio_registro);
+
 			log_warning(loggerCpu, "la direccion fisica es %d", dirFisica);
+
+			/*TODO
+			if (dir_fisica == -1){
+				return SEG_FAULT;
+			}
+			*/
+
+			t_paquete* paquete = crear_paquete(I_MOV_IN);
+			agregar_int_a_paquete(paquete, pcb->id_proceso);
+			agregar_int_a_paquete(paquete, dirFisica);
+			agregar_int_a_paquete(paquete, tamanio_registro);
+			enviar_paquete(paquete, conexionCpuMemoria);
+			eliminar_paquete(paquete);
+
+			log_warning(loggerCpu, "PASA EL ENVIAR OPERACION");
+			char *valor = recibir_valor_a_escribir(conexionCpuMemoria);
+			log_warning(loggerCpu, "PASA EL recibir valor");
+
+			log_info(loggerCpu, "PID: %d  -Acción: LEER - Segmento: %d - Dirección Física: %d - Valor: %s", pcb->id_proceso, division_entera(dirLogica, configCpu->TAM_MAX_SEGMENTO), dirFisica, valor);
+
+			instruccion_set(registro, valor);
+
+			free(valor);
+
+
+			/*
 			int tamanioALeer = obtener_tamanio_segun_registro(registro);
 
 			if(tamanioALeer + offset <= tamanioSegmento){
@@ -228,58 +261,129 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 				hubo_interrupcion = true;
 			}
 			free(registro);
+			*/
 			break;
 		}
 		case I_MOV_OUT:{
-			// MOV_OUT (Dirección Lógica, Registro)
-			//instruccion_mov_out(instruccion[1],instruccion[2],pcb);
-			int numeroSegmento, offset, tamanioSegmento;
-
 			int dirLogica = atoi(instruccion[1]); // pasa de string a int
-
+			//log_warning(loggerCpu, "la direccion logica obtenida por parametro es %d", dirLogica);
 			char* registro = strdup(instruccion[2]); // hace el malloc y copia en la varible
+			//log_warning(loggerCpu, "el registro obtenido por parametro es %s", registro);
 
-			int dirFisica = obtener_direccion_fisica(pcb, dirLogica, &numeroSegmento, &offset, &tamanioSegmento);
+			int tamanio_registro = obtener_tamanio_registro(registro);
+
+			int dirFisica = obtener_direcc_fisica(pcb, dirLogica, tamanio_registro);
+
 			log_warning(loggerCpu, "la direccion fisica es %d", dirFisica);
-			int tamanioALeer = obtener_tamanio_segun_registro(registro);
 
-			if(tamanioALeer + offset <= tamanioSegmento){
-				registros_cpu *registrosCPU = pcb->registrosCpu;
-				char* valorRegistro = obtener_valor_registro(registro, registrosCPU);
-				void* bytesAEnviar = malloc(tamanioALeer);
-				memcpy(bytesAEnviar, valorRegistro, tamanioALeer);
-				log_acceso_a_memoria(pcb->id_proceso, "ESCRIBIR", numeroSegmento, dirFisica, bytesAEnviar,tamanioALeer);
+			/*TODO
+			if (dir_fisica == -1){
+				return SEG_FAULT;
+			}
+			*/
 
-				t_parametros_escritura* parametros_a_enviar = malloc(sizeof(t_parametros_lectura));
+			char* valor_registro = obtener_valor_registro(registro, pcb->registrosCpu);
 
-				parametros_a_enviar->id_proceso = pcb->id_proceso;
-				parametros_a_enviar->direccionFisica = dirFisica;
-				parametros_a_enviar->tamanio = tamanioALeer;
-				strcpy((parametros_a_enviar->bytes_a_enviar), ((char*)bytesAEnviar));
+			t_paquete* paquete = crear_paquete(I_MOV_OUT);
+			agregar_int_a_paquete(paquete, pcb->id_proceso);
+			agregar_int_a_paquete(paquete, dirFisica);
+			agregar_valor_a_paquete(paquete, valor_registro, strlen(valor_registro)+1);
+			enviar_paquete(paquete, conexionCpuMemoria);
+			eliminar_paquete(paquete);
 
-				enviar_operacion(conexionCpuMemoria, I_MOV_OUT, sizeof(t_parametros_escritura), parametros_a_enviar);
+			log_warning(loggerCpu, "PASA EL ENVIAR OPERACION");
 
-				if(recibir_operacion(conexionCpuMemoria) != AUX_OK){
-					log_error(loggerCpu, "No se pudo recibir la confirmacion de escritura");
-					exit(EXIT_FAILURE);
-				}
+			recibir_operacion(conexionCpuMemoria);
+			recibir_operacion(conexionCpuMemoria);
 
-				free(bytesAEnviar);
-				free(valorRegistro);
-				free(parametros_a_enviar);
-			} else{
-				//TODO: EL MOTIVO DE DESALOJO A ENVIAR A KERNEL ES SEGMENTATION FAULT
-				loggear_segmentation_fault(pcb->id_proceso, numeroSegmento, offset, tamanioSegmento);
-				hubo_interrupcion = true;
+			log_warning(loggerCpu, "PASA EL recibir valor");
+
+			log_info(loggerCpu, "PID: %d  -Acción: ESCRIBIR - Segmento: %d - Dirección Física: %d - Valor: %s", pcb->id_proceso, division_entera(dirLogica, configCpu->TAM_MAX_SEGMENTO), dirFisica, valor_registro);
+
 			}
 			break;
 		default:
 			log_error(loggerCpu,E__CODIGO_INVALIDO);
 		}
 
-	}
-
 	return operacion;
+}
+
+int obtener_tamanio_registro(char* registro){
+
+	int codigo = codigo_registro(registro);
+
+	switch(codigo){
+		case AX:{return 4;break;}
+		case BX:{return 4;break;}
+		case CX:{return 4;break;}
+		case DX:{return 4;break;}
+
+		case EAX:{return 8;break;}
+		case EBX:{return 8;break;}
+		case ECX:{return 8;break;}
+		case EDX:{return 8;break;}
+
+		case RAX:{return 16;break;}
+		case RBX:{return 16;break;}
+		case RCX:{return 16;break;}
+		case RDX:{return 16;break;}
+
+	}
+}
+
+int codigo_registro(char* registro){
+	if(strcmp(registro,"AX")==0){
+		return AX;
+	}else if(strcmp(registro,"BX")==0){
+		return BX;
+	}else if(strcmp(registro,"CX")==0){
+		return CX;
+	}else if(strcmp(registro,"DX")==0){
+		return DX;
+	}else if(strcmp(registro,"EAX")==0){
+		return EAX;
+	}else if(strcmp(registro,"EBX")==0){
+		return EBX;
+	}else if(strcmp(registro,"ECX")==0){
+		return ECX;
+	}else if(strcmp(registro,"EDX")==0){
+		return EDX;
+	}else if(strcmp(registro,"RAX")==0){
+		return RAX;
+	}else if(strcmp(registro,"RBX")==0){
+		return RBX;
+	}else if(strcmp(registro,"RCX")==0){
+		return RCX;
+	}else if(strcmp(registro,"RDX")==0){
+		return RDX;
+	}
+}
+long obtener_direcc_fisica(PCB* pcb, int dirLogica, int tamanio_registro){
+	//int numero_segmento = division_entera(dirLogica, configCpu->TAM_MAX_SEGMENTO);
+	int numero_segmento = floor(dirLogica/configCpu->TAM_MAX_SEGMENTO);
+
+	//int offset = dirLogica % configCpu->TAM_MAX_SEGMENTO;
+	int desplazamiento_segmento=dirLogica % configCpu->TAM_MAX_SEGMENTO;
+
+	log_info(loggerCpu, "OFFSET: %d, BYTEs: %d", desplazamiento_segmento, tamanio_registro);
+
+	if (desplazamiento_segmento + tamanio_registro > configCpu->TAM_MAX_SEGMENTO){
+			log_error(loggerCpu, "PID: %d - Error SEG_FAULT- Segmento: %d - Offset: %d - Tamaño: %d", pcb->id_proceso, numero_segmento, desplazamiento_segmento, tamanio_registro);
+			return -1;
+	}
+	segmento_t* segmento = list_get(pcb->lista_segmentos, numero_segmento);
+	//log_warning(loggerCpu, "EL ID DEL SEGMENTO ES: %d", segmento->id);
+	//log_warning(loggerCpu, "la direcc base DEL SEGMENTO ES: %d", (int)(intptr_t)segmento->direccion_base);
+	//log_warning(loggerCpu, "EL tamanio DEL SEGMENTO ES: %d", segmento->tamanio_segmento);
+
+	long direccion_fisica = (long)(segmento->direccion_base + desplazamiento_segmento);
+	//log_warning(loggerCpu, "la direcc fisica es %d", direccion_fisica);
+	return direccion_fisica;
+
+}
+int division_entera(int operando1, int operando2){
+	return (operando1 - (operando1 % operando2)) / operando2;
 }
 
 /************** INSTRUCCIONES ***************************/

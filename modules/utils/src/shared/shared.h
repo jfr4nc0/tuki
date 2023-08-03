@@ -133,7 +133,19 @@ typedef enum {
     AUX_PERMISOS_INSUFICIENTES,
 	SEGMENTO_CREADO,
 	OUT_OF_MEMORY,
-	COMPACTACION
+	COMPACTACION,
+	AX,
+	BX,
+	CX,
+	DX,
+	EAX,
+	EBX,
+	ECX,
+	EDX,
+	RAX,
+	RBX,
+	RCX,
+	RDX,
 }codigo_operacion;
 
 typedef struct {
@@ -151,6 +163,12 @@ typedef struct {
     size_t size;
     int id;
 } t_segmento;
+
+typedef struct{
+	int id;
+	void* direccion_base;
+	int tamanio_segmento;
+}segmento_t;
 
 typedef struct {
     t_segmento* segmento;
@@ -186,6 +204,7 @@ bool obtener_valores_para_logger(int, bool*, t_log_level*, char**);
 void mostrarListaSegmentos(t_list* segmentos);
 void mostrar_pcb(PCB* pcb, t_log* logger);
 void iteratorSinLog(char* value);
+
 
 long leer_long(char* buffer, int* desp);
 long long leer_long_long(char* buffer, int* desp);

@@ -584,7 +584,7 @@ void agregar_lista_segmentos_a_paquete(t_paquete* paquete, int cliente, t_list* 
 	agregar_int_a_paquete(paquete, list_size(segmentosTabla));
     for (int i = 0; i < list_size(segmentosTabla); i++) {
         t_segmento* segmento = list_get(segmentosTabla, i);
-        log_trace(logger, D__LOG_SEGMENTO, segmento->id, segmento->direccionBase, segmento->size);
+        //log_trace(logger, D__LOG_SEGMENTO, segmento->id, segmento->direccionBase, segmento->size);
         agregar_int_a_paquete(paquete, segmento->id);
         agregar_size_a_paquete(paquete, segmento->size);
         agregar_puntero_a_paquete(paquete, segmento->direccionBase);
@@ -615,10 +615,10 @@ t_list* recibir_resto_lista_segmentos(void* buffer, int* desp) {
     int cantidadSegmentos = leer_int(buffer, desp);
 
     for (int i = 0; i < cantidadSegmentos; i++) {
-    	t_segmento* segmento = malloc(sizeof(t_segmento));
+    	segmento_t* segmento = malloc(sizeof(segmento_t));
     	segmento->id = leer_int(buffer, desp);
-        segmento->size = leer_size(buffer, desp);
-        segmento->direccionBase = leer_puntero(buffer, desp);
+        segmento->tamanio_segmento = leer_size(buffer, desp);
+        segmento->direccion_base = leer_puntero(buffer, desp);
 
         list_add(listaSegmentos, segmento);
     }
@@ -668,6 +668,8 @@ void* leer_puntero(void* buffer, int* desp) {
 void iteratorSinLog(char* value) {
     printf("%s \n", value);
 }
+
+
 
 void mostrarListaSegmentos(t_list* segmentos) {
 	for (int indice = 0; indice < list_size(segmentos); indice++) {
@@ -1098,12 +1100,12 @@ void enviar_operacion(int conexion, codigo_operacion codOperacion, size_t tamani
 /*
  * Variable auxiliar, si solo me quiero identificar no hace falta que agregue ningun valor al paquete
  */
+
 void enviar_codigo_operacion(int conexion, codigo_operacion codigoOperacion) {
 	if (conexion > 0) {
 		enviar_operacion(conexion, codigoOperacion, 0, 0);
 	}
 }
-
 /*----------------------- FUNCIONES SERVIDOR -------------------*/
 int iniciar_servidor(t_config* config, t_log* logger) {
     int socket_servidor;
