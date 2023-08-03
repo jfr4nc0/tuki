@@ -63,8 +63,9 @@ codigo_operacion adapter_respuesta_segmento(int pid, void* respuesta, size_t siz
 }
 
 codigo_operacion inicializar_proceso(int pid, size_t pcbSize) {
-    void* respuesta = crear_segmento(pid, pcbSize);
-
+	log_warning(loggerMemoria, "ANTES DE crear_segmento");
+	void* respuesta = crear_segmento(pid, pcbSize);
+	log_warning(loggerMemoria, "DESPUES DE crear_segmento");
     return adapter_respuesta_segmento(pid,respuesta, pcbSize);
 }
 

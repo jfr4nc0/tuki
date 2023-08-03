@@ -95,7 +95,13 @@ void enviar_proceso_a_ready() {
 
         if (conexionMemoria > 0) {
             // Creo el pcb en memoria
-            enviar_operacion(conexionMemoria, AUX_CREATE_PCB, sizeof(int), string_itoa(pcb->id_proceso));
+            //enviar_operacion(conexionMemoria, AUX_CREATE_PCB, sizeof(int), string_itoa(pcb->id_proceso));
+
+        	t_paquete* paquete = crear_paquete(AUX_CREATE_PCB);
+        	agregar_int_a_paquete(paquete, pcb->id_proceso);
+        	enviar_paquete(paquete, conexionMemoria);
+        	eliminar_paquete(paquete);
+
             codigo_operacion codigoRespuesta = recibir_operacion(conexionMemoria);
             if (codigoRespuesta == AUX_ERROR) {
                 log_error(kernelLogger, "Segmentation fault la creacion del proceso %d, ", pcb->id_proceso);

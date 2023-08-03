@@ -9,24 +9,17 @@ int main(int argc, char** argv) {
     cargar_config_memoria(configInicial);
 
     int servidorMemoria = iniciar_servidor(configInicial, loggerMemoria);
-    inicializar_memoria(memoriaConfig->TAM_MEMORIA, memoriaConfig->TAM_SEGMENTO_0,memoriaConfig->ALGORITMO_ASIGNACION);
-	pthread_mutex_init(&mutex_memoria_ocupada,NULL);
 
     atender_conexiones(servidorMemoria);
+
+    inicializar_memoria(memoriaConfig->TAM_MEMORIA, memoriaConfig->TAM_SEGMENTO_0,memoriaConfig->ALGORITMO_ASIGNACION);
+    pthread_mutex_init(&mutex_memoria_ocupada,NULL);
 
     terminar_programa(servidorMemoria, loggerMemoria, configInicial);
     free(memoriaConfig);
     liberar_memoria();
 
 	return 0;
-}
-
-
-void testing_funciones(){
-	codigo_operacion res;
-	res = inicializar_proceso(1, 128);
-	// res = crear_segmento_por_pid(1,100);
-	// res = crear_segmento_por_pid(1,80);
 }
 
 void atender_conexiones(int servidorMemoria) {
@@ -96,7 +89,7 @@ void cargar_config_memoria(t_config* configInicial) {
     memoriaConfig->RETARDO_COMPACTACION = extraer_int_de_config(configInicial, "RETARDO_COMPACTACION", loggerMemoria);
     memoriaConfig->ALGORITMO_ASIGNACION = extraer_string_de_config(configInicial, "ALGORITMO_ASIGNACION", loggerMemoria);
 
-    log_info(loggerMemoria, I__CONFIG_GENERIDO_CARGADO, MEMORIA);
+    //log_info(loggerMemoria, I__CONFIG_GENERIDO_CARGADO, MEMORIA);
 }
 
 void iterator(char* value) {
@@ -117,17 +110,30 @@ void ejecutar_instrucciones(int cliente, char* modulo) {
     return;
 }
 
+void iteratorConLog(char* value) {
+    log_warning(loggerMemoria, "%s", value);
+}
+
 void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion, char* modulo) {
     codigo_operacion codigoRespuesta = AUX_ERROR;
 
 	switch(codigoDeOperacion){
-		case AUX_CREATE_PCB:
+		case AUX_CREATE_PCB: //TODO
 		{
-			t_list* listaRecibida = recibir_paquete(cliente);
-			int pid = *(int*)list_get(listaRecibida, 0);
+			void* buffer;
+			int tamanio = 0;
+			int desplazamiento = 0;
+
+			buffer = recibir_buffer(&tamanio, cliente);
+			int pid = leer_int(buffer, &desplazamiento);
+			log_warning(loggerMemoria, "El pid recibido para inicializar es: %d", pid);
 			codigoRespuesta = inicializar_proceso(pid, sizeof(int));
+			log_warning(loggerMemoria, "antes de obtener_tabla_segmentos_por_proceso_id");
 			t_list* listaSegmentosPorPid = obtener_tabla_segmentos_por_proceso_id(pid);
+			log_warning(loggerMemoria, "despues de obtener_tabla_segmentos_por_proceso_id");
+
 			log_info(loggerMemoria, CREACION_DE_PROCESO, pid);
+			log_warning(loggerMemoria, "despues del log");
 			if (codigoRespuesta == AUX_OK) {
 				enviar_lista_segmentos_del_proceso(cliente, listaSegmentosPorPid, loggerMemoria);
 			} else {

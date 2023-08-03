@@ -200,9 +200,12 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 			int numeroSegmento, offset, tamanioSegmento;
 
 			int dirLogica = atoi(instruccion[1]); // pasa de string a int
+			log_warning(loggerCpu, "la direccion logica obtenida por parametro es %d", dirLogica);
 			char* registro = strdup(instruccion[2]); // hace el malloc y copia en la varible
+			log_warning(loggerCpu, "el registro obtenido por parametro es %s", registro);
 
 			int dirFisica = obtener_direccion_fisica(pcb, dirLogica, &numeroSegmento, &offset, &tamanioSegmento);
+			log_warning(loggerCpu, "la direccion fisica es %d", dirFisica);
 			int tamanioALeer = obtener_tamanio_segun_registro(registro);
 
 			if(tamanioALeer + offset <= tamanioSegmento){
@@ -233,9 +236,11 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 			int numeroSegmento, offset, tamanioSegmento;
 
 			int dirLogica = atoi(instruccion[1]); // pasa de string a int
+
 			char* registro = strdup(instruccion[2]); // hace el malloc y copia en la varible
 
 			int dirFisica = obtener_direccion_fisica(pcb, dirLogica, &numeroSegmento, &offset, &tamanioSegmento);
+			log_warning(loggerCpu, "la direccion fisica es %d", dirFisica);
 			int tamanioALeer = obtener_tamanio_segun_registro(registro);
 
 			if(tamanioALeer + offset <= tamanioSegmento){
@@ -482,11 +487,13 @@ void loggear_segmentation_fault(uint32_t pid, uint32_t numSegmento, uint32_t off
 }
 
 int obtener_direccion_fisica(PCB* pcb, int dirLogica, int* numero_segmento, int* offset, int* tamanioSegmento) {
-
+	log_warning(loggerCpu, "entra a obtener_direccion_fisica");
     int tam_max_segmento = configCpu->TAM_MAX_SEGMENTO;
     *numero_segmento = dirLogica / tam_max_segmento;
     *offset = dirLogica % tam_max_segmento;
+    log_warning(loggerCpu, "antes de obtener_base_segmento");
     int base = obtener_base_segmento(pcb, *numero_segmento, tamanioSegmento);
+    log_warning(loggerCpu, "despues de obtener_base_segmento");
     int direccionFisica = base + *offset;
     return direccionFisica;
 }
@@ -494,13 +501,20 @@ int obtener_direccion_fisica(PCB* pcb, int dirLogica, int* numero_segmento, int*
 int obtener_base_segmento(PCB* pcb, int numeroSegmento,  int *tamanio){
 
     int cantidadSegmentos = list_size(pcb->lista_segmentos);
+
    	t_segmento* segmentoTabla; // TODO: direccionBase deberia ser int
 
    	for(int i = 0; i < cantidadSegmentos; i++){
    		segmentoTabla = list_get(pcb->lista_segmentos, i);
+   		log_warning(loggerCpu, "la base del segmento obtenido es %d", (int)(intptr_t)segmentoTabla->direccionBase);
+   		log_warning(loggerCpu, "el id del segmento obtenido es %d y el id del segmento de la tabla es %d", segmentoTabla->id, numeroSegmento);
    		if(segmentoTabla->id == numeroSegmento){
    			*tamanio = segmentoTabla->size;
-   			return *(int*)(segmentoTabla->direccionBase);
+   			log_warning(loggerCpu, "EL TAMAÑO DEL SEGMENTO ES %d", *tamanio);
+   			//int base = *(int*)(segmentoTabla->direccionBase);
+   			int base = (int)(intptr_t)segmentoTabla->direccionBase;
+   			log_warning(loggerCpu, "LA BASE DEL SEGMENTO ES %d", base);
+   			return base;
    		}
    	}
    	return -1;
