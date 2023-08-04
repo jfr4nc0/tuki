@@ -847,6 +847,7 @@ t_hueco *hueco = NULL;
     list_replace_and_destroy_element(tabla_segmentos_global, index, ts, (void *)liberar_tabla_segmentos);
     t_paquete *paquete = crear_paquete(AUX_OK);
     agregar_a_paquete_dato_serializado(paquete, &(segmento->direccionBase), sizeof(segmento->direccionBase));
+	log_debug(loggerMemoria, "CHICAS ESTO TIENE QUE RECIBIR KERNEL %p", segmento->direccionBase);
     log_info(loggerMemoria, "PID: <%d> - Crear Segmento: <%d> - Base: <%p> - TAMAÑO: <%d>", pcb->id_proceso, id_segmento, hueco->base, tamanio);
     return paquete;
 }
