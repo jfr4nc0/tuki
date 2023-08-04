@@ -169,6 +169,11 @@ typedef struct{
 }segmento_t;
 
 typedef struct {
+    int PID;
+    t_list* segmentos;
+} t_tabla_segmentos;
+
+typedef struct {
     t_segmento* segmento;
     int idProceso;
 } t_segmento_tabla;

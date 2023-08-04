@@ -148,7 +148,7 @@ char *leer_valor_direccion_fisica(long direccion_fisica, int tamanio, int pid, c
     memcpy((void*)valor, memoria_principal + direccion_fisica, tamanio);
     //memcpy((void*)valor, (void*)direccion_fisica, tamanio);
     log_info(loggerMemoria, "PID: <%d> - Acción: <LEER> - Dirección física: <%p> - Tamaño: <%d> - Origen: <%s>", pid, (void *)memoria_principal + direccion_fisica, tamanio, origen);
-    log_info(loggerMemoria, "el valor es %s", valor);
+    //log_info(loggerMemoria, "el valor es %s", valor);
     return valor;
 }
 
@@ -338,6 +338,7 @@ void ejecutar_kernel_pedido(void* socket){
 				serializar_todas_las_tablas_segmentos(tabla_segmentos_global, paquete);
 				enviar_paquete(paquete, socket_modulo);
 				eliminar_paquete(paquete);
+				break;
 			}
 	        case I_CREATE_SEGMENT:{
 
@@ -354,13 +355,11 @@ void ejecutar_kernel_pedido(void* socket){
 
 	        	log_warning(loggerMemoria, "%d %d %d", pcb->id_proceso, id_segmento, tamanio_segmento);
 
-				t_paquete* paquete = crear_segmento(id_segmento, tamanio_segmento, pcb);
+				t_paquete* paquete = crear_segmento(id_segmento, tamanio_segmento, pcb, socket_modulo);
 
 				enviar_paquete(paquete, socket_modulo);
 
 				eliminar_paquete(paquete);
-
-
 
 	        	/*
 	            // recibe
@@ -801,28 +800,23 @@ int obtener_index_tabla_segmentos(int PID){
     return index;
 }
 
-t_paquete* crear_segmento(int id_segmento, int tamanio, PCB* pcb) {
-t_hueco *hueco = NULL;
-    if (strcmp(memoriaConfig->ALGORITMO_ASIGNACION, "FIRST") == 0)
-    {
+t_paquete* crear_segmento(int id_segmento, int tamanio, PCB* pcb, int socket) {
+	t_hueco *hueco = NULL;
+    if (strcmp(memoriaConfig->ALGORITMO_ASIGNACION, "FIRST") == 0){
         hueco = get_hueco_con_first_fit(tamanio);
     }
-    else if (strcmp(memoriaConfig->ALGORITMO_ASIGNACION, "BEST") == 0)
-    {
+    else if (strcmp(memoriaConfig->ALGORITMO_ASIGNACION, "BEST") == 0){
         hueco = get_hueco_con_best_fit(tamanio);
     }
-    else if (strcmp(memoriaConfig->ALGORITMO_ASIGNACION, "WORST") == 0)
-    {
+    else if (strcmp(memoriaConfig->ALGORITMO_ASIGNACION, "WORST") == 0){
         hueco = get_hueco_con_worst_fit(tamanio);
     }
-    else
-    {
+    else{
         log_error(loggerMemoria, "Algoritmo de asignacion no valido");
         return NULL;
     }
 
-    if (!hueco && comprobar_compactacion(tamanio))
-    {
+    if (!hueco && comprobar_compactacion(tamanio))    {
         return crear_paquete(COMPACTACION);
     }
     else if (!hueco)
@@ -846,8 +840,14 @@ t_hueco *hueco = NULL;
 
     list_replace_and_destroy_element(tabla_segmentos_global, index, ts, (void *)liberar_tabla_segmentos);
     t_paquete *paquete = crear_paquete(AUX_OK);
-    agregar_a_paquete_dato_serializado(paquete, &(segmento->direccionBase), sizeof(segmento->direccionBase));
-	log_debug(loggerMemoria, "CHICAS ESTO TIENE QUE RECIBIR KERNEL %p", segmento->direccionBase);
+    //agregar_a_paquete_dato_serializado(paquete, &(segmento->direccionBase), sizeof(segmento->direccionBase));
+
+    agregar_a_paquete(paquete, segmento->direccionBase, (size_t)sizeof(segmento->direccionBase));
+
+    //enviar_paquete(paquete, socket);
+    //eliminar_paquete(paquete);
+
+	//log_debug(loggerMemoria, "CHICAS ESTO TIENE QUE RECIBIR KERNEL %p", segmento->direccionBase);
     log_info(loggerMemoria, "PID: <%d> - Crear Segmento: <%d> - Base: <%p> - TAMAÑO: <%d>", pcb->id_proceso, id_segmento, hueco->base, tamanio);
     return paquete;
 }

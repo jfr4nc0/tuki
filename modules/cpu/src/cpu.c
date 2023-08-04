@@ -212,11 +212,11 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 
 			int dirFisica = obtener_direcc_fisica(pcb, dirLogica, tamanio_registro);
 
-			/*TODO
-			if (dir_fisica == -1){
-				return SEG_FAULT;
+			log_warning(loggerCpu, "la direcc fisica es: %d", dirFisica);
+
+			if (dirFisica == -1){
+				return SEGMENTATION_FAULT;
 			}
-			*/
 
 			t_paquete* paquete = crear_paquete(I_MOV_IN);
 			agregar_int_a_paquete(paquete, pcb->id_proceso);
@@ -273,17 +273,15 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 			int dirFisica = obtener_direcc_fisica(pcb, dirLogica, tamanio_registro);
 			void* dirFisicaPuntero = (void*) dirFisica;
 
-			//log_warning(loggerCpu, "la direccion fisica es %d", dirFisica);
+			log_warning(loggerCpu, "la direccion fisica es %d", dirFisica);
 
 			char* valor_registro = obtener_valor_registro(registro, pcb->registrosCpu);
 
 			// char* valor_registro = registros_cpu_get_valor_registro("escribiendoTextoDePrueba", 16);
 
-			/*TODO
-			if (dir_fisica == -1){
-				return SEG_FAULT;
+			if (dirFisica == -1){
+				return SEGMENTATION_FAULT;
 			}
-			*/
 
 			t_paquete* paquete = crear_paquete(I_MOV_OUT);
 			agregar_int_a_paquete(paquete, pcb->id_proceso);

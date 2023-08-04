@@ -38,10 +38,7 @@ typedef struct {
         bool libre;
 } t_hueco;
 
-typedef struct {
-    int PID;
-    t_list* segmentos;
-} t_tabla_segmentos;
+
 typedef struct
 {
     int cantidad_parametros;
@@ -98,7 +95,7 @@ void comprobar_consolidacion_huecos_aledanios(int index_hueco);
 //t_ctx *recibir_contexto(int socket);
 //t_ctx *deserializar_contexto(void *buffer, int *desplazamiento);
 // void crear_segmento(PCB *proceso);
-t_paquete* crear_segmento(int id_segmento, int tamanio, PCB* pcb);
+t_paquete* crear_segmento(int id_segmento, int tamanio, PCB* pcb, int socket);
 
 void terminar_programa_memoria(int conexion, t_log* logger, t_config* config);
 
