@@ -294,8 +294,8 @@ void manejo_desalojo_pcb() {
         data->pcb = pcb_recibido;
 
         codigo_operacion res = manejo_instrucciones(data);
-        if(res==AUX_SOLO_CON_COMPACTACION){
-            data->operacion = AUX_SOLICITUD_COMPACTACION;
+        if(res==COMPACTACION){
+            data->operacion = COMPACTACION;
             res = manejo_instrucciones(data);
         }
 
@@ -313,6 +313,9 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
     char** instruccion = data->instruccion;
 
         switch(operacion) {
+            case COMPACTACION: {
+
+            }
             case I_YIELD: {
                	agregar_a_lista_con_sem((void*)pcb, ENUM_READY);
                	pcb->ready_timestamp = time(NULL);
@@ -501,34 +504,34 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
         		free(nombre_recurso);
         		break;
         	}
-            case AUX_SOLICITUD_COMPACTACION: {
-				pthread_mutex_lock(&permiso_compactacion);
-
-				log_info(kernelLogger,INICIO_COMPACTACIÓN);
-				enviar_operacion(conexionMemoria, operacion, sizeof(int),1);
-				res=recibir_operacion(conexionMemoria);
-
-				pthread_mutex_unlock(&permiso_compactacion);
-				if(res==AUX_OK){log_info(kernelLogger,FIN_COMPACTACIÓN);}
-				else{log_error(kernelLogger,"ERROR compactacion");}
-				break;
-			 }
 			 case I_CREATE_SEGMENT: { //id_segmento, tamanio
 
 				 int id_segmento = atoi(instruccion[1]);
 				 int tamanio_segmento = atoi(instruccion[2]);
 
+                 enviar_pcb(conexionMemoria, pcb, I_CREATE_SEGMENT, kernelLogger);
 				 t_paquete* paquete = crear_paquete(I_CREATE_SEGMENT);
-				 agregar_int_a_paquete(paquete, pcb->id_proceso);
-				 agregar_int_a_paquete(paquete, id_segmento);
-				 agregar_int_a_paquete(paquete, tamanio_segmento);
-				 enviar_paquete(paquete, conexionMemoria);
-				 eliminar_paquete(paquete);
 
-				 log_warning(kernelLogger, "%d %d %d", pcb->id_proceso, id_segmento, tamanio_segmento);
+                // enviar_pcb(conexionCPU, pcb, AUX_OK, kernelLogger);
+				agregar_int_a_paquete(paquete, id_segmento);
+				agregar_int_a_paquete(paquete, tamanio_segmento);
+				enviar_paquete(paquete, conexionMemoria);
+				eliminar_paquete(paquete);
 
+				log_warning(kernelLogger, "%d %d %d", pcb->id_proceso, id_segmento, tamanio_segmento);
 
+                codigo_operacion codigoRespuesa = recibir_operacion(conexionMemoria);
 
+                if (codigoRespuesa == AUX_OK) {
+                    char* buffer;
+                    int tamanio = 0;
+                    int desplazamiento = 0;
+                    buffer = recibir_buffer(&tamanio, conexionMemoria);
+                    int size = leer_int(buffer, &desplazamiento);
+                    void* direccionBase = leer_algo(buffer, &desplazamiento, size);
+                    sem_post(&sem_cpu_disponible);
+        		    sem_post(&sem_proceso_a_ready_terminado);
+                }
 
 				/*
 				t_segmento_tabla* tabla_segmento = malloc(sizeof(tabla_segmento));

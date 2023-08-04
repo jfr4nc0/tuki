@@ -121,8 +121,6 @@ typedef enum {
 	AUX_MENSAJE,
 	AUX_OK,
 	AUX_ERROR,
-    AUX_SOLO_CON_COMPACTACION,
-    AUX_SOLICITUD_COMPACTACION,
     AUX_FINALIZAR_PROCESO,
 	AUX_NEW_PROCESO, // Notifica a kernel que hay un nuevo proceso y se le envia la lista de instrucciones
 	AUX_SOY_CPU, // Notifica a memoria que el modulo que se conectó es CPU

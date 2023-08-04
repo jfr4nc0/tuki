@@ -72,6 +72,18 @@ void liberar_parametros_desalojo(t_parametros_variables *parametros_variables);
 void vaciar_parametros_desalojo(t_parametros_variables *parametros);
 void vaciar_parametros_desalojo(t_parametros_variables *parametros);
 
+
+void compactar();
+
+void serializar_todas_las_tablas_segmentos(t_list* tablas_segmentos, t_paquete* paquete);
+
+////////////
+t_hueco* get_hueco_con_best_fit(int tamanio);
+t_hueco* get_hueco_con_worst_fit(int tamanio);
+bool comprobar_compactacion(int tamanio);
+void modificar_lista_huecos(t_hueco* hueco, int tamanio);
+////////////
+
 void ejecutar_cpu_pedido(void*);
 
 void ejecutar_kernel_pedido(void* socket_modulo);
@@ -85,8 +97,8 @@ void liberar_tabla_segmentos(t_tabla_segmentos *ts);
 void comprobar_consolidacion_huecos_aledanios(int index_hueco);
 //t_ctx *recibir_contexto(int socket);
 //t_ctx *deserializar_contexto(void *buffer, int *desplazamiento);
-void crear_segmento(PCB *proceso);
-
+// void crear_segmento(PCB *proceso);
+t_paquete* crear_segmento(int id_segmento, int tamanio, PCB* pcb);
 
 void terminar_programa_memoria(int conexion, t_log* logger, t_config* config);
 

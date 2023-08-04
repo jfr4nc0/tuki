@@ -332,19 +332,33 @@ void ejecutar_kernel_pedido(void* socket){
 	            */
 	            break;
 	        }
+			case COMPACTACION: {
+				compactar();
+				paquete = crear_paquete(AUX_OK);
+				serializar_todas_las_tablas_segmentos(tabla_segmentos_global, paquete);
+				enviar_paquete(paquete, socket_modulo);
+				eliminar_paquete(paquete);
+			}
 	        case I_CREATE_SEGMENT:{
 
-	        	void* buffer;
-	        	int tamanio = 0;
-	        	int desplazamiento = 0;
+				PCB* pcb = recibir_pcb(socket_modulo);
 
+				recibir_operacion(socket_modulo);
+				void* buffer;
+				int tamanio = 0;
+				int desplazamiento = 0;
 	        	buffer = recibir_buffer(&tamanio, socket_modulo);
 
-	        	int pid = leer_int(buffer, &desplazamiento);
 	        	int id_segmento = leer_int(buffer, &desplazamiento);
 	        	int tamanio_segmento = leer_int(buffer, &desplazamiento);
 
-	        	log_warning(loggerMemoria, "%d %d %d", pid, id_segmento, tamanio_segmento);
+	        	log_warning(loggerMemoria, "%d %d %d", pcb->id_proceso, id_segmento, tamanio_segmento);
+
+				t_paquete* paquete = crear_segmento(id_segmento, tamanio_segmento, pcb);
+
+				enviar_paquete(paquete, socket_modulo);
+
+				eliminar_paquete(paquete);
 
 
 
@@ -370,7 +384,7 @@ void ejecutar_kernel_pedido(void* socket){
 	            ctx = recibir_contexto(*socket_modulo); // Porque no está inicializada??
 
 	            // elimina
-	            eliminar_segmento(ctx->tabla_segmentos, atoi(ctx->motivos_desalojo->parametros[0]), ctx->PID);
+	            eliminar_segmento(ctx->tabla_segmentos, atoi(ctx->motivos_desalojo->parametros[0]), pcb->id_proceso);
 
 	            // envia
 	            paquete = crear_paquete(DELETE_SEGMENT);
@@ -380,16 +394,6 @@ void ejecutar_kernel_pedido(void* socket){
 	            // libera
 	            eliminar_paquete(paquete);
 	            liberar_contexto(ctx);
-	            */
-	            break;
-	        }
-	        case AUX_SOLICITUD_COMPACTACION:{
-	        	/*
-	            compactar();
-	            paquete = crear_paquete(COMPACTAR);
-	            serializar_todas_las_tablas_segmentos(tabla_segmentos_global, paquete);
-	            enviar_paquete(paquete, *socket_modulo);
-	            eliminar_paquete(paquete);
 	            */
 	            break;
 	        }
@@ -403,6 +407,90 @@ void ejecutar_kernel_pedido(void* socket){
 	        }
 	    }
 }
+
+void serializar_todas_las_tablas_segmentos(t_list* tablas_segmentos, t_paquete* paquete){
+	agregar_a_paquete_dato_serializado(paquete, &tablas_segmentos->elements_count, sizeof(int));
+	for(int i = 0; i < list_size(tablas_segmentos); i++){
+		t_tabla_segmentos* tabla_segmentos = list_get(tablas_segmentos, i);
+		agregar_a_paquete_dato_serializado(paquete, &(tabla_segmentos->PID), sizeof(int));
+		serializar_tabla_segmentos(tabla_segmentos->segmentos, paquete);
+	}
+}
+
+void compactar()
+{
+    log_info(loggerMemoria, "Se solicita compactacion");
+    usleep(memoriaConfig->RETARDO_COMPACTACION * 250);
+    int nuevo_tamanio = 0;
+    void *base_del_primer_hueco = NULL;
+
+    for (int i = 1; i < list_size(lista_huecos); i++)
+    {
+        t_hueco *hueco = list_get(lista_huecos, i);
+
+        if (base_del_primer_hueco == hueco->base)
+        {
+            hueco->tamanio = nuevo_tamanio;
+            // eliminar los huecos que estan a la derecha del hueco que se esta compactando
+            for (int j = i + 1; j < list_size(lista_huecos); j++)
+            {
+                list_remove(lista_huecos, j);
+            }
+            break;
+        }
+
+        if (hueco->libre)
+        {
+            // agregarlo al final de la lista de huecos
+            list_remove(lista_huecos, i);
+            list_add(lista_huecos, hueco);
+            nuevo_tamanio += hueco->tamanio;
+            if (!base_del_primer_hueco)
+                base_del_primer_hueco = hueco->base;
+            i--;
+        }
+    }
+
+    // modificar las bases de los huecos en relacion a su tamanio (solo los ocupados)
+    t_hueco *hueco = list_get(lista_huecos, 0);
+    void *base_actual = hueco->base;
+    int tamanio_actual = hueco->tamanio;
+
+    for (int i = 1; i < list_size(lista_huecos); i++)
+    {
+        t_hueco *hueco = list_get(lista_huecos, i);
+        if (!hueco->libre)
+        {
+            // modificar la tabla de segmentos
+            // buscar el segmento en todas las tablas de segmentos
+            for (int j = 0; j < list_size(tabla_segmentos_global); j++)
+            {
+                t_tabla_segmentos *tabla_segmentos = list_get(tabla_segmentos_global, j);
+                for (int k = 1; k < list_size(tabla_segmentos->segmentos); k++)
+                {
+                    t_segmento *segmento = list_get(tabla_segmentos->segmentos, k);
+                    if (segmento->direccionBase == hueco->base)
+                    {
+                        segmento->direccionBase = base_actual + tamanio_actual;
+                        log_info(loggerMemoria, "PID: <%d> - Segmento: <%d> - Base: <%p> - TAMAÑO: <%zu>", tabla_segmentos->PID, k, segmento->direccionBase, segmento->size);
+                        break;
+                    }
+                }
+            }
+
+            hueco->base = base_actual + tamanio_actual;
+            base_actual = hueco->base;
+            tamanio_actual = hueco->tamanio;
+        }
+        else
+        {
+            hueco->base = base_actual + tamanio_actual;
+            tamanio_actual = hueco->tamanio;
+        }
+    }
+
+}
+
 //Recibir int
 int recibir_int(int socket){
     int size;
@@ -421,6 +509,7 @@ void serializar_tabla_segmentos(t_list *tabla_segmentos, t_paquete *paquete){
     for (int i = 0; i < tabla_segmentos->elements_count; i++)
     {
         segmento_t *segmento = list_get(tabla_segmentos, i);
+		// agregar_a_paquete
         agregar_a_paquete_dato_serializado(paquete, &(segmento->id), sizeof(int));
         agregar_a_paquete_dato_serializado(paquete, &(segmento->direccion_base), sizeof(void*));
         agregar_a_paquete_dato_serializado(paquete, &(segmento->tamanio_segmento), sizeof(int));
@@ -435,6 +524,7 @@ void agregar_a_paquete_dato_serializado(t_paquete *paquete, void *valor, int tam
 
 	paquete->buffer->size += tamanio;
 }
+
 t_list* deserializar_tabla_segmentos(void* buffer, int* desplazamiento){
 	t_list* tabla_segmentos = list_create();
 
@@ -531,6 +621,18 @@ void comprobar_consolidacion_huecos_aledanios(int index_hueco) {
         free(hueco_siguiente);
     }
 }
+
+void mostrar_tabla_global(){
+    for (int i = 0; i < tabla_segmentos_global->elements_count; i++){
+        t_tabla_segmentos* ts = list_get(tabla_segmentos_global, i);
+        log_info(loggerMemoria, "PID: %d", ts->PID);
+        for (int j = 0; j < ts->segmentos->elements_count; j++){
+            t_segmento* s = list_get(ts->segmentos, j);
+            log_info(loggerMemoria, "Base: %p, Tamanio: %zu, ID: %d", s->direccionBase, s->size, s->id);
+        }
+    }
+}
+
 /*
 t_ctx *recibir_contexto(int socket){
     int size;
@@ -552,8 +654,8 @@ t_ctx *deserializar_contexto(void *buffer, int *desplazamiento){
 	// Deserializo PID, PC y cant_instrucciones
 
 	// Aveces ocurre Segment Fault cuando cierras mal o algo así los módulos
-	memcpy(&ctx->PID, buffer + *desplazamiento, sizeof(ctx->PID));
-	*desplazamiento += sizeof(ctx->PID);
+	memcpy(&pcb->id_proceso, buffer + *desplazamiento, sizeof(pcb->id_proceso));
+	*desplazamiento += sizeof(pcb->id_proceso);
 	memcpy(&ctx->program_counter, buffer + *desplazamiento, sizeof(ctx->program_counter));
 	*desplazamiento += sizeof(ctx->program_counter);
 	memcpy(&ctx->cant_instrucciones, buffer + *desplazamiento, sizeof(ctx->cant_instrucciones));
@@ -580,8 +682,9 @@ t_ctx *deserializar_contexto(void *buffer, int *desplazamiento){
 
 	return ctx;
 }*/
+/*
 void crear_segmento(PCB *proceso){
-	/*
+
     // enviar a memoria CREATE_SEGMENT con sus 2 parametros (id del segmento y tamanio)
     // se solicita la creacion del segmento
     pthread_mutex_lock(&m_memoria);
@@ -630,8 +733,156 @@ void crear_segmento(PCB *proceso){
         pthread_mutex_unlock(&m_memoria);
         terminar_proceso(proceso, OUT_OF_MEMORY);
         break;
-    }*/
+
 }
+}*/
+
+t_hueco* get_hueco_con_best_fit(int tamanio){
+    t_hueco* hueco = NULL;
+    int tamanio_hueco = memoriaConfig->TAM_MEMORIA;
+    for (int i = 0; i < list_size(lista_huecos); i++) {
+        t_hueco* hueco_actual = list_get(lista_huecos, i);
+        if (hueco_actual->libre && hueco_actual->tamanio >= tamanio && hueco_actual->tamanio < tamanio_hueco) {
+            hueco = hueco_actual;
+            tamanio_hueco = hueco_actual->tamanio;
+        }
+    }
+    return hueco;
+}
+
+t_hueco* get_hueco_con_worst_fit(int tamanio){
+    t_hueco* hueco = NULL;
+    int tamanio_hueco = 0;
+    for (int i = 0; i < list_size(lista_huecos); i++) {
+        t_hueco* hueco_actual = list_get(lista_huecos, i);
+        if (hueco_actual->libre && hueco_actual->tamanio >= tamanio && hueco_actual->tamanio > tamanio_hueco) {
+            hueco = hueco_actual;
+            tamanio_hueco = hueco_actual->tamanio;
+        }
+    }
+    return hueco;
+}
+
+bool comprobar_compactacion(int tamanio){
+    // sumar el tamaño de todos los hueccos libres
+    int tamanio_huecos_libres = 0;
+    for (int i = 0; i < list_size(lista_huecos); i++) {
+        t_hueco* hueco_actual = list_get(lista_huecos, i);
+        if (hueco_actual->libre) {
+            tamanio_huecos_libres += hueco_actual->tamanio;
+        }
+    }
+
+    return tamanio_huecos_libres >= tamanio;
+}
+
+t_hueco* get_hueco_con_first_fit(int tamanio){
+    t_hueco* hueco = NULL;
+    // devuelve el primer hueco que encuentre que este libre
+    for (int i = 0; i < list_size(lista_huecos); i++) {
+        t_hueco* hueco_actual = list_get(lista_huecos, i);
+        if (hueco_actual->libre && hueco_actual->tamanio >= tamanio) {
+            hueco = hueco_actual;
+            break;
+        }
+    }
+    return hueco;
+}
+
+int obtener_index_tabla_segmentos(int PID){
+    int index = -1;
+    for (int i = 0; i < tabla_segmentos_global->elements_count; i++){
+        t_tabla_segmentos* ts = list_get(tabla_segmentos_global, i);
+        if (ts->PID == PID){
+            index = i;
+            break;
+        }
+    }
+    return index;
+}
+
+t_paquete* crear_segmento(int id_segmento, int tamanio, PCB* pcb) {
+t_hueco *hueco = NULL;
+    if (strcmp(memoriaConfig->ALGORITMO_ASIGNACION, "FIRST") == 0)
+    {
+        hueco = get_hueco_con_first_fit(tamanio);
+    }
+    else if (strcmp(memoriaConfig->ALGORITMO_ASIGNACION, "BEST") == 0)
+    {
+        hueco = get_hueco_con_best_fit(tamanio);
+    }
+    else if (strcmp(memoriaConfig->ALGORITMO_ASIGNACION, "WORST") == 0)
+    {
+        hueco = get_hueco_con_worst_fit(tamanio);
+    }
+    else
+    {
+        log_error(loggerMemoria, "Algoritmo de asignacion no valido");
+        return NULL;
+    }
+
+    if (!hueco && comprobar_compactacion(tamanio))
+    {
+        return crear_paquete(COMPACTACION);
+    }
+    else if (!hueco)
+    {
+        log_error(loggerMemoria, "No hay hueco disponible para crear el segmento");
+        return crear_paquete(OUT_OF_MEMORY);
+    }
+
+    modificar_lista_huecos(hueco, tamanio);
+
+    t_segmento *segmento = list_get(pcb->lista_segmentos, id_segmento);
+
+    memcpy(&(segmento->direccionBase), &hueco->base, sizeof(void *));
+    memcpy(&(segmento->size), &tamanio, sizeof(int));
+
+    t_tabla_segmentos *ts = malloc(sizeof(t_tabla_segmentos));
+    ts->PID = pcb->id_proceso;
+    ts->segmentos = pcb->lista_segmentos;
+
+    int index = obtener_index_tabla_segmentos(pcb->id_proceso);
+
+    list_replace_and_destroy_element(tabla_segmentos_global, index, ts, (void *)liberar_tabla_segmentos);
+    t_paquete *paquete = crear_paquete(AUX_OK);
+    agregar_a_paquete_dato_serializado(paquete, &(segmento->direccionBase), sizeof(segmento->direccionBase));
+    log_info(loggerMemoria, "PID: <%d> - Crear Segmento: <%d> - Base: <%p> - TAMAÑO: <%d>", pcb->id_proceso, id_segmento, hueco->base, tamanio);
+    return paquete;
+}
+
+int obtener_indice_de_lista_huecos(t_hueco* hueco) {
+    int index = -1;
+    for (int i = 0; i < list_size(lista_huecos); i++) {
+        t_hueco* hueco_actual = list_get(lista_huecos, i);
+        if (hueco_actual->base == hueco->base) {
+            index = i;
+            break;
+        }
+    }
+
+    return index;
+}
+
+void modificar_lista_huecos(t_hueco* hueco, int tamanio) {
+    // dividir el hueco en 2, uno para el segmento y otro para el hueco restante
+    t_hueco* hueco_restante = malloc(sizeof(t_hueco));
+    hueco_restante->base = hueco->base + tamanio;
+    hueco_restante->tamanio = hueco->tamanio - tamanio;
+    hueco_restante->libre = true;
+
+    hueco->tamanio = tamanio;
+    hueco->libre = false;
+
+    // usar el espacio en MEMORIA_PRINCIPAL
+    memset(hueco->base, 0, tamanio);
+    memset(hueco_restante->base, 0, hueco_restante->tamanio);
+
+    // agregar el hueco restante a la lista de huecos despues del hueco actual
+    int index_hueco = obtener_indice_de_lista_huecos(hueco);
+    list_add_in_index(lista_huecos, index_hueco + 1, hueco_restante);
+}
+
 void terminar_proceso(PCB* pcb_para_finalizar, codigo_operacion motivo_finalizacion){
 
 	//log_info(loggerMemoria, "Finaliza el proceso con PID %d - Motivo: %s", pcb_para_finalizar->id_proceso, obtener_motivo(motivo_finalizacion));

@@ -731,6 +731,7 @@ void enviar_pcb(int conexion, PCB* pcb_a_enviar, codigo_operacion codigo, t_log*
     eliminar_paquete(paquete);
 }
 
+
 void agregar_pcb_a_paquete(t_paquete* paquete, PCB* pcb, t_log* log) {
     agregar_registros_a_paquete(paquete, pcb->registrosCpu);
     agregar_int_a_paquete(paquete, pcb->id_proceso);
