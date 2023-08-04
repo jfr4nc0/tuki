@@ -214,11 +214,13 @@ t_log* iniciar_logger(char* pathLog, int moduloPos) {
 
     t_log *logger;
     char *directorioActual = get_current_dir_name();
-    free(directorioActual);
+
     if (( logger = log_create(pathLog, modulo, mostrarConsola, log_level)) == NULL ) {
-        printf(cantidad_strings_a_mostrar(2), E__LOGGER_CREATE, ENTER);
+        printf(cantidad_strings_a_mostrar(3), E__LOGGER_CREATE, directorioActual, ENTER);
+        free(directorioActual);
         exit(1);
     }
+    free(directorioActual);
     /*
     if (valoresPorDefecto) {
     	log_warning(logger, cantidad_strings_a_mostrar(4), D__LOG_CREADO, "-> ", pathLog, " con valores por defecto");
