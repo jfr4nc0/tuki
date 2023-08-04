@@ -605,33 +605,50 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
 				break;
 			 }
 			 case I_DELETE_SEGMENT: {
-				t_segmento_tabla* tabla_segmento = malloc(sizeof(tabla_segmento));
-				t_segmento* segmento = malloc(sizeof(segmento));
-				segmento->direccionBase = (void*)(intptr_t)0;
-				segmento->id = atoi(instruccion[1]);
-				segmento->size = 0;
-				 tabla_segmento->idProceso = pcb->id_proceso;
-				 tabla_segmento->segmento = segmento;
-				 enviar_segmento_por_pid(conexionMemoria,I_DELETE_SEGMENT,tabla_segmento);
-				res = recibir_operacion(conexionMemoria); // Recibe basura y no se bloquea
-				if (res == AUX_OK){
-                    // Agregar lista de segmentos actualizada al pcb
-                    pcb->lista_segmentos = recibir_lista_segmentos(conexionMemoria);
-					log_info(kernelLogger,ELIMINAR_SEGMENTO,pcb->id_proceso,segmento->id);
-				} else if (res==AUX_PERMISOS_INSUFICIENTES){
-					log_error(kernelLogger,E__PERMISOS_INSUFICIENTES,pcb->id_proceso);
-				} else {
-                    log_error(kernelLogger,E__ELIMINAR_SEGMENTO,segmento->id);
-                }
-				pcb->contador_instrucciones = pcb->contador_instrucciones+1;
-				agregar_a_lista_con_sem((void*)pcb, ENUM_EXECUTING);
-				sem_post(&sem_proceso_a_executing);
+
+				 pthread_mutex_lock(&mutex_memoria);
+				 int id_segmento = atoi(instruccion[1]);
+
+				 enviar_pcb(conexionMemoria, pcb, I_DELETE_SEGMENT, kernelLogger);
+				 t_paquete* paquete = crear_paquete(I_DELETE_SEGMENT);
+
+				 // enviar_pcb(conexionCPU, pcb, AUX_OK, kernelLogger);
+				 agregar_int_a_paquete(paquete, id_segmento);
+				 enviar_paquete(paquete, conexionMemoria);
+				 eliminar_paquete(paquete);
+
+				 codigo_operacion codigoRespuesa = recibir_operacion(conexionMemoria);
+
+				 if (codigoRespuesa == AUX_OK) {
+					 t_list *tabla_segmentos_actualizada = recibir_tabla_segmentos(conexionMemoria);
+
+					 //cambiar la tabla de segmentos del proceso por la nueva
+					 list_clean_and_destroy_elements(pcb->lista_segmentos, free);
+					 pcb->lista_segmentos = tabla_segmentos_actualizada;
+
+					 pthread_mutex_unlock(&mutex_memoria);
+
+					 log_info(kernelLogger, "PID: <%d> - Eliminar Segmento - Id Segmento: <%d>", pcb->id_proceso, id_segmento);
+				 }
+
 				break;
 			 }
 			 default: {
 				 break;
 			 }
         }
+}
+t_list* recibir_tabla_segmentos(int socket_cliente){
+    int size;
+    void* buffer = recibir_buffer(&size, socket_cliente);
+
+    int desplazamiento = 0;
+
+    t_list* tabla_segmentos = deserializar_tabla_segmentos(buffer, &desplazamiento);
+
+    free(buffer);
+
+    return tabla_segmentos;
 }
 t_list* recibir_todas_las_tablas_segmentos(int socket_cliente){
 	int size;
@@ -710,7 +727,7 @@ PCB *buscar_proceso(int pid_buscado){
     if (resulatdo_buesqueda != -1)
         return get_de_lista_blockfs(resulatdo_buesqueda);
 
-    log_info(LOGGER_KERNEL, "No hay proceso con PID: <%d> al que se le pueda actualizar la tabla de segmetnos", pid_buscado);
+    log_info(kernelLogger, "No hay proceso con PID: <%d> al que se le pueda actualizar la tabla de segmetnos", pid_buscado);
 
     return NULL;
 }
