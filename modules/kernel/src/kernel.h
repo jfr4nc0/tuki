@@ -74,8 +74,11 @@ typedef struct {
 }t_semaforo_recurso;
 
 pthread_mutex_t permiso_compactacion;
+pthread_mutex_t mutex_memoria;
 
 /*----------------- FUNCIONES ------------------*/
+
+void iteratorConLog(char* value);
 
 void inicializar_estructuras();
 void _planificador_largo_plazo();

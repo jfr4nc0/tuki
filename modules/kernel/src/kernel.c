@@ -93,14 +93,23 @@ void enviar_proceso_a_ready() {
 
         PCB* pcb = list_get(lista_estados[ENUM_NEW], 0);
 
+        pthread_mutex_lock(&mutex_memoria);
         if (conexionMemoria > 0) {
             // Creo el pcb en memoria
-            // enviar_operacion(conexionMemoria, AUX_CREATE_PCB, sizeof(int), string_itoa(pcb->id_proceso));
+
         	t_paquete* paquete = crear_paquete(AUX_CREATE_PCB);
         	agregar_int_a_paquete(paquete, pcb->id_proceso);
         	enviar_paquete(paquete, conexionMemoria);
         	eliminar_paquete(paquete);
+
+        	recibir_operacion(conexionMemoria);
+        	pcb->lista_segmentos = recibir_lista_segmentos(conexionMemoria);
+
+            //list_iterate(pcb->lista_segmentos, (void*)iteratorConLog);
+        	/*
+
             codigo_operacion codigoRespuesta = recibir_operacion(conexionMemoria);
+            log_warning(kernelLogger, "el cod op recibido de memoria es %d", codigoRespuesta);
             if (codigoRespuesta == AUX_ERROR) {
                 log_error(kernelLogger, "Segmentation fault la creacion del proceso %d, ", pcb->id_proceso);
             } else if (codigoRespuesta == AUX_SOLO_CON_COMPACTACION) {
@@ -112,7 +121,9 @@ void enviar_proceso_a_ready() {
             } else {
                 log_error(kernelLogger, "Error interno en Modulo Memoria para crear proceso id: %d.", pcb->id_proceso);
             }
+            */
         }
+        pthread_mutex_unlock(&mutex_memoria);
 
         sem_wait(&sem_grado_multiprogamacion);
         sem_wait(&sem_lista_estados[ENUM_READY]);
@@ -122,6 +133,10 @@ void enviar_proceso_a_ready() {
         sem_post(&sem_lista_estados[ENUM_READY]);
         sem_post(&sem_proceso_a_ready_terminado);
     }
+}
+
+void iteratorConLog(char* value) {
+    log_warning(kernelLogger, "%s", value);
 }
 
 void iterator_id_proceso(PCB* pcb) {
@@ -234,6 +249,7 @@ void _planificador_corto_plazo() {
 
 void manejo_desalojo_pcb() {
     while(1) {
+
         sem_wait(&sem_proceso_a_executing);
 
         sem_wait(&sem_lista_estados[ENUM_EXECUTING]);
@@ -277,6 +293,7 @@ void manejo_desalojo_pcb() {
         data->instruccion = ultimaInstruccionDecodificada;
         data->operacion = operacionRecibida;
         data->pcb = pcb_recibido;
+
         codigo_operacion res = manejo_instrucciones(data);
         if(res==AUX_SOLO_CON_COMPACTACION){
             data->operacion = AUX_SOLICITUD_COMPACTACION;
@@ -919,7 +936,7 @@ char* obtener_motivo(codigo_operacion codigo_motivo){
 			break;
 		}
 		case WAIT_RECURSO_NO_EXISTENTE:{
-			return "EXIT_RECURSO_NO_EXISTENTE";
+			return "WAIT_RECURSO_NO_EXISTENTE";
 			break;
 		}
 		case SIGNAL_RECURSO_NO_EXISTENTE:{
@@ -1161,6 +1178,7 @@ void inicializar_semaforos() {
     sem_init(&proceso_para_finalizar, 0, 0);
     sem_init(&proceso_en_exit, 0, 0);
     sem_init(&sem_compactacion, 0, 1);
+    pthread_mutex_init(&mutex_memoria,NULL);
     // pthread_mutex_init(mutexTablaAchivosAbiertos, NULL);
     /* TODO: JOAN Y JOACO
      * LOS CHICOS TENIAN ESTOS TAMBIEN Y ES PROBABLE QUE LOS NECESITEN

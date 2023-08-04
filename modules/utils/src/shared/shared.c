@@ -358,16 +358,6 @@ char* leer_registro_16_bytes(char* buffer, int* desp){
 	return leer_texto(buffer, desp, 16);
 }
 
-char* leer_string(char* buffer, int* desp) {
-	int size = leer_int(buffer, desp);
-
-	char* respuesta = malloc(size);
-	memcpy(respuesta, buffer+(*desp), size);
-	(*desp)+=size;
-
-	return respuesta;
-}
-
 t_list* leer_string_array(char* buffer, int* desp) {
     int cantidadElementos = leer_int(buffer, desp);
     t_list* lista_instrucciones = list_create();
@@ -525,6 +515,34 @@ void agregar_registros_a_paquete(t_paquete* paquete, registros_cpu* registrosCpu
     agregar_registro16bytes_a_paquete(paquete, registrosCpu->RDX);
 }
 
+void agregar_registro_a_paquete(t_paquete* paquete, char* registro, int tamanio_registro) {
+	agregar_int_a_paquete(paquete, tamanio_registro);
+	if (tamanio_registro == 16) {
+		agregar_registro16bytes_a_paquete(paquete, registro);
+	}
+	if (tamanio_registro == 8) {
+		agregar_registro8bytes_a_paquete(paquete, registro);
+	}
+	if (tamanio_registro == 4) {
+		agregar_registro4bytes_a_paquete(paquete, registro);
+	}
+	return;
+}
+
+
+char* leer_registro_de_buffer(char* buffer, int desplazamiento) {
+    int tamanioRegistro = leer_int(buffer, &desplazamiento);
+    if (tamanioRegistro == 16) {
+        return leer_registro_16_bytes(buffer, &desplazamiento);
+    }
+    if (tamanioRegistro == 8) {
+        return leer_registro_8_bytes(buffer, &desplazamiento);
+    }
+    if (tamanioRegistro == 4) {
+        return leer_registro_4_bytes(buffer, &desplazamiento);
+    }
+}
+
 void agregar_registro4bytes_a_paquete(t_paquete* paquete, char valor[4]) {
     paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(int));
     memcpy(paquete->buffer->stream + paquete->buffer->size, (void*)valor, sizeof(int));
@@ -584,7 +602,7 @@ void agregar_lista_segmentos_a_paquete(t_paquete* paquete, int cliente, t_list* 
 	agregar_int_a_paquete(paquete, list_size(segmentosTabla));
     for (int i = 0; i < list_size(segmentosTabla); i++) {
         t_segmento* segmento = list_get(segmentosTabla, i);
-        log_trace(logger, D__LOG_SEGMENTO, segmento->id, segmento->direccionBase, segmento->size);
+        //log_trace(logger, D__LOG_SEGMENTO, segmento->id, segmento->direccionBase, segmento->size);
         agregar_int_a_paquete(paquete, segmento->id);
         agregar_size_a_paquete(paquete, segmento->size);
         agregar_puntero_a_paquete(paquete, segmento->direccionBase);
@@ -615,10 +633,10 @@ t_list* recibir_resto_lista_segmentos(void* buffer, int* desp) {
     int cantidadSegmentos = leer_int(buffer, desp);
 
     for (int i = 0; i < cantidadSegmentos; i++) {
-    	t_segmento* segmento = malloc(sizeof(t_segmento));
+    	segmento_t* segmento = malloc(sizeof(segmento_t));
     	segmento->id = leer_int(buffer, desp);
-        segmento->size = leer_size(buffer, desp);
-        segmento->direccionBase = leer_puntero(buffer, desp);
+        segmento->tamanio_segmento = leer_size(buffer, desp);
+        segmento->direccion_base = leer_puntero(buffer, desp);
 
         list_add(listaSegmentos, segmento);
     }
@@ -668,6 +686,8 @@ void* leer_puntero(void* buffer, int* desp) {
 void iteratorSinLog(char* value) {
     printf("%s \n", value);
 }
+
+
 
 void mostrarListaSegmentos(t_list* segmentos) {
 	for (int indice = 0; indice < list_size(segmentos); indice++) {
@@ -745,6 +765,15 @@ void agregar_valor_a_paquete(t_paquete* paquete, void* valor, int tamanio) {
     paquete->buffer->size += tamanio;
 }
 
+char* leer_string(char* buffer, int* desp) {
+	int size = leer_int(buffer, desp);
+
+	char* respuesta = malloc(size);
+	memcpy(respuesta, buffer+(*desp), size);
+	(*desp)+=size;
+
+	return respuesta;
+}
 
 PCB* recibir_pcb(int clienteAceptado) {
 	PCB* pcb = malloc(sizeof(PCB));
@@ -1098,12 +1127,12 @@ void enviar_operacion(int conexion, codigo_operacion codOperacion, size_t tamani
 /*
  * Variable auxiliar, si solo me quiero identificar no hace falta que agregue ningun valor al paquete
  */
+
 void enviar_codigo_operacion(int conexion, codigo_operacion codigoOperacion) {
 	if (conexion > 0) {
 		enviar_operacion(conexion, codigoOperacion, 0, 0);
 	}
 }
-
 /*----------------------- FUNCIONES SERVIDOR -------------------*/
 int iniciar_servidor(t_config* config, t_log* logger) {
     int socket_servidor;

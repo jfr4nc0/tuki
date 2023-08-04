@@ -37,7 +37,5 @@ uint32_t obtener_bloque_absoluto(t_fcb* fcb, uint32_t punteroFseek) ;
 uint32_t obtener_posicion_absoluta(t_fcb* fcb, uint32_t punteroFseek);
 void escribir_en_bloque(uint32_t posicion, uint32_t cantidadBytesAEscribir, char *informacionAEscribir);
 uint32_t buscar_siguiente_bloque(uint32_t bloqueActual, t_fcb *fcbArchivo);
-void* escribir_espacio_usuario(void* direccion, size_t size, void* valor, int demora);
-char* leer_espacio_usuario(void* direccion, size_t size, int demora);
 
 #endif
