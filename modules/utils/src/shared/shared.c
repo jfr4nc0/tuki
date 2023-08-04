@@ -467,7 +467,7 @@ char* encode_instruccion(char** strings) {
 
 
 int armar_conexion(t_config* config, char* modulo, t_log* logger) {
-    char* ip = extraer_de_modulo_config(config, IP_CONFIG, modulo, logger);
+	char* ip = extraer_de_modulo_config(config, IP_CONFIG, modulo, logger);
     char* puerto = extraer_de_modulo_config(config, PUERTO_CONFIG, modulo, logger);
 
     //log_debug(logger, D__ESTABLECIENDO_CONEXION, modulo);
@@ -733,6 +733,7 @@ void enviar_pcb(int conexion, PCB* pcb_a_enviar, codigo_operacion codigo, t_log*
     eliminar_paquete(paquete);
 }
 
+
 void agregar_pcb_a_paquete(t_paquete* paquete, PCB* pcb, t_log* log) {
     agregar_registros_a_paquete(paquete, pcb->registrosCpu);
     agregar_int_a_paquete(paquete, pcb->id_proceso);
@@ -844,6 +845,9 @@ int crear_conexion(char *ip, char* puerto, char* modulo, t_log* logger) {
     int clienteAceptado = socket(server_info->ai_family,
             server_info->ai_socktype,
             server_info->ai_protocol);
+
+    int val = 1;
+    setsockopt(clienteAceptado, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val));
 
     // Ahora que tenemos el socket, vamos a conectarlo
     if (connect(clienteAceptado, server_info->ai_addr, server_info->ai_addrlen) != -1) {

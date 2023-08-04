@@ -40,10 +40,7 @@ typedef struct {
         bool libre;
 } t_hueco;
 
-typedef struct {
-    int PID;
-    t_list* segmentos;
-} t_tabla_segmentos;
+
 typedef struct
 {
     int cantidad_parametros;
@@ -74,6 +71,19 @@ void liberar_parametros_desalojo(t_parametros_variables *parametros_variables);
 void vaciar_parametros_desalojo(t_parametros_variables *parametros);
 void vaciar_parametros_desalojo(t_parametros_variables *parametros);
 
+
+void compactar();
+void eliminar_segmento(t_list *tabla_segmentos, int id_segmento, int PID);
+int obtener_index_tabla_segmentos(int PID);
+void serializar_todas_las_tablas_segmentos(t_list* tablas_segmentos, t_paquete* paquete);
+
+////////////
+t_hueco* get_hueco_con_best_fit(int tamanio);
+t_hueco* get_hueco_con_worst_fit(int tamanio);
+bool comprobar_compactacion(int tamanio);
+void modificar_lista_huecos(t_hueco* hueco, int tamanio);
+////////////
+
 void ejecutar_cpu_pedido(void*);
 
 void ejecutar_kernel_pedido(void* socket_modulo);
@@ -87,12 +97,12 @@ void liberar_tabla_segmentos(t_tabla_segmentos *ts);
 void comprobar_consolidacion_huecos_aledanios(int index_hueco);
 //t_ctx *recibir_contexto(int socket);
 //t_ctx *deserializar_contexto(void *buffer, int *desplazamiento);
-void crear_segmento(PCB *proceso);
-
+// void crear_segmento(PCB *proceso);
+t_paquete* crear_segmento(int id_segmento, int tamanio, PCB* pcb, int socket);
 
 void terminar_programa_memoria(int conexion, t_log* logger, t_config* config);
 
-void escribir_valor_en_memoria(long dirFisica, void* bytesRecibidos, uint32_t tamanio);
+void escribir_valor_en_memoria(long dirFisica, void* bytesRecibidos, uint32_t tamanio, int pid, char *origen);
 
 char* leer_espacio_usuario(void* direccion, size_t size);
 

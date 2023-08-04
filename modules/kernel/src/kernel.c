@@ -18,14 +18,16 @@ int main(int argc, char** argv) {
     cargar_config_kernel(config, kernelLogger);
 
     conexionFileSystem = armar_conexion(config, FILE_SYSTEM, kernelLogger);
+    if(conexionMemoria > 0){
+    	enviar_codigo_operacion(conexionMemoria, AUX_SOY_KERNEL);
+    }
 
-    enviar_codigo_operacion(conexionMemoria, AUX_SOY_KERNEL); // Le dice a memoria que módulo se conectó
+    int servidorKernel = iniciar_servidor(config, kernelLogger);
 
     inicializar_estructuras();
 
     inicializar_diccionario_recursos();
 
-    int servidorKernel = iniciar_servidor(config, kernelLogger);
 
 
     // TODO: Manejar multiples instancias de conexiones de consola al kernel
@@ -295,8 +297,9 @@ void manejo_desalojo_pcb() {
         data->pcb = pcb_recibido;
 
         codigo_operacion res = manejo_instrucciones(data);
-        if(res==AUX_SOLO_CON_COMPACTACION){
-            data->operacion = AUX_SOLICITUD_COMPACTACION;
+
+        if(res==I_CREATE_SEGMENT){
+            data->operacion = I_CREATE_SEGMENT;
             res = manejo_instrucciones(data);
         }
 
@@ -504,29 +507,88 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
         		free(nombre_recurso);
         		break;
         	}
-            case AUX_SOLICITUD_COMPACTACION: {
-				pthread_mutex_lock(&permiso_compactacion);
+			 case I_CREATE_SEGMENT: { //id_segmento, tamanio
+				 pthread_mutex_lock(&mutex_memoria);
+				 int id_segmento = atoi(instruccion[1]);
+				 int tamanio_segmento = atoi(instruccion[2]);
 
-				log_info(kernelLogger,INICIO_COMPACTACIÓN);
-				enviar_operacion(conexionMemoria, operacion, sizeof(int),1);
-				res=recibir_operacion(conexionMemoria);
+                 enviar_pcb(conexionMemoria, pcb, I_CREATE_SEGMENT, kernelLogger);
+				 t_paquete* paquete = crear_paquete(I_CREATE_SEGMENT);
 
-				pthread_mutex_unlock(&permiso_compactacion);
-				if(res==AUX_OK){log_info(kernelLogger,FIN_COMPACTACIÓN);}
-				else{log_error(kernelLogger,"ERROR compactacion");}
-				break;
-			 }
-			 case I_CREATE_SEGMENT: {
-                t_segmento_tabla* tabla_segmento = malloc(sizeof(tabla_segmento));
-				t_segmento* segmento = malloc(sizeof(segmento));
+                // enviar_pcb(conexionCPU, pcb, AUX_OK, kernelLogger);
+				agregar_int_a_paquete(paquete, id_segmento);
+				agregar_int_a_paquete(paquete, tamanio_segmento);
+				enviar_paquete(paquete, conexionMemoria);
+				eliminar_paquete(paquete);
+
+                codigo_operacion codigoRespuesa = recibir_operacion(conexionMemoria);
+
+                if (codigoRespuesa == AUX_OK) {
+                    char* buffer;
+                    int tamanio = 0;
+                    int desplazamiento = 0;
+                    buffer = recibir_buffer(&tamanio, conexionMemoria);
+
+                    segmento_t *segmento = list_get(pcb->lista_segmentos, id_segmento);
+                    memcpy(&(segmento->direccion_base), buffer, sizeof(segmento->direccion_base));
+                    segmento->tamanio_segmento = tamanio_segmento;
+                    free(buffer);
+
+                    // TODO: revisar el valor de segmento->id que llega
+
+                    /*
+                    int size_paquete = leer_int(buffer, &desplazamiento);
+                    //log_warning(kernelLogger, "el valor recibido de tamanio es %d", size_paquete);
+                    void* direccionBase = leer_algo(buffer, &desplazamiento, (size_t)size_paquete);
+                    //log_warning(kernelLogger, "el valor recibido de kernel de direccion_base es %p", (int)(intptr_t)direccionBase);
+                     */
+
+                    pthread_mutex_unlock(&mutex_memoria);
+                    log_info(kernelLogger, "PID: %d - Crear Segmento - Id: %d - Tamaño: %d", pcb->id_proceso, id_segmento, segmento->tamanio_segmento);
+                    agregar_a_lista_con_sem((void*)pcb, ENUM_EXECUTING);
+                    sem_post(&sem_proceso_a_executing);
+
+                }else if(codigoRespuesa == COMPACTACION){
+                    log_info(kernelLogger, "Compactación: <Se solicitó compactación / Esperando Fin de Operaciones de FS>");
+                    pthread_mutex_lock(&mutex_operaciones_fs);
+                    log_info(kernelLogger, "Inicia la compactacion");
+
+                    enviar_operacion(conexionMemoria, COMPACTACION, 0,0);
+                    recibir_operacion(conexionMemoria);
+                    recibir_operacion(conexionMemoria);
+
+
+                    t_list *tablas_de_segmentos_actualizadas = recibir_todas_las_tablas_segmentos(conexionMemoria);
+                    actualizar_todas_las_tablas_de_segmentos(tablas_de_segmentos_actualizadas);
+
+                    log_info(kernelLogger, "Se finalizó el proceso de compactación");
+                    pthread_mutex_unlock(&mutex_operaciones_fs);
+                    pthread_mutex_unlock(&mutex_memoria);
+                    return I_CREATE_SEGMENT;
+            	// TODO: falta terminar de implementar
+                    break;
+                }else if(codigoRespuesa == OUT_OF_MEMORY){
+                	pthread_mutex_unlock(&mutex_memoria);
+                	terminar_proceso(pcb, OUT_OF_MEMORY);
+                	break;
+                }
+
+				/*
+				t_segmento_tabla* tabla_segmento = malloc(sizeof(tabla_segmento));
+
+                t_segmento* segmento = malloc(sizeof(segmento));
+
 				segmento->direccionBase = (void*)(intptr_t)0;
 				segmento->id = atoi(instruccion[1]);
 				segmento->size = strtoul(instruccion[2],NULL,10);
-                tabla_segmento->idProceso = pcb->id_proceso;
+
+				tabla_segmento->idProceso = pcb->id_proceso;
                 tabla_segmento->segmento = segmento;
+
                 enviar_segmento_por_pid(conexionMemoria,I_CREATE_SEGMENT,tabla_segmento);
                 res = recibir_operacion(conexionMemoria);
-				if (res == AUX_OK){
+
+                if (res == AUX_OK){
                     // Agregar lista de segmentos actualizada al pcb
                     pcb->lista_segmentos = recibir_lista_segmentos(conexionMemoria);
 					log_info(kernelLogger,CREAR_SEGMENTO,pcb->id_proceso,tabla_segmento->segmento->id,tabla_segmento->segmento->size); // no loguea
@@ -535,33 +597,43 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
 				} else {
 					log_error(kernelLogger,E__BAD_REQUEST);
 				}
-                pcb->contador_instrucciones = pcb->contador_instrucciones+1;
-				agregar_a_lista_con_sem((void*)pcb, ENUM_EXECUTING);
-				sem_post(&sem_proceso_a_executing);
-				break;
-			 }
-			 case I_DELETE_SEGMENT: {
-				t_segmento_tabla* tabla_segmento = malloc(sizeof(tabla_segmento));
-				t_segmento* segmento = malloc(sizeof(segmento));
-				segmento->direccionBase = (void*)(intptr_t)0;
-				segmento->id = atoi(instruccion[1]);
-				segmento->size = 0;
-				 tabla_segmento->idProceso = pcb->id_proceso;
-				 tabla_segmento->segmento = segmento;
-				 enviar_segmento_por_pid(conexionMemoria,I_DELETE_SEGMENT,tabla_segmento);
-				res = recibir_operacion(conexionMemoria); // Recibe basura y no se bloquea
-				if (res == AUX_OK){
-                    // Agregar lista de segmentos actualizada al pcb
-                    pcb->lista_segmentos = recibir_lista_segmentos(conexionMemoria);
-					log_info(kernelLogger,ELIMINAR_SEGMENTO,pcb->id_proceso,segmento->id);
-				} else if (res==AUX_PERMISOS_INSUFICIENTES){
-					log_error(kernelLogger,E__PERMISOS_INSUFICIENTES,pcb->id_proceso);
-				} else {
-                    log_error(kernelLogger,E__ELIMINAR_SEGMENTO,segmento->id);
-                }
+
 				pcb->contador_instrucciones = pcb->contador_instrucciones+1;
 				agregar_a_lista_con_sem((void*)pcb, ENUM_EXECUTING);
 				sem_post(&sem_proceso_a_executing);
+				*/
+				break;
+			 }
+			 case I_DELETE_SEGMENT: {
+
+				 pthread_mutex_lock(&mutex_memoria);
+				 int id_segmento = atoi(instruccion[1]);
+
+				 enviar_pcb(conexionMemoria, pcb, I_DELETE_SEGMENT, kernelLogger);
+				 t_paquete* paquete = crear_paquete(I_DELETE_SEGMENT);
+
+				 // enviar_pcb(conexionCPU, pcb, AUX_OK, kernelLogger);
+				 agregar_int_a_paquete(paquete, id_segmento);
+				 enviar_paquete(paquete, conexionMemoria);
+				 eliminar_paquete(paquete);
+
+				 codigo_operacion codigoRespuesa = recibir_operacion(conexionMemoria);
+
+				 if (codigoRespuesa == AUX_OK) {
+					 //t_list *tabla_segmentos_actualizada = recibir_tabla_segmentos(conexionMemoria);
+
+					 //cambiar la tabla de segmentos del proceso por la nueva
+					 list_clean_and_destroy_elements(pcb->lista_segmentos, free);
+					 //pcb->lista_segmentos = tabla_segmentos_actualizada;
+
+					 pthread_mutex_unlock(&mutex_memoria);
+
+					 log_info(kernelLogger, "PID: <%d> - Eliminar Segmento - Id Segmento: <%d>", pcb->id_proceso, id_segmento);
+				 }
+
+				 agregar_a_lista_con_sem(pcb, ENUM_EXECUTING);
+				 sem_post(&sem_proceso_a_executing);
+
 				break;
 			 }
 			 default: {
@@ -569,6 +641,113 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
 			 }
         }
 }
+
+t_list* recibir_tabla_segmentos(int socket_cliente){
+    int size;
+    void* buffer = recibir_buffer(&size, socket_cliente);
+
+    int desplazamiento = 0;
+
+    t_list* tabla_segmentos = deserializar_tabla_segmentos(buffer, &desplazamiento);
+
+    free(buffer);
+
+    return tabla_segmentos;
+}
+
+t_list* recibir_todas_las_tablas_segmentos(int socket_cliente){
+	int size;
+	void* buffer = recibir_buffer(&size, socket_cliente);
+
+	int desplazamiento = 0;
+
+	t_list* tablas_segmentos = deserealizar_todas_las_tablas_segmentos(buffer, &desplazamiento);
+
+	free(buffer);
+
+	return tablas_segmentos;
+}
+t_list* deserealizar_todas_las_tablas_segmentos(void* buffer, int* desplazamiento){
+	t_list* tablas_segmentos = list_create();
+	int cantidad_tablas_segmentos;
+	memcpy(&cantidad_tablas_segmentos, buffer + *desplazamiento, sizeof(int));
+	*desplazamiento += sizeof(int);
+	for(int i = 0; i < cantidad_tablas_segmentos; i++){
+		t_tabla_segmentos* tabla_segmentos = malloc(sizeof(t_tabla_segmentos));
+		memcpy(&tabla_segmentos->PID, buffer + *desplazamiento, sizeof(int));
+		*desplazamiento += sizeof(int);
+		tabla_segmentos->segmentos = deserializar_tabla_segmentos(buffer, desplazamiento);
+		list_add(tablas_segmentos, tabla_segmentos);
+	}
+	return tablas_segmentos;
+}
+t_list* deserializar_tabla_segmentos(void* buffer, int* desplazamiento){
+	t_list* tabla_segmentos = list_create();
+
+	int cant_segmentos;
+    memcpy(&cant_segmentos, buffer + *desplazamiento, sizeof(int));
+    *desplazamiento += sizeof(int);
+
+	for (int i = 0; i < cant_segmentos; i++) {
+        segmento_t* segmento = malloc(sizeof(t_segmento));
+
+	    memcpy(&segmento->id, buffer + *desplazamiento, sizeof(int));
+        *desplazamiento += sizeof(int);
+
+	    memcpy(&segmento->direccion_base, buffer + *desplazamiento, sizeof(void*));
+        *desplazamiento += sizeof(void*);
+
+	    memcpy(&segmento->tamanio_segmento, buffer + *desplazamiento, sizeof(int));
+        *desplazamiento += sizeof(int);
+
+	    list_add(tabla_segmentos, segmento);
+    }
+    return tabla_segmentos;
+}
+void actualizar_todas_las_tablas_de_segmentos(t_list* nuevas_tablas, PCB* pcb){
+    for (int i = 0; i < nuevas_tablas->elements_count; i++){
+        t_tabla_segmentos* tabla_actualizada = list_get(nuevas_tablas, i);
+        PCB* proceso = buscar_proceso(tabla_actualizada->PID, pcb);
+        if (proceso != NULL){
+            list_clean_and_destroy_elements(proceso->lista_segmentos, free);
+            proceso->lista_segmentos = tabla_actualizada->segmentos;
+        }
+    }
+}
+
+PCB *buscar_proceso(int idProceso){
+
+    for (int estado = 0; estado < CANTIDAD_ESTADOS; estado++) {
+        t_list* listaPorEstado = lista_estados[estado];
+        for (int index = 0; index < list_size(listaPorEstado); index++) {
+            PCB* pcb = list_get(listaPorEstado, index);
+            if (pcb->id_proceso == idProceso) {
+                log_warning(kernelLogger, "PCB con id %d Lista encontrada en lista de estados: %s", pcb->id_proceso, nombres_estados[estado]);
+                return pcb;
+            }
+        }
+    }
+    return NULL;
+    /*
+    int resulatdo_buesqueda; // en -1 entoces no lo encontro
+    if (EJECUTANDO->contexto->PID == pid_buscado)
+        return EJECUTANDO;
+>>>>>>> 62b4dda1182d158e7e1665d28304fd3283c60d34
+
+    int indice;
+    int estado;
+    for (int i = 0; i < CANTIDAD_ESTADOS; i++){
+    	indice = obtener_index_pcb_de_lista(i, pcb->id_proceso);
+    	estado = i;
+    }
+
+    PCB* pcb_buscado = (PCB*)list_get(lista_estados[estado], indice);
+
+    //TODO
+    //log_info(kernelLogger, "No hay proceso con PID: <%d> al que se le pueda actualizar la tabla de segmetnos", pid_buscado);
+*/
+}
+
 /*
 void crear_segmento(PCB* pcb_recibido, char* id_segmento, char* tamanio) {
 	char** parametros_a_memoria = string_array_new();
@@ -667,10 +846,11 @@ void instruccion_wait(PCB *pcb_en_ejecucion, char *nombre_recurso){
         	sem_wait(&semaforo_recurso);
 
         	list_add(recurso->procesos_bloqueados, pcb_en_ejecucion);
-
+        	recurso->instancias = 0;
         	sem_post(&semaforo_recurso);
 
             log_info(kernelLogger, "PID: %u - Bloqueado por: %s", pcb_en_ejecucion->id_proceso, nombre_recurso);
+
             sem_post(&sem_cpu_disponible);
 
         } else { // Si el proceso no se bloquea en el if anterior, puede usar el recurso
@@ -694,18 +874,20 @@ void instruccion_signal(PCB *pcb_en_ejecucion, char *nombre_recurso){
 		sem_post(&sem_proceso_a_executing);
 
 		log_info(kernelLogger, "PID: %d - Signal: %s - Instancias: %d", pcb_en_ejecucion->id_proceso, nombre_recurso, recurso->instancias);
-		if(recurso->instancias <= 0){
+		//if(recurso->instancias == 0){
+		if(list_size(recurso->procesos_bloqueados) > 0){
 		    // Desbloquea al primer proceso de la cola de bloqueados del recurso
 			sem_t semaforo_recurso = recurso->sem_recurso;
+
 			sem_wait(&semaforo_recurso);
 
 			PCB* pcb = list_remove(recurso->procesos_bloqueados, 0);
-
+			log_warning(kernelLogger, "removiendo PID %d de la lista de bloqueados de: %s", pcb->id_proceso, recurso->nombre);
 			sem_post(&semaforo_recurso);
 
 			agregar_a_lista_con_sem(pcb, ENUM_READY);
 
-			sem_wait(&sem_proceso_a_ready_terminado);
+			sem_post(&sem_proceso_a_ready_terminado);
 
 		}
 	}
@@ -947,6 +1129,10 @@ char* obtener_motivo(codigo_operacion codigo_motivo){
 			return "EXIT_SEGMENTATION_FAULT";
 			break;
 		}
+		case OUT_OF_MEMORY:{
+			return "OUT_OF_MEMORY";
+			break;
+		}
 		default:
 			break;
 	}
@@ -1103,7 +1289,8 @@ void mover_de_lista_con_sem(int idProceso, int estadoNuevo, int estadoAnterior) 
 			log_error(kernelLogger, "ERROR AL MOVER pcb de estado %s a estado %s",
 					nombres_estados[estadoAnterior], nombres_estados[estadoNuevo] );
 		}
-		list_add(lista_estados[estadoNuevo], pcb);
+        list_add(lista_estados[estadoNuevo], pcbEliminado);
+
 		//int indexDevuelto = list_add(lista_estados[estadoNuevo], (void*)pcb);
 		//log_info(kernelLogger, "Se ha añadido el pcb <%d> a la lista de estados <%s> devuelve indice %d", pcb->id_proceso, nombres_estados[estadoNuevo], indexDevuelto);
 
@@ -1179,6 +1366,7 @@ void inicializar_semaforos() {
     sem_init(&proceso_en_exit, 0, 0);
     sem_init(&sem_compactacion, 0, 1);
     pthread_mutex_init(&mutex_memoria,NULL);
+    pthread_mutex_init(&mutex_operaciones_fs,NULL);
     // pthread_mutex_init(mutexTablaAchivosAbiertos, NULL);
     /* TODO: JOAN Y JOACO
      * LOS CHICOS TENIAN ESTOS TAMBIEN Y ES PROBABLE QUE LOS NECESITEN
