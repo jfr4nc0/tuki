@@ -29,6 +29,8 @@ int conexionMemoria;
 
 pthread_mutex_t m_instruccion;
 
+#define DEFAULT_LOG_PATH        "logs/file_system.log"
+
 // Functions
 void atender_kernel(int);
 void ejecutar_instrucciones_kernel(void*);

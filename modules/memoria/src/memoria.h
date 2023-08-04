@@ -31,7 +31,7 @@ typedef struct {
 
 #define DEFAULT_CONFIG_PATH         "tuki-pruebas/prueba-memoria/memoria.config"
 
-#define DEFAULT_MEMORIA_LOG_PATH    "../../logs/memoria.log"
+#define DEFAULT_MEMORIA_LOG_PATH    "logs/memoria.log"
 
 // NOWNOWNOW
 typedef struct {
@@ -59,7 +59,7 @@ t_list* crear_tabla_segmentos();
 void agregar_segmento_0(t_list* tabla_segmentos);
 void atender_conexiones(int socket_servidor);
 
-void ejecutar_filesystem_pedido(int *socket_modulo);
+void ejecutar_filesystem_pedido(void* socket);
 void recibir_acceso(t_parametros_variables **parametros, int *PID, int socket);
 int leer_int_memoria(void *buffer, int *desplazamiento);
 t_parametros_variables* deserealizar_motivos_desalojo(void *buffer, int*desplazamiento);

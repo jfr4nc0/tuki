@@ -28,7 +28,7 @@ void atender_conexiones(int socket_servidor){
     codigo_operacion codigo;
 
     //for (int i = 0; i < 3; i++)
-    for (int i = 0; i < 2; i++){
+    for (int i = 0; i < 4; i++){
 
     	cliente = esperar_cliente(socket_servidor, loggerMemoria);
     	codigo = recibir_operacion(cliente);
@@ -42,27 +42,73 @@ void atender_conexiones(int socket_servidor){
         case AUX_SOY_KERNEL:
             log_info(loggerMemoria, "Se conecto el kernel");
             conexion_kernel = cliente;
-            codigo = recibir_operacion(cliente);
+            recibir_operacion(cliente);
             pthread_create(&hilo_kernel, NULL, (void *)ejecutar_kernel_pedido, (void*)(intptr_t)conexion_kernel);
             pthread_join(hilo_kernel, NULL);
             break;
         case AUX_SOY_CPU:
             log_info(loggerMemoria, "Se conecto el cpu");
             conexion_cpu = cliente;
-            codigo = recibir_operacion(cliente);
+            recibir_operacion(cliente);
             pthread_create(&hilo_cpu, NULL, (void *)ejecutar_cpu_pedido, (void*)(intptr_t)conexion_cpu);
             pthread_detach(hilo_cpu);
             break;
+        case AUX_SOY_FILE_SYSTEM:
+			log_info(loggerMemoria, "Se conecto el fileSystem");
+			conexion_cpu = cliente;
+			recibir_operacion(cliente);
+			pthread_create(&hilo_cpu, NULL, (void *)ejecutar_filesystem_pedido, (void*)(intptr_t)conexion_cpu);
+			pthread_detach(hilo_cpu);
+		break;
         }
     }
 }
 
 // --------------------------PEDIDOS FILESYSTEM--------------------------
-void ejecutar_filesystem_pedido(int *socket_modulo){
-    while (1)
-    {
-        int cod_op = recibir_operacion(*socket_modulo);
-        switch (cod_op){
+void ejecutar_filesystem_pedido(void* socket){
+	while (1){
+		//log_warning(loggerMemoria, "entra al while(1)");
+		int socket_modulo = (int)(intptr_t)socket;
+		codigo_operacion cod_op = recibir_operacion(socket_modulo);
+		//log_warning(loggerMemoria, "el cod op recibido de cpu es %d", cod_op1);
+
+	    switch (cod_op){
+        	case I_F_WRITE: {
+				int tamanio = 0;
+				int desp = 0;
+				char* buffer = recibir_buffer(&tamanio, socket_modulo);
+				int pid = leer_int(buffer, &desp);
+				void* direccionFisica = leer_puntero(buffer, &desp);
+				uint32_t cantidadBytes = leer_uint32(buffer, &desp);
+				char* valorParaEscribir = leer_string(buffer, &desp);
+				escribir_espacio_usuario(direccionFisica, cantidadBytes, valorParaEscribir);
+
+				t_paquete* paquete = crear_paquete(AUX_OK);
+				enviar_paquete(paquete, socket_modulo);
+				eliminar_paquete(paquete);
+				break;
+				/*
+					agregar_int_a_paquete(paquete, pidProceso);
+					agregar_puntero_a_paquete(paquete, direccionFisica);
+					agregar_uint32_a_paquete(paquete, cantidadBytes);
+					enviar_paquete(paquete, cliente);
+				 */
+			}
+			case I_F_READ: {
+				int tamanio = 0;
+				int desp = 0;
+				char* buffer = recibir_buffer(&tamanio, socket_modulo);
+				int pid = leer_int(buffer, &desp);
+				void* direccionFisica = leer_puntero(buffer, &desp);
+				uint32_t cantidadBytes = leer_uint32(buffer, &desp);
+				free(buffer);
+				char* respuesta = leer_espacio_usuario(direccionFisica, cantidadBytes);
+				t_paquete* paquete = crear_paquete(AUX_OK);
+				agregar_a_paquete(paquete, (void*) respuesta, cantidadBytes);
+				enviar_paquete(paquete, socket_modulo);
+				eliminar_paquete(paquete);
+				break;
+			}
 
         case -1:
             log_info(loggerMemoria, "Se desconecto un modulo");
@@ -74,6 +120,7 @@ void ejecutar_filesystem_pedido(int *socket_modulo){
         }
     }
 }
+
 //Recibir acceso
 void recibir_acceso(t_parametros_variables **parametros, int *PID, int socket){
     int size;
@@ -263,43 +310,7 @@ void ejecutar_kernel_pedido(void* socket){
 		//log_warning(loggerMemoria, "el cod op recibido de kernel es %d", cod_op);
 		t_paquete *paquete;
 		switch (cod_op){
-			case I_F_WRITE: {
-			int tamanio = 0;
-			int desp = 0;
-			char* buffer = recibir_buffer(&tamanio, socket_modulo);
-			int pid = leer_int(buffer, &desp);
-			void* direccionFisica = leer_puntero(buffer, &desp);
-			uint32_t cantidadBytes = leer_uint32(buffer, &desp);
-			char* valorParaEscribir = leer_string(buffer, &desp);
-			escribir_espacio_usuario(direccionFisica, cantidadBytes, valorParaEscribir);
-
-			t_paquete* paquete = crear_paquete(AUX_OK);
-			enviar_paquete(paquete, socket_modulo);
-			eliminar_paquete(paquete);
-			break;
-			/*
-				agregar_int_a_paquete(paquete, pidProceso);
-				agregar_puntero_a_paquete(paquete, direccionFisica);
-				agregar_uint32_a_paquete(paquete, cantidadBytes);
-				enviar_paquete(paquete, cliente);
-			 */
-		}
-		case I_F_READ: {
-			int tamanio = 0;
-			int desp = 0;
-			char* buffer = recibir_buffer(&tamanio, socket_modulo);
-			int pid = leer_int(buffer, &desp);
-			void* direccionFisica = leer_puntero(buffer, &desp);
-			uint32_t cantidadBytes = leer_uint32(buffer, &desp);
-			free(buffer);
-			char* respuesta = leer_espacio_usuario(direccionFisica, cantidadBytes);
-			t_paquete* paquete = crear_paquete(AUX_OK);
-			agregar_a_paquete(paquete, (void*) respuesta, cantidadBytes);
-			enviar_paquete(paquete, socket_modulo);
-			eliminar_paquete(paquete);
-			break;
-		}
-		case AUX_CREATE_PCB:{
+			case AUX_CREATE_PCB:{
 				// recibe
 				void* buffer;
 				int tamanio = 0;
