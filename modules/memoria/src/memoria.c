@@ -3,7 +3,7 @@
 t_memoria_config* memoriaConfig;
 
 int main(int argc, char** argv) {
-    loggerMemoria = iniciar_logger(DEFAULT_LOG_PATH, ENUM_MEMORIA);
+    loggerMemoria = iniciar_logger(DEFAULT_MEMORIA_LOG_PATH, ENUM_MEMORIA);
     t_config* configInicial = iniciar_config(argv[1], loggerMemoria);
     cargar_config_memoria(configInicial);
 
