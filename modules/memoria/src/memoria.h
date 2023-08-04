@@ -88,9 +88,7 @@ void ejecutar_cpu_pedido(void*);
 
 void ejecutar_kernel_pedido(void* socket_modulo);
 int recibir_int(int socket);
-void serializar_tabla_segmentos(t_list *tabla_segmentos, t_paquete *paquete);
 void agregar_a_paquete_dato_serializado(t_paquete *paquete, void *valor, int tamanio);
-t_list* deserializar_tabla_segmentos(void* buffer, int* desplazamiento);
 void finalizar_proceso(t_list *tabla_segmentos, int PID);
 void liberar_segmento(t_segmento *segmento);
 void liberar_tabla_segmentos(t_tabla_segmentos *ts);

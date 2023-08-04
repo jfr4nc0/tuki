@@ -627,9 +627,18 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
 					 //t_list *tabla_segmentos_actualizada = recibir_tabla_segmentos(conexionMemoria);
 
 					 //cambiar la tabla de segmentos del proceso por la nueva
-					 list_clean_and_destroy_elements(pcb->lista_segmentos, free);
-					 //pcb->lista_segmentos = tabla_segmentos_actualizada;
+					 int size;
+					 void* buffer = recibir_buffer(&size, conexionMemoria);
+					 int desplazamiento = 0;
+					 t_list* tabla_segmentos_actualizada = deserializar_tabla_segmentos(buffer, &desplazamiento);
+					 free(buffer);
 
+					 log_debug(kernelLogger, "Lista de segmentos antes de eliminarse: ");
+					 mostrarListaSegmentos(pcb->lista_segmentos);
+					 //pcb->lista_segmentos = tabla_segmentos_actualizada;
+					 log_debug(kernelLogger, "Lista de segmentos despues de eliminarse: ");
+					 pcb->lista_segmentos = tabla_segmentos_actualizada;
+					 mostrarListaSegmentos(pcb->lista_segmentos);
 					 pthread_mutex_unlock(&mutex_memoria);
 
 					 log_info(kernelLogger, "PID: <%d> - Eliminar Segmento - Id Segmento: <%d>", pcb->id_proceso, id_segmento);
@@ -683,43 +692,7 @@ t_list* recibir_todas_las_tablas_segmentos(int socket_cliente){
 
 	return tablas_segmentos;
 }
-t_list* deserealizar_todas_las_tablas_segmentos(void* buffer, int* desplazamiento){
-	t_list* tablas_segmentos = list_create();
-	int cantidad_tablas_segmentos;
-	memcpy(&cantidad_tablas_segmentos, buffer + *desplazamiento, sizeof(int));
-	*desplazamiento += sizeof(int);
-	for(int i = 0; i < cantidad_tablas_segmentos; i++){
-		t_tabla_segmentos* tabla_segmentos = malloc(sizeof(t_tabla_segmentos));
-		memcpy(&tabla_segmentos->PID, buffer + *desplazamiento, sizeof(int));
-		*desplazamiento += sizeof(int);
-		tabla_segmentos->segmentos = deserializar_tabla_segmentos(buffer, desplazamiento);
-		list_add(tablas_segmentos, tabla_segmentos);
-	}
-	return tablas_segmentos;
-}
-t_list* deserializar_tabla_segmentos(void* buffer, int* desplazamiento){
-	t_list* tabla_segmentos = list_create();
 
-	int cant_segmentos;
-    memcpy(&cant_segmentos, buffer + *desplazamiento, sizeof(int));
-    *desplazamiento += sizeof(int);
-
-	for (int i = 0; i < cant_segmentos; i++) {
-        t_segmento* segmento = malloc(sizeof(t_segmento));
-
-	    memcpy(&segmento->id, buffer + *desplazamiento, sizeof(int));
-        *desplazamiento += sizeof(int);
-
-	    memcpy(&segmento->direccionBase, buffer + *desplazamiento, sizeof(void*));
-        *desplazamiento += sizeof(void*);
-
-	    memcpy(&segmento->size, buffer + *desplazamiento, sizeof(int));
-        *desplazamiento += sizeof(int);
-
-	    list_add(tabla_segmentos, segmento);
-    }
-    return tabla_segmentos;
-}
 void actualizar_todas_las_tablas_de_segmentos(t_list* nuevas_tablas){
     for (int i = 0; i < nuevas_tablas->elements_count; i++){
         t_tabla_segmentos* tabla_actualizada = list_get(nuevas_tablas, i);

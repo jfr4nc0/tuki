@@ -400,6 +400,7 @@ void ejecutar_kernel_pedido(void* socket){
 
 	        	PCB* pcb = recibir_pcb(socket_modulo);
 
+	        	recibir_operacion(socket_modulo);
 	        	void* buffer;
 	        	int tamanio = 0;
 	        	int desplazamiento = 0;
@@ -576,18 +577,7 @@ int recibir_int(int socket){
     free(desplazamiento);
     return valor;
 }
-void serializar_tabla_segmentos(t_list *tabla_segmentos, t_paquete *paquete){
-    agregar_a_paquete_dato_serializado(paquete, &(tabla_segmentos->elements_count), sizeof(int));
-    for (int i = 0; i < tabla_segmentos->elements_count; i++)
-    {
-        t_segmento *segmento = list_get(tabla_segmentos, i);
-		// agregar_a_paquete
-        agregar_a_paquete_dato_serializado(paquete, &(segmento->id), sizeof(int));
-        agregar_a_paquete_dato_serializado(paquete, &(segmento->direccionBase), sizeof(void*));
-        agregar_a_paquete_dato_serializado(paquete, &(segmento->size), sizeof(int));
 
-    }
-}
 void agregar_a_paquete_dato_serializado(t_paquete *paquete, void *valor, int tamanio){
 	paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + tamanio);
 
@@ -597,29 +587,6 @@ void agregar_a_paquete_dato_serializado(t_paquete *paquete, void *valor, int tam
 	paquete->buffer->size += tamanio;
 }
 
-t_list* deserializar_tabla_segmentos(void* buffer, int* desplazamiento){
-	t_list* tabla_segmentos = list_create();
-
-	int cansegmento_ts;
-    memcpy(&cansegmento_ts, buffer + *desplazamiento, sizeof(int));
-    *desplazamiento += sizeof(int);
-
-	for (int i = 0; i < cansegmento_ts; i++) {
-        t_segmento* segmento = malloc(sizeof(t_segmento));
-
-	    memcpy(&segmento->id, buffer + *desplazamiento, sizeof(int));
-        *desplazamiento += sizeof(int);
-
-	    memcpy(&segmento->direccionBase, buffer + *desplazamiento, sizeof(void*));
-        *desplazamiento += sizeof(void*);
-
-	    memcpy(&segmento->size, buffer + *desplazamiento, sizeof(int));
-        *desplazamiento += sizeof(int);
-
-	    list_add(tabla_segmentos, segmento);
-    }
-    return tabla_segmentos;
-}
 void finalizar_proceso(t_list *tabla_segmentos, int PID){
     free(list_remove(tabla_segmentos, 0));
     for (int i = 0; i < list_size(tabla_segmentos); i++)
@@ -866,15 +833,13 @@ t_hueco* get_hueco_con_first_fit(int tamanio){
 }
 
 int obtener_index_tabla_segmentos(int PID){
-    int index = -1;
     for (int i = 0; i < tabla_segmentos_global->elements_count; i++){
         t_tabla_segmentos* ts = list_get(tabla_segmentos_global, i);
         if (ts->PID == PID){
-            index = i;
-            break;
+            return i;
         }
     }
-    return index;
+    return -1;
 }
 
 t_paquete* crear_segmento(int id_segmento, int tamanio, PCB* pcb, int socket) {
@@ -925,8 +890,7 @@ t_paquete* crear_segmento(int id_segmento, int tamanio, PCB* pcb, int socket) {
     //enviar_paquete(paquete, socket);
     //eliminar_paquete(paquete);
 
-	log_debug(loggerMemoria, "CHICAS ESTO TIENE QUE RECIBIR KERNEL %p", segmento->direccionBase);
-    log_info(loggerMemoria, "PID: <%d> - Crear Segmento: <%d> - Base: <%p> - TAMAÑO: <%d>", pcb->id_proceso, id_segmento, hueco->base, tamanio);
+	log_info(loggerMemoria, "PID: <%d> - Crear Segmento: <%d> - Base: <%p> - TAMAÑO: <%d>", pcb->id_proceso, id_segmento, hueco->base, tamanio);
     return paquete;
 }
 

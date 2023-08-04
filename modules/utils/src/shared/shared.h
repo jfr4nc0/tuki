@@ -210,6 +210,10 @@ void mostrarListaSegmentos(t_list* segmentos);
 void mostrar_pcb(PCB* pcb, t_log* logger);
 void iteratorSinLog(char* value);
 
+void serializar_tabla_segmentos(t_list *tabla_segmentos, t_paquete *paquete);
+
+t_list* deserializar_tabla_segmentos(void* buffer, int* desplazamiento);
+t_list* deserealizar_todas_las_tablas_segmentos(void* buffer, int* desplazamiento);
 
 long leer_long(char* buffer, int* desp);
 long long leer_long_long(char* buffer, int* desp);

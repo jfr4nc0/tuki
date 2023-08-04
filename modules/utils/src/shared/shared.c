@@ -689,7 +689,51 @@ void iteratorSinLog(char* value) {
     printf("%s \n", value);
 }
 
+t_list* deserealizar_todas_las_tablas_segmentos(void* buffer, int* desplazamiento){
+	t_list* tablas_segmentos = list_create();
+	int cantidad_tablas_segmentos;
+	memcpy(&cantidad_tablas_segmentos, buffer + *desplazamiento, sizeof(int));
+	*desplazamiento += sizeof(int);
+	for(int i = 0; i < cantidad_tablas_segmentos; i++){
+		t_tabla_segmentos* tabla_segmentos = malloc(sizeof(t_tabla_segmentos));
+		memcpy(&tabla_segmentos->PID, buffer + *desplazamiento, sizeof(int));
+		*desplazamiento += sizeof(int);
+		tabla_segmentos->segmentos = deserializar_tabla_segmentos(buffer, desplazamiento);
+		list_add(tablas_segmentos, tabla_segmentos);
+	}
+	return tablas_segmentos;
+}
 
+
+t_list* deserializar_tabla_segmentos(void* buffer, int* desplazamiento){
+	t_list* tabla_segmentos = list_create();
+
+	int cantsegmento_ts = leer_int(buffer, desplazamiento);
+
+	for (int i = 0; i < cantsegmento_ts; i++) {
+        t_segmento* segmento = malloc(sizeof(t_segmento));
+
+	    segmento->id = leer_int(buffer, desplazamiento);
+	    segmento->size = leer_int(buffer, desplazamiento);
+	    segmento->direccionBase = leer_puntero(buffer, desplazamiento);
+
+	    list_add(tabla_segmentos, segmento);
+    }
+    return tabla_segmentos;
+}
+
+void serializar_tabla_segmentos(t_list *tabla_segmentos, t_paquete *paquete){
+	agregar_int_a_paquete(paquete, tabla_segmentos->elements_count);
+//    agregar_a_paquete_dato_serializado(paquete, &(tabla_segmentos->elements_count), sizeof(int));
+    for (int i = 0; i < tabla_segmentos->elements_count; i++)
+    {
+        t_segmento *segmento = list_get(tabla_segmentos, i);
+		// agregar_a_paquete
+        agregar_int_a_paquete(paquete, segmento->id);
+        agregar_int_a_paquete(paquete, segmento->size);
+        agregar_puntero_a_paquete(paquete, segmento->direccionBase);
+    }
+}
 
 void mostrarListaSegmentos(t_list* segmentos) {
 	for (int indice = 0; indice < list_size(segmentos); indice++) {
