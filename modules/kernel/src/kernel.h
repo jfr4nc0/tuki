@@ -140,7 +140,8 @@ t_list* recibir_todas_las_tablas_segmentos(int socket_cliente);
 void actualizar_todas_las_tablas_de_segmentos(t_list* nuevas_tablas);
 t_list* deserealizar_todas_las_tablas_segmentos(void* buffer, int* desplazamiento);
 t_list* deserializar_tabla_segmentos(void* buffer, int* desplazamiento);
-
+t_list* recibir_tabla_segmentos(int socket_cliente);
+PCB *buscar_proceso(int pid_buscado);
 
 // t_semaforo_recurso* diccionario_semaforos_recursos_get_semaforo_recurso(tablaArchivosAbiertos, nombreArchivo);
 
