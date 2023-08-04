@@ -169,8 +169,6 @@ char* obtener_motivo(codigo_operacion );
 void crear_segmento(PCB* pcb_recibido, char* id_segmento, char* tamanio);
 
 
-t_list* archivosAbiertosGlobal;
-
 /*----------------- SEMAFOROS / HILOS ------------------*/
 sem_t sem_proceso_a_ready_inicializar;
 sem_t sem_proceso_a_ready_terminado;

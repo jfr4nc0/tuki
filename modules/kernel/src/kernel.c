@@ -40,7 +40,6 @@ int main(int argc, char** argv) {
 }
 
 void inicializar_estructuras(){
-    archivosAbiertosGlobal = list_create();
     inicializar_listas_estados();
 /*
     inicializar_archivo_estado(ENUM_FREE);
@@ -260,6 +259,7 @@ void manejo_desalojo_pcb() {
         double inicio_ejecucion_proceso = time(NULL);
 
         if (conexionCPU > 0) {
+        	mostrar_pcb(pcb_para_cpu, kernelLogger);
         	enviar_pcb(conexionCPU, pcb_para_cpu, OP_EXECUTE_PCB, kernelLogger);
         } else {
         	log_error(kernelLogger, "ERROR CONEXION CPU NO FUE HECHA BIEN, NO SE PUEDE MANDAR EL PCB");
