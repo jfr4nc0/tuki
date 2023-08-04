@@ -95,7 +95,9 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
 	    instruccion = (char *)list_get(pcb->lista_instrucciones, pcb->contador_instrucciones);
 		instruccion_decodificada = decode_instruccion(instruccion, loggerCpu);
 		if (instruccion_decodificada[0] != NULL) {
-			log_info(loggerCpu, "PID: %u - Ejecutando: %s", pcb->id_proceso, instruccion_decodificada[0]);
+
+			loggear_instruccion(pcb, instruccion_decodificada);
+
         	ultimaOperacion = ejecutar_instruccion(instruccion_decodificada, pcb);
 			if (!hubo_interrupcion) {
 				pcb->contador_instrucciones++;
@@ -133,6 +135,39 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
 	free(instruccion_decodificada);
 }
 
+void loggear_instruccion(PCB* pcb, char** instruccion){
+	char* instruccion_ = malloc(sizeof(char*));
+	instruccion_ = strtok(instruccion[0], "\n");
+
+	int operacion = keyFromString(instruccion_);
+
+	switch(operacion){
+		case I_F_READ:
+		case I_F_WRITE:
+			log_info(loggerCpu, "PID: %u - Ejecutando: %s  %s %s %s", pcb->id_proceso, instruccion[0], instruccion[1], instruccion[2], instruccion[3]);
+			break;
+		case I_SET:
+		case I_MOV_IN:
+		case I_MOV_OUT:
+		case I_TRUNCATE:
+		case I_F_SEEK:
+		case I_CREATE_SEGMENT:
+			log_info(loggerCpu, "PID: %u - Ejecutando: %s  %s %s", pcb->id_proceso, instruccion[0], instruccion[1], instruccion[2]);
+			break;
+		case I_IO:
+		case I_WAIT:
+		case I_SIGNAL:
+		case I_F_OPEN:
+		case I_F_CLOSE:
+		case I_DELETE_SEGMENT:
+			log_info(loggerCpu, "PID: %u - Ejecutando: %s  %s", pcb->id_proceso, instruccion[0], instruccion[1]);
+			break;
+		case I_EXIT:
+		case I_YIELD:
+			log_info(loggerCpu, "PID: %u - Ejecutando: %s", pcb->id_proceso, instruccion[0]);
+			break;
+	}
+}
 
 void cargar_registros(PCB* pcb) { // Acumula basura
 	strcpy(registrosCpu->AX, pcb->registrosCpu->AX);
@@ -278,8 +313,8 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 			char* valor_registro = obtener_valor_registro(registro, pcb->registrosCpu);
 
 			// char* valor_registro = registros_cpu_get_valor_registro("escribiendoTextoDePrueba", 16);
-
-			if (dirFisica == -1){
+			int desplazamiento_segmento=dirLogica % configCpu->TAM_MAX_SEGMENTO;
+			if (desplazamiento_segmento + tamanio_registro > configCpu->TAM_MAX_SEGMENTO){
 				return SEGMENTATION_FAULT;
 			}
 
@@ -361,14 +396,18 @@ int codigo_registro(char* registro){
 long obtener_direcc_fisica(PCB* pcb, int dirLogica, int tamanio_registro){
 
 	int numero_segmento = floor(dirLogica/configCpu->TAM_MAX_SEGMENTO);
-
+	//log_warning(loggerCpu, "el nro de seg es %d", numero_segmento);
 	int desplazamiento_segmento=dirLogica % configCpu->TAM_MAX_SEGMENTO;
-
+	//log_warning(loggerCpu, "el desplazamiento dentro del seg es %d", desplazamiento_segmento);
 	if (desplazamiento_segmento + tamanio_registro > configCpu->TAM_MAX_SEGMENTO){
 			log_error(loggerCpu, "PID: %d - Error SEG_FAULT- Segmento: %d - Offset: %d - Tamaño: %d", pcb->id_proceso, numero_segmento, desplazamiento_segmento, tamanio_registro);
 			return -1;
 	}
 	segmento_t* segmento = list_get(pcb->lista_segmentos, numero_segmento);
+
+	//log_warning(loggerCpu, "id segmento %d", segmento->id);
+	//log_warning(loggerCpu, "size segmento %d", segmento->tamanio_segmento);
+	//log_warning(loggerCpu, "direcc base segmento %p", segmento->direccion_base);
 
 	long direccion_fisica = (long)(segmento->direccion_base + desplazamiento_segmento);
 

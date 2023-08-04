@@ -137,9 +137,10 @@ double __calcular_valor_hrrn(PCB *pcb, double tiempoActual);
 PCB* obtener_maximo_por_R(t_list* lista_procesos);
 //double obtener_diferencial_de_tiempo_en_milisegundos(timestamp *end, timestamp *start);
 t_list* recibir_todas_las_tablas_segmentos(int socket_cliente);
-void actualizar_todas_las_tablas_de_segmentos(t_list* nuevas_tablas);
+void actualizar_todas_las_tablas_de_segmentos(t_list* nuevas_tablas, PCB* pcb);
 t_list* deserealizar_todas_las_tablas_segmentos(void* buffer, int* desplazamiento);
 t_list* deserializar_tabla_segmentos(void* buffer, int* desplazamiento);
+PCB *buscar_proceso(int pid_buscado, PCB* pcb);
 
 
 // t_semaforo_recurso* diccionario_semaforos_recursos_get_semaforo_recurso(tablaArchivosAbiertos, nombreArchivo);

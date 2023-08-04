@@ -113,5 +113,6 @@ int get_int_registro(char* );
 void* convertir_dir_logica_a_fisica(PCB *pcb, char* dirLogica);
 void* obtener_base_segmento_puntero(PCB *pcb, uint32_t numeroSegmento,  uint32_t *tamanio);
 void* obtener_puntero_direccion_fisica(PCB *pcb,uint32_t dirLogica, uint32_t *numeroSegmento, uint32_t *offset, uint32_t *tamanioSegmento);
+void loggear_instruccion(PCB* pcb, char** instruccion);
 
 #endif
