@@ -64,25 +64,6 @@ void ejecutar_filesystem_pedido(int *socket_modulo){
         int cod_op = recibir_operacion(*socket_modulo);
         switch (cod_op){
 
-        case I_F_READ:
-            int PID = -1;
-            t_parametros_variables *parametros = NULL;
-            recibir_acceso(&parametros, &PID, *socket_modulo);
-            escribir_valor_direccion_fisica(parametros->parametros[0], strtol(parametros->parametros[1], NULL, 10), PID, "FS");
-            enviar_mensaje_memoria("OK", *socket_modulo);
-            liberar_parametros_desalojo(parametros);
-
-            break;
-
-        case I_F_WRITE:
-            recibir_acceso(&parametros, &PID, *socket_modulo);
-            char *valor_leido = leer_valor_direccion_fisica(strtol(parametros->parametros[0], NULL, 10), atoi(parametros->parametros[1]), PID, "FS");
-            enviar_mensaje_memoria(valor_leido, *socket_modulo);
-            free(valor_leido);
-            liberar_parametros_desalojo(parametros);
-
-            break;
-
         case -1:
             log_info(loggerMemoria, "Se desconecto un modulo");
             return;
@@ -730,7 +711,7 @@ void terminar_programa_memoria(int conexion, t_log* logger, t_config* config){ /
 	}
 }
 
-char* leer_espacio_usuario(void* direccion, size_t size, int demora) {
+char* leer_espacio_usuario(void* direccion, size_t size) {
     void *valor = malloc(size * sizeof(char *));
     sleep(memoriaConfig->RETARDO_MEMORIA / 500);
 
