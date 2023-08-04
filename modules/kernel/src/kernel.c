@@ -704,10 +704,10 @@ t_list* deserializar_tabla_segmentos(void* buffer, int* desplazamiento){
     }
     return tabla_segmentos;
 }
-void actualizar_todas_las_tablas_de_segmentos(t_list* nuevas_tablas, PCB* pcb){
+void actualizar_todas_las_tablas_de_segmentos(t_list* nuevas_tablas){
     for (int i = 0; i < nuevas_tablas->elements_count; i++){
         t_tabla_segmentos* tabla_actualizada = list_get(nuevas_tablas, i);
-        PCB* proceso = buscar_proceso(tabla_actualizada->PID, pcb);
+        PCB* proceso = buscar_proceso(tabla_actualizada->PID);
         if (proceso != NULL){
             list_clean_and_destroy_elements(proceso->lista_segmentos, free);
             proceso->lista_segmentos = tabla_actualizada->segmentos;
