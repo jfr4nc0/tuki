@@ -31,7 +31,7 @@ typedef struct {
 
 #define DEFAULT_CONFIG_PATH         "tuki-pruebas/prueba-memoria/memoria.config"
 
-#define DEFAULT_MEMORIA_LOG_PATH    "logs/memoria.log"
+#define DEFAULT_MEMORIA_LOG_PATH    "../../../logs/memoria.log"
 
 // NOWNOWNOW
 typedef struct {

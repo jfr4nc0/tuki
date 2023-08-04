@@ -178,14 +178,16 @@ void _planificador_largo_plazo() {
 
 void destruir_pcb(PCB* pcb) {
     //pthread_mutex_lock(pcb_get_mutex(pcb));
-
+	log_warning(kernelLogger, "ppio de destruir_pcb");
     list_destroy_and_destroy_elements(pcb->lista_instrucciones, (void*)free);
 
     free(pcb->registrosCpu);
-
-    //list_destroy_and_destroy_elements(pcb->lista_segmentos, (void*)destruir_segmento); TODO: NO FUNCIONA
+    log_warning(kernelLogger, "miti de destruir_pcb");
+    //list_destroy_and_destroy_elements(pcb->lista_segmentos, (void*)destruir_segmento);
 
     list_destroy_and_destroy_elements(pcb->lista_archivos_abiertos, (void*)free);
+
+    log_warning(kernelLogger, "fin de destruir_pcb");
 
     free(pcb);
 }
