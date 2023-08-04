@@ -237,6 +237,8 @@ void buffer_pack_string(t_buffer *self, char *stringToAdd);
 
 uint32_t leer_uint32(char* buffer, int* desp);
 t_list* recibir_lista_segmentos(int cliente);
+void agregar_registro_a_paquete(t_paquete* paquete, char* registro, int tamanio_registro);
+char* leer_registro_de_buffer(char* buffer, int desplazamiento);
 
 t_list* recibir_resto_lista_segmentos(void* buffer, int* desp);
 void agregar_lista_segmentos_a_paquete(t_paquete* buffer, int cliente, t_list* segmentosTabla, t_log* logger);

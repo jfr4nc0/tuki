@@ -26,12 +26,13 @@ void atender_conexiones(int socket_servidor){
 
     pthread_t hilo_kernel, hilo_cpu, hilo_fs;
     int conexion_cpu, conexion_fs, conexion_kernel, cliente;
+    codigo_operacion codigo;
 
     //for (int i = 0; i < 3; i++)
     for (int i = 0; i < 2; i++){
 
     	cliente = esperar_cliente(socket_servidor, loggerMemoria);
-    	codigo_operacion codigo = recibir_operacion(cliente);
+    	codigo = recibir_operacion(cliente);
         switch (codigo){
         /*case AUX_SOY_FILE_SYSTEM:
             log_info(loggerMemoria, "Se conecto el file system");
@@ -42,12 +43,14 @@ void atender_conexiones(int socket_servidor){
         case AUX_SOY_KERNEL:
             log_info(loggerMemoria, "Se conecto el kernel");
             conexion_kernel = cliente;
+            codigo = recibir_operacion(cliente);
             pthread_create(&hilo_kernel, NULL, (void *)ejecutar_kernel_pedido, (void*)(intptr_t)conexion_kernel);
             pthread_join(hilo_kernel, NULL);
             break;
         case AUX_SOY_CPU:
             log_info(loggerMemoria, "Se conecto el cpu");
             conexion_cpu = cliente;
+            codigo = recibir_operacion(cliente);
             pthread_create(&hilo_cpu, NULL, (void *)ejecutar_cpu_pedido, (void*)(intptr_t)conexion_cpu);
             pthread_detach(hilo_cpu);
             break;
@@ -129,15 +132,34 @@ t_parametros_variables* deserealizar_motivos_desalojo(void *buffer, int*desplaza
 	return motivos_desalojo;
 }
 
+void escribir_espacio_usuario(void* direccion, size_t size, void* valor, int demora) {
+    // simular_tiempo_acceso(demora);
+
+    memcpy(direccion, valor, size);
+
+    log_debug(loggerMemoria, "Valor escrito en memoria: %s", (char*)direccion);
+    return;
+}
+
 //Escribir/leer valor de direccion fisica
 char *leer_valor_direccion_fisica(long direccion_fisica, int tamanio, int pid, char *origen){
     sleep(memoriaConfig->RETARDO_MEMORIA / 500);
-    void *valor = malloc(tamanio * sizeof(char *));
-    memcpy(valor, (void *)direccion_fisica, tamanio * sizeof(char *));
+    char* valor = malloc(tamanio);
+    memcpy((void*)valor, memoria_principal + direccion_fisica, tamanio);
     //memcpy((void*)valor, (void*)direccion_fisica, tamanio);
-    log_info(loggerMemoria, "PID: <%d> - Acción: <LEER> - Dirección física: <%p> - Tamaño: <%d> - Origen: <%s>", pid, (void *)direccion_fisica, tamanio, origen);
-    log_info(loggerMemoria, "el valor es %s", (char*)valor);
-    return (char*)valor;
+    log_info(loggerMemoria, "PID: <%d> - Acción: <LEER> - Dirección física: <%p> - Tamaño: <%d> - Origen: <%s>", pid, (void *)memoria_principal + direccion_fisica, tamanio, origen);
+    log_info(loggerMemoria, "el valor es %s", valor);
+    return valor;
+}
+
+void escribir_valor_en_memoria(long dirFisica, void* bytesRecibidos, uint32_t tamanio)
+{
+	// bytesRecibidos = malloc(tamanio);
+	char* valor = (char*)bytesRecibidos;
+    memcpy(memoria_principal+dirFisica, bytesRecibidos, tamanio); // cambiar
+    log_debug(loggerMemoria, "Escribió %s en memoria", valor);
+
+    return;
 }
 
 void escribir_valor_direccion_fisica(char *valor, long direccion_fisica, int pid, char *origen){
@@ -148,6 +170,7 @@ void escribir_valor_direccion_fisica(char *valor, long direccion_fisica, int pid
     memcpy(direccion, valor, tamanio);
     log_info(loggerMemoria, "PID: <%d> - Acción: <ESCRIBIR> - Dirección física: <%p> - Tamaño: <%d> - Origen: <%s>", pid, direccion, tamanio, origen);
 }
+
 //Enviar mensaje
 void enviar_mensaje_memoria(char* mensaje, int socket_cliente){
 	t_paquete *paquete = malloc(sizeof(t_paquete));
@@ -185,10 +208,9 @@ void ejecutar_cpu_pedido(void* socket){
 	while (1){
 		log_warning(loggerMemoria, "entra al while(1)");
 		int socket_modulo = (int)(intptr_t)socket;
-		int cod_op1 = recibir_operacion(socket_modulo);
-		int cod_op2 = recibir_operacion(socket_modulo);
-		log_warning(loggerMemoria, "el cod op recibido de cpu es %d", cod_op2);
-	    switch (cod_op2){
+		codigo_operacion cod_op1 = recibir_operacion(socket_modulo);
+		log_warning(loggerMemoria, "el cod op recibido de cpu es %d", cod_op1);
+	    switch (cod_op1){
 	    	case I_MOV_IN:{
 	    		log_warning(loggerMemoria, "entra a MOV_IN");
 
@@ -206,8 +228,12 @@ void ejecutar_cpu_pedido(void* socket){
 	            log_debug(loggerMemoria, "%d %d %d", pid, direccion_fisica, tamanio_registro);
 
 	            char *valor_leido = leer_valor_direccion_fisica(direccion_fisica, tamanio_registro, pid, "CPU");
-	            enviar_mensaje_memoria(valor_leido, socket_modulo);
-	            free(valor_leido);
+
+				t_paquete* paquete = crear_paquete(AUX_OK);
+
+				agregar_registro_a_paquete(paquete, valor_leido, tamanio_registro);
+				enviar_paquete(paquete, socket_modulo);
+
 	            free(buffer);
 	            break;
 	    	}
@@ -223,15 +249,17 @@ void ejecutar_cpu_pedido(void* socket){
 
 	        	int pid = leer_int(buffer, &desplazamiento);
 	        	long direccion_fisica = (long)leer_int(buffer, &desplazamiento);
+	        	int tamanioRegistro = leer_int(buffer, &desplazamiento);
+//				char* valor_registro = leer_string(buffer, &desplazamiento);
+	        	char* valor_registro = leer_registro_de_buffer(buffer, desplazamiento);
 
-	        	char* valor_registro = leer_string(buffer, &desplazamiento);
+				escribir_valor_en_memoria(direccion_fisica, valor_registro, tamanioRegistro);
+//	        	log_debug(loggerMemoria, "%d %d %s", pid, direccion_fisica, (char*)valor_registro);
 
-	        	log_debug(loggerMemoria, "%d %d %d %s", pid, direccion_fisica, valor_registro);
-
-	        	escribir_valor_direccion_fisica(valor_registro, direccion_fisica, pid, "CPU");
+//	        	escribir_valor_direccion_fisica(valor_registro, direccion_fisica, pid, "CPU");
 	        	//enviar_mensaje_memoria(valor_leido, socket_modulo);
 	        	enviar_operacion(socket_modulo, AUX_OK, 0, 0);
-	        	free(valor_registro);
+
 	        	free(buffer);
 	            break;
 	        }
@@ -671,8 +699,3 @@ void terminar_programa_memoria(int conexion, t_log* logger, t_config* config){ /
 		config_destroy(config);
 	}
 }
-
-
-
-
-

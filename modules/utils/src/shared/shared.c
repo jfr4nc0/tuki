@@ -358,16 +358,6 @@ char* leer_registro_16_bytes(char* buffer, int* desp){
 	return leer_texto(buffer, desp, 16);
 }
 
-char* leer_string(char* buffer, int* desp) {
-	int size = leer_int(buffer, desp);
-
-	char* respuesta = malloc(size);
-	memcpy(respuesta, buffer+(*desp), size);
-	(*desp)+=size;
-
-	return respuesta;
-}
-
 t_list* leer_string_array(char* buffer, int* desp) {
     int cantidadElementos = leer_int(buffer, desp);
     t_list* lista_instrucciones = list_create();
@@ -523,6 +513,33 @@ void agregar_registros_a_paquete(t_paquete* paquete, registros_cpu* registrosCpu
     agregar_registro16bytes_a_paquete(paquete, registrosCpu->RBX);
     agregar_registro16bytes_a_paquete(paquete, registrosCpu->RCX);
     agregar_registro16bytes_a_paquete(paquete, registrosCpu->RDX);
+}
+
+void agregar_registro_a_paquete(t_paquete* paquete, char* registro, int tamanio_registro) {
+	if (tamanio_registro == 16) {
+		agregar_registro16bytes_a_paquete(paquete, registro);
+	}
+	if (tamanio_registro == 8) {
+		agregar_registro8bytes_a_paquete(paquete, registro);
+	}
+	if (tamanio_registro == 4) {
+		agregar_registro4bytes_a_paquete(paquete, registro);
+	}
+	return;
+}
+
+
+char* leer_registro_de_buffer(char* buffer, int desplazamiento) {
+    int tamanioRegistro = leer_int(buffer, &desplazamiento);
+    if (tamanioRegistro == 16) {
+        return leer_registro_16_bytes(buffer, &desplazamiento);
+    }
+    if (tamanioRegistro == 8) {
+        return leer_registro_8_bytes(buffer, &desplazamiento);
+    }
+    if (tamanioRegistro == 4) {
+        return leer_registro_4_bytes(buffer, &desplazamiento);
+    }
 }
 
 void agregar_registro4bytes_a_paquete(t_paquete* paquete, char valor[4]) {

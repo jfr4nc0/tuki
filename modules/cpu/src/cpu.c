@@ -273,8 +273,17 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 			int tamanio_registro = obtener_tamanio_registro(registro);
 
 			int dirFisica = obtener_direcc_fisica(pcb, dirLogica, tamanio_registro);
+			void* dirFisicaPuntero = (void*) dirFisica;
+
+			void* bytesAEnviar = malloc(tamanio_registro);
 
 			log_warning(loggerCpu, "la direccion fisica es %d", dirFisica);
+
+			// char* valor_registro = obtener_valor_registro(registro, pcb->registrosCpu);
+
+			char* valor_registro = registros_cpu_get_valor_registro("escribiendoTextoDePrueba", 16);
+
+			memcpy(bytesAEnviar, (void*)valor_registro, tamanio_registro);
 
 			/*TODO
 			if (dir_fisica == -1){
@@ -282,21 +291,22 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 			}
 			*/
 
-			char* valor_registro = obtener_valor_registro(registro, pcb->registrosCpu);
-
 			t_paquete* paquete = crear_paquete(I_MOV_OUT);
 			agregar_int_a_paquete(paquete, pcb->id_proceso);
 			agregar_int_a_paquete(paquete, dirFisica);
-			agregar_valor_a_paquete(paquete, valor_registro, strlen(valor_registro)+1);
+			agregar_int_a_paquete(paquete, tamanio_registro);
+			agregar_registro_a_paquete(paquete, valor_registro, tamanio_registro);
+
 			enviar_paquete(paquete, conexionCpuMemoria);
 			eliminar_paquete(paquete);
 
 			log_warning(loggerCpu, "PASA EL ENVIAR OPERACION");
 
-			recibir_operacion(conexionCpuMemoria);
-			recibir_operacion(conexionCpuMemoria);
+			codigo_operacion cod1Prueba = recibir_operacion(conexionCpuMemoria);
+			codigo_operacion cod2Prueba = recibir_operacion(conexionCpuMemoria);
 
-			log_warning(loggerCpu, "PASA EL recibir valor");
+
+			log_warning(loggerCpu, "PASA EL recibir valor: %s", (char*)bytesAEnviar);
 
 			log_info(loggerCpu, "PID: %d  -Acción: ESCRIBIR - Segmento: %d - Dirección Física: %d - Valor: %s", pcb->id_proceso, division_entera(dirLogica, configCpu->TAM_MAX_SEGMENTO), dirFisica, valor_registro);
 
@@ -428,7 +438,7 @@ char* recibir_valor_a_escribir(int clienteAceptado){
 	recibir_operacion(clienteAceptado);
 	buffer = recibir_buffer(&tamanio, clienteAceptado);
 
-	return leer_string(buffer, &desplazamiento);
+	return leer_registro_de_buffer(buffer, desplazamiento);
 
 }
 
@@ -542,6 +552,7 @@ int get_int_registro(char* registro){
 		return -1;
 	}
 }
+
 
 char *registros_cpu_get_valor_registro(char* registro, int tamanioRegistro){
 	/*
@@ -671,28 +682,7 @@ void* get_registro_cpu(char* registro, registros_cpu* registrosCpu){
 	}
 	return NULL;
 }
-void instruccion_mov_in(char* registro, char* dir_logica, PCB* pcb) {
-	/*
-	 * Lee el valor de memoria corresponfiente a la Direccion Logica y lo almacena en el registro
 
-	t_segmento* segmento;
-	void* dir_fisica = get_dir_fisica(segmento, dir_logica, configCpu->TAM_MAX_SEGMENTO);
-	if(dir_fisica!=-1){
-		void* registro_cpu = get_registro_cpu(registro, registrosCpu);
-
-		if(registro_cpu!=-1){
-			registro_cpu = *&dir_fisica; // Valor en la direccion fisica
-			log_info(loggerCpu, "Se asigno el valor de memoria corresponfiente a la Direccion Logica %s y se almaceno en el registro %s", dir_logica, registro);
-		} else {
-			log_error(loggerCpu, "Registro de CPU no reconocido.");
-			hubo_interrupcion=true;
-		}
-		free(registro_cpu);
-	} else {
-		return NULL;
-	}
-	*/
-}
 
 void* convertir_dir_logica_a_fisica(PCB *pcb, char* dirLogicaTexto) {
 	uint32_t numeroSegmento, offset, tamanioSegmento;
