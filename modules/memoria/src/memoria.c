@@ -137,7 +137,7 @@ void escribir_espacio_usuario(void* direccion, size_t size, void* valor, int dem
 
     memcpy(direccion, valor, size);
 
-    log_debug(loggerMemoria, "Valor escrito en memoria: %s", (char*)direccion);
+    //log_debug(loggerMemoria, "Valor escrito en memoria: %s", (char*)direccion);
     return;
 }
 
@@ -152,12 +152,13 @@ char *leer_valor_direccion_fisica(long direccion_fisica, int tamanio, int pid, c
     return valor;
 }
 
-void escribir_valor_en_memoria(long dirFisica, void* bytesRecibidos, uint32_t tamanio)
+void escribir_valor_en_memoria(long dirFisica, void* bytesRecibidos, uint32_t tamanio, int pid, char *origen)
 {
 	// bytesRecibidos = malloc(tamanio);
 	char* valor = (char*)bytesRecibidos;
     memcpy(memoria_principal+dirFisica, bytesRecibidos, tamanio); // cambiar
-    log_debug(loggerMemoria, "Escribió %s en memoria", valor);
+    //log_debug(loggerMemoria, "Escribió %s en memoria", valor);
+    log_info(loggerMemoria, "PID: <%d> - Acción: <ESCRIBIR> - Dirección física: <%p> - Tamaño: <%d> - Origen: <%s>", pid, dirFisica, tamanio, origen);
 
     return;
 }
@@ -206,13 +207,13 @@ void vaciar_parametros_desalojo(t_parametros_variables *parametros){
 // --------------------------PEDIDOS CPU--------------------------
 void ejecutar_cpu_pedido(void* socket){
 	while (1){
-		log_warning(loggerMemoria, "entra al while(1)");
+		//log_warning(loggerMemoria, "entra al while(1)");
 		int socket_modulo = (int)(intptr_t)socket;
 		codigo_operacion cod_op1 = recibir_operacion(socket_modulo);
-		log_warning(loggerMemoria, "el cod op recibido de cpu es %d", cod_op1);
+		//log_warning(loggerMemoria, "el cod op recibido de cpu es %d", cod_op1);
 	    switch (cod_op1){
 	    	case I_MOV_IN:{
-	    		log_warning(loggerMemoria, "entra a MOV_IN");
+	    		//log_warning(loggerMemoria, "entra a MOV_IN");
 
 	            char* buffer;
 	            int tamanio = 0;
@@ -225,7 +226,7 @@ void ejecutar_cpu_pedido(void* socket){
 	            long direccion_fisica = (long)leer_int(buffer, &desplazamiento);
 	            int tamanio_registro = leer_int(buffer, &desplazamiento);
 
-	            log_debug(loggerMemoria, "%d %d %d", pid, direccion_fisica, tamanio_registro);
+	            //log_debug(loggerMemoria, "%d %d %d", pid, direccion_fisica, tamanio_registro);
 
 	            char *valor_leido = leer_valor_direccion_fisica(direccion_fisica, tamanio_registro, pid, "CPU");
 
@@ -238,7 +239,7 @@ void ejecutar_cpu_pedido(void* socket){
 	            break;
 	    	}
 	        case I_MOV_OUT:{
-	        	log_warning(loggerMemoria, "entra a MOV_OUT");
+	        	//log_warning(loggerMemoria, "entra a MOV_OUT");
 
 	        	char* buffer;
 	        	int tamanio = 0;
@@ -253,7 +254,7 @@ void ejecutar_cpu_pedido(void* socket){
 //				char* valor_registro = leer_string(buffer, &desplazamiento);
 	        	char* valor_registro = leer_registro_de_buffer(buffer, desplazamiento);
 
-				escribir_valor_en_memoria(direccion_fisica, valor_registro, tamanioRegistro);
+				escribir_valor_en_memoria(direccion_fisica, valor_registro, tamanioRegistro, pid, "CPU");
 //	        	log_debug(loggerMemoria, "%d %d %s", pid, direccion_fisica, (char*)valor_registro);
 
 //	        	escribir_valor_direccion_fisica(valor_registro, direccion_fisica, pid, "CPU");
@@ -279,7 +280,7 @@ void ejecutar_kernel_pedido(void* socket){
 	while (1){
 		int socket_modulo = (int)(intptr_t)socket;
 		int cod_op = recibir_operacion(socket_modulo);
-		log_warning(loggerMemoria, "el cod op recibido de kernel es %d", cod_op);
+		//log_warning(loggerMemoria, "el cod op recibido de kernel es %d", cod_op);
 		t_paquete *paquete;
 		switch (cod_op){
 			case AUX_CREATE_PCB:{
@@ -291,7 +292,7 @@ void ejecutar_kernel_pedido(void* socket){
 				buffer = recibir_buffer(&tamanio, socket_modulo);
 
 				int pid = leer_int(buffer, &desplazamiento);
-				log_warning(loggerMemoria, "EL PID %d FUE RECIBIDO DE KERNEL", pid);
+				//log_warning(loggerMemoria, "EL PID %d FUE RECIBIDO DE KERNEL", pid);
 	            // crea
 	            t_tabla_segmentos *tabla_segmentos = malloc(sizeof(t_tabla_segmentos));
 	            tabla_segmentos->PID = pid;
@@ -332,7 +333,22 @@ void ejecutar_kernel_pedido(void* socket){
 	            break;
 	        }
 	        case I_CREATE_SEGMENT:{
-	            /*
+
+	        	void* buffer;
+	        	int tamanio = 0;
+	        	int desplazamiento = 0;
+
+	        	buffer = recibir_buffer(&tamanio, socket_modulo);
+
+	        	int pid = leer_int(buffer, &desplazamiento);
+	        	int id_segmento = leer_int(buffer, &desplazamiento);
+	        	int tamanio_segmento = leer_int(buffer, &desplazamiento);
+
+	        	log_warning(loggerMemoria, "%d %d %d", pid, id_segmento, tamanio_segmento);
+
+
+
+	        	/*
 	            // recibe
 	            t_ctx *ctx = recibir_contexto(*socket_modulo);
 

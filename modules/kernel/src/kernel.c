@@ -513,17 +513,39 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
 				else{log_error(kernelLogger,"ERROR compactacion");}
 				break;
 			 }
-			 case I_CREATE_SEGMENT: {
-                t_segmento_tabla* tabla_segmento = malloc(sizeof(tabla_segmento));
-				t_segmento* segmento = malloc(sizeof(segmento));
+			 case I_CREATE_SEGMENT: { //id_segmento, tamanio
+
+				 int id_segmento = atoi(instruccion[1]);
+				 int tamanio_segmento = atoi(instruccion[2]);
+
+				 t_paquete* paquete = crear_paquete(I_CREATE_SEGMENT);
+				 agregar_int_a_paquete(paquete, pcb->id_proceso);
+				 agregar_int_a_paquete(paquete, id_segmento);
+				 agregar_int_a_paquete(paquete, tamanio_segmento);
+				 enviar_paquete(paquete, conexionMemoria);
+				 eliminar_paquete(paquete);
+
+				 log_warning(kernelLogger, "%d %d %d", pcb->id_proceso, id_segmento, tamanio_segmento);
+
+
+
+
+				/*
+				t_segmento_tabla* tabla_segmento = malloc(sizeof(tabla_segmento));
+
+                t_segmento* segmento = malloc(sizeof(segmento));
+
 				segmento->direccionBase = (void*)(intptr_t)0;
 				segmento->id = atoi(instruccion[1]);
 				segmento->size = strtoul(instruccion[2],NULL,10);
-                tabla_segmento->idProceso = pcb->id_proceso;
+
+				tabla_segmento->idProceso = pcb->id_proceso;
                 tabla_segmento->segmento = segmento;
+
                 enviar_segmento_por_pid(conexionMemoria,I_CREATE_SEGMENT,tabla_segmento);
                 res = recibir_operacion(conexionMemoria);
-				if (res == AUX_OK){
+
+                if (res == AUX_OK){
                     // Agregar lista de segmentos actualizada al pcb
                     pcb->lista_segmentos = recibir_lista_segmentos(conexionMemoria);
 					log_info(kernelLogger,CREAR_SEGMENTO,pcb->id_proceso,tabla_segmento->segmento->id,tabla_segmento->segmento->size); // no loguea
@@ -532,9 +554,11 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
 				} else {
 					log_error(kernelLogger,E__BAD_REQUEST);
 				}
-                pcb->contador_instrucciones = pcb->contador_instrucciones+1;
+
+				pcb->contador_instrucciones = pcb->contador_instrucciones+1;
 				agregar_a_lista_con_sem((void*)pcb, ENUM_EXECUTING);
 				sem_post(&sem_proceso_a_executing);
+				*/
 				break;
 			 }
 			 case I_DELETE_SEGMENT: {

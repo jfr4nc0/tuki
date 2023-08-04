@@ -90,7 +90,7 @@ void crear_segmento(PCB *proceso);
 
 void terminar_programa_memoria(int conexion, t_log* logger, t_config* config);
 
-void escribir_valor_en_memoria(long dirFisica, void* bytesRecibidos, uint32_t tamanio);
+void escribir_valor_en_memoria(long dirFisica, void* bytesRecibidos, uint32_t tamanio, int pid, char *origen);
 
 /*
 // LOGS ////////////////////////////////////
