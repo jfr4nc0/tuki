@@ -75,12 +75,11 @@ typedef struct {
 
 pthread_mutex_t permiso_compactacion;
 pthread_mutex_t mutex_memoria;
-pthread_mutex_t mutex_operaciones_fs;
 
 /*----------------- FUNCIONES ------------------*/
 
 void iteratorConLog(char* value);
-
+t_segmento* buscar_segmento(t_list* listaSegmentos, int id_segmento);
 void inicializar_estructuras();
 void _planificador_largo_plazo();
 void destruir_pcb(PCB* pcb);

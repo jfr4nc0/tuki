@@ -635,10 +635,10 @@ t_list* recibir_resto_lista_segmentos(void* buffer, int* desp) {
     int cantidadSegmentos = leer_int(buffer, desp);
 
     for (int i = 0; i < cantidadSegmentos; i++) {
-    	segmento_t* segmento = malloc(sizeof(segmento_t));
+    	t_segmento* segmento = malloc(sizeof(t_segmento));
     	segmento->id = leer_int(buffer, desp);
-        segmento->tamanio_segmento = leer_size(buffer, desp);
-        segmento->direccion_base = leer_puntero(buffer, desp);
+        segmento->size = leer_size(buffer, desp);
+        segmento->direccionBase = leer_puntero(buffer, desp);
 
         list_add(listaSegmentos, segmento);
     }

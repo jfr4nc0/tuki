@@ -403,13 +403,13 @@ long obtener_direcc_fisica(PCB* pcb, int dirLogica, int tamanio_registro){
 			log_error(loggerCpu, "PID: %d - Error SEG_FAULT- Segmento: %d - Offset: %d - Tamaño: %d", pcb->id_proceso, numero_segmento, desplazamiento_segmento, tamanio_registro);
 			return -1;
 	}
-	segmento_t* segmento = list_get(pcb->lista_segmentos, numero_segmento);
+	t_segmento* segmento = list_get(pcb->lista_segmentos, numero_segmento);
 
 	//log_warning(loggerCpu, "id segmento %d", segmento->id);
 	//log_warning(loggerCpu, "size segmento %d", segmento->tamanio_segmento);
 	//log_warning(loggerCpu, "direcc base segmento %p", segmento->direccion_base);
 
-	long direccion_fisica = (long)(segmento->direccion_base + desplazamiento_segmento);
+	long direccion_fisica = (long)(segmento->direccionBase + desplazamiento_segmento);
 
 	return direccion_fisica;
 

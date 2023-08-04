@@ -162,11 +162,13 @@ typedef struct {
     int id;
 } t_segmento;
 
+/*
 typedef struct{
 	int id;
 	void* direccion_base;
 	int tamanio_segmento;
 }segmento_t;
+*/
 
 typedef struct {
     int PID;

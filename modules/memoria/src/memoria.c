@@ -387,7 +387,7 @@ void ejecutar_kernel_pedido(void* socket){
 	        	int id_segmento = leer_int(buffer, &desplazamiento);
 	        	int tamanio_segmento = leer_int(buffer, &desplazamiento);
 
-	        	log_warning(loggerMemoria, "%d %d %d", pcb->id_proceso, id_segmento, tamanio_segmento);
+	        	log_debug(loggerMemoria, "%d %d %d", pcb->id_proceso, id_segmento, tamanio_segmento);
 
 				t_paquete* paquete = crear_segmento(id_segmento, tamanio_segmento, pcb, socket_modulo);
 
@@ -400,7 +400,6 @@ void ejecutar_kernel_pedido(void* socket){
 
 	        	PCB* pcb = recibir_pcb(socket_modulo);
 
-	        	recibir_operacion(socket_modulo);
 	        	void* buffer;
 	        	int tamanio = 0;
 	        	int desplazamiento = 0;
@@ -581,11 +580,11 @@ void serializar_tabla_segmentos(t_list *tabla_segmentos, t_paquete *paquete){
     agregar_a_paquete_dato_serializado(paquete, &(tabla_segmentos->elements_count), sizeof(int));
     for (int i = 0; i < tabla_segmentos->elements_count; i++)
     {
-        segmento_t *segmento = list_get(tabla_segmentos, i);
+        t_segmento *segmento = list_get(tabla_segmentos, i);
 		// agregar_a_paquete
         agregar_a_paquete_dato_serializado(paquete, &(segmento->id), sizeof(int));
-        agregar_a_paquete_dato_serializado(paquete, &(segmento->direccion_base), sizeof(void*));
-        agregar_a_paquete_dato_serializado(paquete, &(segmento->tamanio_segmento), sizeof(int));
+        agregar_a_paquete_dato_serializado(paquete, &(segmento->direccionBase), sizeof(void*));
+        agregar_a_paquete_dato_serializado(paquete, &(segmento->size), sizeof(int));
 
     }
 }
@@ -606,15 +605,15 @@ t_list* deserializar_tabla_segmentos(void* buffer, int* desplazamiento){
     *desplazamiento += sizeof(int);
 
 	for (int i = 0; i < cansegmento_ts; i++) {
-        segmento_t* segmento = malloc(sizeof(segmento_t));
+        t_segmento* segmento = malloc(sizeof(t_segmento));
 
 	    memcpy(&segmento->id, buffer + *desplazamiento, sizeof(int));
         *desplazamiento += sizeof(int);
 
-	    memcpy(&segmento->direccion_base, buffer + *desplazamiento, sizeof(void*));
+	    memcpy(&segmento->direccionBase, buffer + *desplazamiento, sizeof(void*));
         *desplazamiento += sizeof(void*);
 
-	    memcpy(&segmento->tamanio_segmento, buffer + *desplazamiento, sizeof(int));
+	    memcpy(&segmento->size, buffer + *desplazamiento, sizeof(int));
         *desplazamiento += sizeof(int);
 
 	    list_add(tabla_segmentos, segmento);
@@ -625,15 +624,15 @@ void finalizar_proceso(t_list *tabla_segmentos, int PID){
     free(list_remove(tabla_segmentos, 0));
     for (int i = 0; i < list_size(tabla_segmentos); i++)
     {
-        segmento_t *segmento = list_get(tabla_segmentos, i);
-        if (segmento->direccion_base != NULL)
+        t_segmento *segmento = list_get(tabla_segmentos, i);
+        if (segmento->direccionBase != NULL)
         {
             // buscar hueco que tenga la misma base que el segmento y marcarlo como libre
             int index_hueco = 0;
             for (int i = 0; i < list_size(lista_huecos); i++)
             {
                 t_hueco *hueco = list_get(lista_huecos, i);
-                if (hueco->base == segmento->direccion_base)
+                if (hueco->base == segmento->direccionBase)
                 {
                     hueco->libre = true;
                     index_hueco = i;
@@ -642,7 +641,7 @@ void finalizar_proceso(t_list *tabla_segmentos, int PID){
             }
             comprobar_consolidacion_huecos_aledanios(index_hueco);
         }
-        list_remove_and_destroy_element(tabla_segmentos, i, (void *)liberar_segmentoo);
+        list_remove_and_destroy_element(tabla_segmentos, i, (void *)liberar_segmento);
         i--;
     }
 
@@ -691,11 +690,11 @@ void comprobar_consolidacion_huecos_aledanios(int index_hueco) {
 }
 
 
-void liberar_segmentoo(segmento_t *segmento){
+void liberar_segmento(t_segmento *segmento){
     free(segmento);
 }
 void liberar_tabla_segmentos(t_tabla_segmentos *ts){
-    list_destroy_and_destroy_elements(ts->segmentos, (void *)liberar_segmentoo);
+    list_destroy_and_destroy_elements(ts->segmentos, (void *)liberar_segmento);
     free(ts);
 }
 
@@ -778,7 +777,7 @@ void crear_segmento(PCB *proceso){
         int size;
         void *buffer = recibir_buffer(&size, SOCKET_MEMORIA);
 
-        segmento_t *segmento = list_get(proceso->contexto->tabla_segmentos, atoi(proceso->contexto->motivos_desalojo->parametros[0]));
+        segmento_ t *segmento = list_get(proceso->contexto->tabla_segmentos, atoi(proceso->contexto->motivos_desalojo->parametros[0]));
 
         memcpy(&(segmento->base), buffer, sizeof(segmento->base));
         segmento->tamanio = atoi(proceso->contexto->motivos_desalojo->parametros[1]);
@@ -918,14 +917,15 @@ t_paquete* crear_segmento(int id_segmento, int tamanio, PCB* pcb, int socket) {
 
     list_replace_and_destroy_element(tabla_segmentos_global, index, ts, (void *)liberar_tabla_segmentos);
     t_paquete *paquete = crear_paquete(AUX_OK);
-    //agregar_a_paquete_dato_serializado(paquete, &(segmento->direccionBase), sizeof(segmento->direccionBase));
 
-    agregar_a_paquete(paquete, segmento->direccionBase, (size_t)sizeof(segmento->direccionBase));
+//    agregar_a_paquete_dato_serializado(paquete, &(segmento->direccionBase), sizeof(segmento->direccionBase));
+    agregar_puntero_a_paquete(paquete, segmento->direccionBase);
+    // agregar_a_paquete(paquete, segmento->direccionBase, (size_t)sizeof(segmento->direccionBase));
 
     //enviar_paquete(paquete, socket);
     //eliminar_paquete(paquete);
 
-	//log_debug(loggerMemoria, "CHICAS ESTO TIENE QUE RECIBIR KERNEL %p", segmento->direccionBase);
+	log_debug(loggerMemoria, "CHICAS ESTO TIENE QUE RECIBIR KERNEL %p", segmento->direccionBase);
     log_info(loggerMemoria, "PID: <%d> - Crear Segmento: <%d> - Base: <%p> - TAMAÑO: <%d>", pcb->id_proceso, id_segmento, hueco->base, tamanio);
     return paquete;
 }
@@ -1012,10 +1012,10 @@ t_list* crear_tabla_segmentos(){
     //se me orccure algo, hacer el malloc afuera
 
     for (int i = 0; i < memoriaConfig->CANT_SEGMENTOS; i++) {
-        segmento_t* segmento = malloc(sizeof(segmento_t));
+        t_segmento* segmento = malloc(sizeof(t_segmento));
         segmento->id = i;
-        segmento->direccion_base = NULL;
-        segmento->tamanio_segmento = 0;
+        segmento->direccionBase = NULL;
+        segmento->size = 0;
         list_add(tabla_segmentos, segmento);
     }
 
@@ -1024,10 +1024,10 @@ t_list* crear_tabla_segmentos(){
 }
 
 void agregar_segmento_0(t_list* tabla_segmentos){
-    segmento_t* segmento_0 = malloc(sizeof(segmento_t));
+    t_segmento* segmento_0 = malloc(sizeof(t_segmento));
     segmento_0 = list_get(tabla_segmentos, 0);
-    segmento_0->direccion_base = memoria_principal;
-    segmento_0->tamanio_segmento = memoriaConfig->TAM_SEGMENTO_0;
+    segmento_0->direccionBase = memoria_principal;
+    segmento_0->size = memoriaConfig->TAM_SEGMENTO_0;
 }
 
 void terminar_programa_memoria(int conexion, t_log* logger, t_config* config){ //TODO: faltaria liberar la conexion
