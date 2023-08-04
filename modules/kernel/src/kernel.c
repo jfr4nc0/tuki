@@ -147,8 +147,8 @@ void recibir_de_consola(void *clienteAceptado) {
     recibir_operacion(conexionConConsola);
     t_list* listaInstrucciones = recibir_paquete(conexionConConsola);
 
-    //log_info(kernelLogger, "Me llegaron los siguientes valores: ");
-    //list_iterate(listaInstrucciones, (void*) iteratorSinLog);
+    // log_info(kernelLogger, "Me llegaron los siguientes valores: ");
+    // list_iterate(listaInstrucciones, (void*) iteratorSinLog);
 
     nuevo_proceso(listaInstrucciones, conexionConConsola);
 
@@ -259,7 +259,6 @@ void manejo_desalojo_pcb() {
         double inicio_ejecucion_proceso = time(NULL);
 
         if (conexionCPU > 0) {
-        	mostrar_pcb(pcb_para_cpu, kernelLogger);
         	enviar_pcb(conexionCPU, pcb_para_cpu, OP_EXECUTE_PCB, kernelLogger);
         } else {
         	log_error(kernelLogger, "ERROR CONEXION CPU NO FUE HECHA BIEN, NO SE PUEDE MANDAR EL PCB");
