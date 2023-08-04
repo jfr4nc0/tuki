@@ -275,15 +275,11 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 			int dirFisica = obtener_direcc_fisica(pcb, dirLogica, tamanio_registro);
 			void* dirFisicaPuntero = (void*) dirFisica;
 
-			void* bytesAEnviar = malloc(tamanio_registro);
-
 			log_warning(loggerCpu, "la direccion fisica es %d", dirFisica);
 
-			// char* valor_registro = obtener_valor_registro(registro, pcb->registrosCpu);
+			char* valor_registro = obtener_valor_registro(registro, pcb->registrosCpu);
 
-			char* valor_registro = registros_cpu_get_valor_registro("escribiendoTextoDePrueba", 16);
-
-			memcpy(bytesAEnviar, (void*)valor_registro, tamanio_registro);
+			// char* valor_registro = registros_cpu_get_valor_registro("escribiendoTextoDePrueba", 16);
 
 			/*TODO
 			if (dir_fisica == -1){
@@ -304,9 +300,6 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 
 			codigo_operacion cod1Prueba = recibir_operacion(conexionCpuMemoria);
 			codigo_operacion cod2Prueba = recibir_operacion(conexionCpuMemoria);
-
-
-			log_warning(loggerCpu, "PASA EL recibir valor: %s", (char*)bytesAEnviar);
 
 			log_info(loggerCpu, "PID: %d  -Acción: ESCRIBIR - Segmento: %d - Dirección Física: %d - Valor: %s", pcb->id_proceso, division_entera(dirLogica, configCpu->TAM_MAX_SEGMENTO), dirFisica, valor_registro);
 

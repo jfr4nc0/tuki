@@ -516,6 +516,7 @@ void agregar_registros_a_paquete(t_paquete* paquete, registros_cpu* registrosCpu
 }
 
 void agregar_registro_a_paquete(t_paquete* paquete, char* registro, int tamanio_registro) {
+	agregar_int_a_paquete(paquete, tamanio_registro);
 	if (tamanio_registro == 16) {
 		agregar_registro16bytes_a_paquete(paquete, registro);
 	}
@@ -764,6 +765,15 @@ void agregar_valor_a_paquete(t_paquete* paquete, void* valor, int tamanio) {
     paquete->buffer->size += tamanio;
 }
 
+char* leer_string(char* buffer, int* desp) {
+	int size = leer_int(buffer, desp);
+
+	char* respuesta = malloc(size);
+	memcpy(respuesta, buffer+(*desp), size);
+	(*desp)+=size;
+
+	return respuesta;
+}
 
 PCB* recibir_pcb(int clienteAceptado) {
 	PCB* pcb = malloc(sizeof(PCB));
