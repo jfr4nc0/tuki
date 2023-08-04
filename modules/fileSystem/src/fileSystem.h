@@ -29,7 +29,7 @@ int conexionMemoria;
 
 pthread_mutex_t m_instruccion;
 
-#define DEFAULT_LOG_PATH        "logs/file_system.log"
+#define DEFAULT_LOG_PATH        "../../../logs/file_system.log"
 
 // Functions
 void atender_kernel(int);
