@@ -1200,7 +1200,7 @@ int iniciar_servidor(t_config* config, t_log* logger) {
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE;
 
-    getaddrinfo(LOCALHOST, puerto, &hints, &servinfo);
+    getaddrinfo(NULL, puerto, &hints, &servinfo);
 
     // Creamos el socket de escucha del servidor
     socket_servidor = socket(servinfo->ai_family,
