@@ -296,8 +296,9 @@ void manejo_desalojo_pcb() {
         data->pcb = pcb_recibido;
 
         codigo_operacion res = manejo_instrucciones(data);
-        if(res==COMPACTACION){
-            data->operacion = COMPACTACION;
+
+        if(res==I_CREATE_SEGMENT){
+            data->operacion = I_CREATE_SEGMENT;
             res = manejo_instrucciones(data);
         }
 
@@ -315,28 +316,6 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
     char** instruccion = data->instruccion;
 
         switch(operacion) {
-            case COMPACTACION: {
-
-            	log_info(kernelLogger, "Compactación: <Se solicitó compactación / Esperando Fin de Operaciones de FS>");
-            	pthread_mutex_lock(&mutex_operaciones_fs);
-            	log_info(kernelLogger, "Inicia la compactacion");
-
-            	enviar_operacion(conexionMemoria, COMPACTACION, 0,0);
-            	recibir_operacion(conexionMemoria);
-            	recibir_operacion(conexionMemoria);
-
-            	t_list *tablas_de_segmentos_actualizadas = recibir_todas_las_tablas_segmentos(conexionMemoria);
-            	actualizar_todas_las_tablas_de_segmentos(tablas_de_segmentos_actualizadas, pcb);
-
-            	log_info(kernelLogger, "Se finalizó el proceso de compactación");
-            	pthread_mutex_unlock(&mutex_operaciones_fs);
-            	pthread_mutex_unlock(&mutex_memoria);
-
-            	// TODO: falta terminar de implementar
-
-            	return I_CREATE_SEGMENT;
-            	break;
-            }
             case I_YIELD: {
                	agregar_a_lista_con_sem((void*)pcb, ENUM_READY);
                	pcb->ready_timestamp = time(NULL);
@@ -565,10 +544,26 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
                     log_info(kernelLogger, "PID: %d - Crear Segmento - Id: %d - Tamaño: %d", pcb->id_proceso, id_segmento, segmento->tamanio_segmento);
                     agregar_a_lista_con_sem((void*)pcb, ENUM_EXECUTING);
                     sem_post(&sem_proceso_a_executing);
-                    return AUX_OK;
+
                 }else if(codigoRespuesa == COMPACTACION){
-                	pthread_mutex_unlock(&mutex_memoria);
-                	return COMPACTACION;
+                    log_info(kernelLogger, "Compactación: <Se solicitó compactación / Esperando Fin de Operaciones de FS>");
+                    pthread_mutex_lock(&mutex_operaciones_fs);
+                    log_info(kernelLogger, "Inicia la compactacion");
+
+                    enviar_operacion(conexionMemoria, COMPACTACION, 0,0);
+                    recibir_operacion(conexionMemoria);
+                    recibir_operacion(conexionMemoria);
+
+
+                    t_list *tablas_de_segmentos_actualizadas = recibir_todas_las_tablas_segmentos(conexionMemoria);
+                    actualizar_todas_las_tablas_de_segmentos(tablas_de_segmentos_actualizadas);
+
+                    log_info(kernelLogger, "Se finalizó el proceso de compactación");
+                    pthread_mutex_unlock(&mutex_operaciones_fs);
+                    pthread_mutex_unlock(&mutex_memoria);
+                    return I_CREATE_SEGMENT;
+            	// TODO: falta terminar de implementar
+                    break;
                 }else if(codigoRespuesa == OUT_OF_MEMORY){
                 	pthread_mutex_unlock(&mutex_memoria);
                 	terminar_proceso(pcb, OUT_OF_MEMORY);
@@ -716,7 +711,25 @@ void actualizar_todas_las_tablas_de_segmentos(t_list* nuevas_tablas, PCB* pcb){
         }
     }
 }
-PCB *buscar_proceso(int pid_buscado, PCB* pcb){
+
+PCB *buscar_proceso(int idProceso){
+
+    for (int estado = 0; estado < CANTIDAD_ESTADOS; estado++) {
+        t_list* listaPorEstado = lista_estados[estado];
+        for (int index = 0; index < list_size(listaPorEstado); index++) {
+            PCB* pcb = list_get(listaPorEstado, index);
+            if (pcb->id_proceso == idProceso) {
+                log_warning(kernelLogger, "PCB con id %d Lista encontrada en lista de estados: %s", pcb->id_proceso, nombres_estados[estado]);
+                return pcb;
+            }
+        }
+    }
+    return NULL;
+    /*
+    int resulatdo_buesqueda; // en -1 entoces no lo encontro
+    if (EJECUTANDO->contexto->PID == pid_buscado)
+        return EJECUTANDO;
+>>>>>>> 62b4dda1182d158e7e1665d28304fd3283c60d34
 
     int indice;
     int estado;
@@ -729,8 +742,7 @@ PCB *buscar_proceso(int pid_buscado, PCB* pcb){
 
     //TODO
     //log_info(kernelLogger, "No hay proceso con PID: <%d> al que se le pueda actualizar la tabla de segmetnos", pid_buscado);
-
-    return pcb_buscado;
+*/
 }
 
 /*
@@ -1275,6 +1287,7 @@ void mover_de_lista_con_sem(int idProceso, int estadoNuevo, int estadoAnterior) 
 			log_error(kernelLogger, "ERROR AL MOVER pcb de estado %s a estado %s",
 					nombres_estados[estadoAnterior], nombres_estados[estadoNuevo] );
 		}
+        list_add(lista_estados[estadoNuevo], pcbEliminado);
 		//int indexDevuelto = list_add(lista_estados[estadoNuevo], (void*)pcb);
 		//log_info(kernelLogger, "Se ha añadido el pcb <%d> a la lista de estados <%s> devuelve indice %d", pcb->id_proceso, nombres_estados[estadoNuevo], indexDevuelto);
 

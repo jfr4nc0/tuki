@@ -630,45 +630,14 @@ void finalizar_proceso(t_list *tabla_segmentos, int PID){
         }
     }
 }
+
+
 void liberar_segmentoo(segmento_t *segmento){
     free(segmento);
 }
 void liberar_tabla_segmentos(t_tabla_segmentos *ts){
     list_destroy_and_destroy_elements(ts->segmentos, (void *)liberar_segmentoo);
     free(ts);
-}
-void comprobar_consolidacion_huecos_aledanios(int index_hueco) {
-    t_hueco* hueco_actual = list_get(lista_huecos, index_hueco);
-    t_hueco* hueco_anterior = NULL;
-    t_hueco* hueco_siguiente = NULL;
-
-    if (index_hueco > 1) {
-        hueco_anterior = list_get(lista_huecos, index_hueco - 1);
-    }
-
-    if (index_hueco < list_size(lista_huecos) - 1) {
-        hueco_siguiente = list_get(lista_huecos, index_hueco + 1);
-    }
-
-    if (hueco_anterior && hueco_anterior->libre) {
-        hueco_anterior->tamanio += hueco_actual->tamanio;
-        list_remove(lista_huecos, index_hueco);
-
-        // copio el contenido del hueco actual al anterior
-        memcpy(hueco_actual, hueco_anterior, sizeof(t_hueco));
-        hueco_actual = (void*) hueco_anterior;
-        hueco_anterior = NULL;
-
-        index_hueco--;
-        memset(hueco_actual->base, 0, hueco_actual->tamanio);
-    }
-
-    if (hueco_siguiente && hueco_siguiente->libre) {
-        hueco_actual->tamanio += hueco_siguiente->tamanio;
-        list_remove(lista_huecos, index_hueco + 1);
-        memset(hueco_actual->base, 0, hueco_actual->tamanio);
-        free(hueco_siguiente);
-    }
 }
 
 void mostrar_tabla_global(){
