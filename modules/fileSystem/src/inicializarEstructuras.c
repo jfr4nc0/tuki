@@ -13,7 +13,7 @@ uint32_t CANTIDAD_BLOQUES;
 */
 void inicializar_estructuras(t_config* config) {
     configFileSystem = cargar_config(config);
-    superbloque = crear_superbloque(DEFAULT_SUPERBLOQUE_PATH);
+    superbloque = crear_superbloque(configFileSystem->PATH_SUPERBLOQUE);
 
     SIZE_BLOQUE = superbloque->block_size;
     CANTIDAD_BLOQUES = superbloque->block_count;
