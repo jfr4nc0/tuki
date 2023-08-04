@@ -243,23 +243,13 @@ t_list* recalcular_huecos_libres() {
 }
 
 char* leer_espacio_usuario(void* direccion, size_t size, int demora) {
-	/*
-    t_segmento* segmentoUno = list_get(memoria->segmentos, 1);
-	direccion = calcular_direccion(memoria->espacioUsuario, 150);
-	direccion = segmentoUno->direccionBase;
-
-	void *escribirEnValor = malloc(size * sizeof(char *));
-    escribirEnValor = (char*)"hola";
-    void* holaPuntero = (void*)escribirEnValor;
-    memcpy(direccion, holaPuntero, size);
-*/
     void *valor = malloc(size * sizeof(char *));
     // simular_tiempo_acceso(demora);
 
     // Realizar la lectura en la dirección indicada
     memcpy(valor, direccion, size);
     log_debug(loggerMemoria, "Se pidio leer el texto %s", (char*)valor);
-    return valor;
+    return (char*)valor;
 }
 
 void escribir_espacio_usuario(void* direccion, size_t size, void* valor, int demora) {

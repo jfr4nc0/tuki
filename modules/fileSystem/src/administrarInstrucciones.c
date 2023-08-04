@@ -226,6 +226,7 @@ char* leer_archivo(char* nombreArchivo, uint32_t puntero, void* direccionFisica,
 
 bool escribir_archivo(char* informacionAEscribir, char *nombreArchivo, uint32_t puntero, uint32_t cantidadBytesAEscribir, void* direccionFisica) {
 
+    // char informacion[cantidadBytesAEscribir] = informacionAEscribir;
     bool primeraVez = true;
     uint32_t bloqueActual, bloqueRelativo, nuevoBloque, espacioDisponible, posicion;
     uint32_t bytesPorEscribir = cantidadBytesAEscribir;

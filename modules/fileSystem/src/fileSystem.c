@@ -121,12 +121,13 @@ void ejecutar_instrucciones_kernel(void* cliente) {
 	            int desplazamiento = 0;
 
 	            codigo_operacion operacionOK = recibir_operacion(conexionMemoria);
+	            recibir_operacion(conexionMemoria);
                 void* buffer = recibir_buffer(&tamanio, conexionMemoria);
                 char* respuesta = leer_string(buffer, &desplazamiento);
 
                 log_debug(loggerFileSystem, "Se va a escribir en los bloques el texto %s", respuesta);
 
-                devolver_instruccion_generico(escribir_archivo((char*)direccionFisica, nombreArchivo, puntero, cantidadBytes, direccionFisica), clienteKernel);
+                devolver_instruccion_generico(escribir_archivo(respuesta, nombreArchivo, puntero, cantidadBytes, direccionFisica), clienteKernel);
 				// char* informacionAEscribir = (char*)recibir_buffer_informacion_memoria(cantidadBytes);
                 // log_info(loggerFileSystem, "Escrito %s exitoso", informacionAEscribir);
 //				devolver_instruccion_generico(escribir_archivo(informacionAEscribir, nombreArchivo, puntero, cantidadBytes), clienteKernel);

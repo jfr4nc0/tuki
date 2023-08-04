@@ -154,7 +154,7 @@ void administrar_instrucciones(int cliente, codigo_operacion codigoDeOperacion, 
 			char* respuesta = leer_espacio_usuario(direccionFisica, cantidadBytes, memoriaConfig->RETARDO_MEMORIA);
 
 			t_paquete* paquete = crear_paquete(AUX_OK);
-			agregar_a_paquete(paquete, (void*) respuesta, strlen(respuesta)+1);
+			agregar_a_paquete(paquete, (void*) respuesta, cantidadBytes);
 			enviar_paquete(paquete, cliente);
 			eliminar_paquete(paquete);
 			break;
