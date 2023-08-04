@@ -75,7 +75,6 @@ void vaciar_parametros_desalojo(t_parametros_variables *parametros);
 void compactar();
 void eliminar_segmento(t_list *tabla_segmentos, int id_segmento, int PID);
 int obtener_index_tabla_segmentos(int PID);
-void serializar_todas_las_tablas_segmentos(t_list* tablas_segmentos, t_paquete* paquete);
 
 ////////////
 t_hueco* get_hueco_con_best_fit(int tamanio);

@@ -28,9 +28,6 @@ int main(int argc, char** argv) {
 
     inicializar_diccionario_recursos();
 
-
-
-    // TODO: Manejar multiples instancias de conexiones de consola al kernel
     inicializar_escucha_conexiones_consolas(servidorKernel);
 
     /*TODO: NUNCA LLEGA ACA PORQUE SE QUEDA ESPERANDO NUEVAS CONSOLAS,
@@ -544,8 +541,6 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
                     sem_post(&sem_proceso_a_executing);
                     return AUX_OK;
 
-                    // TODO: revisar el valor de segmento->id que llega
-
                     /*
                     int size_paquete = leer_int(buffer, &desplazamiento);
                     //log_warning(kernelLogger, "el valor recibido de tamanio es %d", size_paquete);
@@ -568,8 +563,8 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
                     log_info(kernelLogger, "Se finalizó el proceso de compactación");
                     pthread_mutex_unlock(&permiso_compactacion);
                     pthread_mutex_unlock(&mutex_memoria);
+                    sem_post(&sem_proceso_a_executing);
                     return I_CREATE_SEGMENT;
-            	// TODO: falta terminar de implementar
                     break;
                 }else if(codigoRespuesa == OUT_OF_MEMORY){
                 	pthread_mutex_unlock(&mutex_memoria);
@@ -708,12 +703,14 @@ PCB *buscar_proceso(int idProceso){
 
     for (int estado = 0; estado < CANTIDAD_ESTADOS; estado++) {
         t_list* listaPorEstado = lista_estados[estado];
-        for (int index = 0; index < list_size(listaPorEstado); index++) {
-            PCB* pcb = list_get(listaPorEstado, index);
-            if (pcb->id_proceso == idProceso) {
-                log_warning(kernelLogger, "PCB con id %d Lista encontrada en lista de estados: %s", pcb->id_proceso, nombres_estados[estado]);
-                return pcb;
-            }
+        if (listaPorEstado) {
+			for (int index = 0; index < list_size(listaPorEstado); index++) {
+				PCB* pcb = list_get(listaPorEstado, index);
+				if (pcb->id_proceso == idProceso) {
+					log_warning(kernelLogger, "PCB con id %d Lista encontrada en lista de estados: %s", pcb->id_proceso, nombres_estados[estado]);
+					return pcb;
+				}
+			}
         }
     }
     return NULL;
@@ -747,16 +744,16 @@ void crear_segmento(PCB* pcb_recibido, char* id_segmento, char* tamanio) {
 
 	codigo_operacion respuesta = recibir_operacion(conexionMemoria);
 	switch(respuesta){
-		case SEGMENTO_CREADO: {
+		case SEGMENTO_ CREADO: {
 			log_info(kernelLogger, CREAR_SEGMENTO, pcb_recibido->id_proceso, atoi(id_segmento), atoi(tamanio));
 			pcb_recibido->lista_segmentos = recibir_lista_segmentos(conexionMemoria);  //TODO: para inicializar pcb, y cada vez que se modifique hay que recibir la lista actualizada
 			break;
 		}
-		case OUT_OF_MEMORY: {
+		case OUT_OF_ MEMORY: {
 			terminar_proceso(pcb_recibido, OUT_OF_MEMORY);
 			break;
 		}
-		case COMPACTACION: {
+		case COMPACTA CION: {
 			log_info(kernelLogger, "Compactación: Esperando Fin de Operaciones de FS");
 			sem_wait(&sem_compactacion);
 			log_info(kernelLogger, "Compactación: Se solicitó compactación.");

@@ -156,7 +156,6 @@ char* extraer_de_modulo_config(t_config* config, char* valorIncompleto, char* mo
     return extraer_string_de_config(config, property, logger);
 }
 
-// TODO: volverla funcion que acepte infinitos parametros
 char* concatenar_strings(char *p1, char *p2 ) {
     char *concatenacion = malloc( sizeof( char ) * ( strlen( p1 ) + strlen( p2 ) ) + 1 );
 
@@ -689,17 +688,23 @@ void iteratorSinLog(char* value) {
     printf("%s \n", value);
 }
 
+void serializar_todas_las_tablas_segmentos(t_list* tablas_segmentos, t_paquete* paquete){
+    agregar_int_a_paquete(paquete, tablas_segmentos->elements_count); // TODO: TENER CUIDADO
+	for(int i = 0; i < tablas_segmentos->elements_count; i++){
+		t_tabla_segmentos* tabla_segmentos = list_get(tablas_segmentos, i);
+        agregar_int_a_paquete(paquete, tabla_segmentos->PID);
+		serializar_tabla_segmentos(tabla_segmentos->segmentos, paquete);
+	}
+}
+
 t_list* deserealizar_todas_las_tablas_segmentos(void* buffer, int* desplazamiento){
 	t_list* tablas_segmentos = list_create();
-	int cantidad_tablas_segmentos;
-	memcpy(&cantidad_tablas_segmentos, buffer + *desplazamiento, sizeof(int));
-	*desplazamiento += sizeof(int);
+	int cantidad_tablas_segmentos = leer_int(buffer, desplazamiento);
 	for(int i = 0; i < cantidad_tablas_segmentos; i++){
-		t_tabla_segmentos* tabla_segmentos = malloc(sizeof(t_tabla_segmentos));
-		memcpy(&tabla_segmentos->PID, buffer + *desplazamiento, sizeof(int));
-		*desplazamiento += sizeof(int);
-		tabla_segmentos->segmentos = deserializar_tabla_segmentos(buffer, desplazamiento);
-		list_add(tablas_segmentos, tabla_segmentos);
+		t_tabla_segmentos* elemento_tabla_segmentos = malloc(sizeof(t_tabla_segmentos));
+        elemento_tabla_segmentos->PID = leer_int(buffer, desplazamiento);
+		elemento_tabla_segmentos->segmentos = deserializar_tabla_segmentos(buffer, desplazamiento);
+		list_add(tablas_segmentos, elemento_tabla_segmentos);
 	}
 	return tablas_segmentos;
 }

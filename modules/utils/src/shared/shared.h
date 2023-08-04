@@ -215,6 +215,8 @@ void serializar_tabla_segmentos(t_list *tabla_segmentos, t_paquete *paquete);
 t_list* deserializar_tabla_segmentos(void* buffer, int* desplazamiento);
 t_list* deserealizar_todas_las_tablas_segmentos(void* buffer, int* desplazamiento);
 
+void serializar_todas_las_tablas_segmentos(t_list* tablas_segmentos, t_paquete* paquete);
+
 long leer_long(char* buffer, int* desp);
 long long leer_long_long(char* buffer, int* desp);
 float leer_float(char* buffer, int* desp);

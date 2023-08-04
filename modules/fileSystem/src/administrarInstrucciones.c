@@ -237,11 +237,6 @@ bool escribir_archivo(char* informacionAEscribir, char *nombreArchivo, uint32_t 
     posicion = obtener_posicion_absoluta(fcbArchivo, puntero);
     espacioDisponible = SIZE_BLOQUE - obtener_posicion_en_bloque(puntero);
 
-    //informacionAEscribir = leer_espacio_usuario(direccionFisica, cantidadBytesAEscribir, 0);
-    // informacionAEscribir = "sonicthehedgedogTextoExtensoVamosLosPIbesCOnsolasonicthehedgedogTextoExtensoVamosLosPIbesCOnsolasonicthehedgedogTextoExtensoVamosLosPIbesCOnsola";
-    // TODO: OBTENER TEXTO DE MEMORIA
-
-
     if (cantidadBytesAEscribir <= espacioDisponible)
     {
         sleep(configFileSystem->RETARDO_ACCESO_BLOQUE);

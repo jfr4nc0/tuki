@@ -367,6 +367,7 @@ void ejecutar_kernel_pedido(void* socket){
 			break;
 	        }
 			case COMPACTACION: {
+				recibir_operacion(socket_modulo);
 				compactar();
 				paquete = crear_paquete(AUX_OK);
 				serializar_todas_las_tablas_segmentos(tabla_segmentos_global, paquete);
@@ -479,15 +480,6 @@ void eliminar_segmento(t_list *tabla_segmentos, int id_segmento, int PID){
     int index = obtener_index_tabla_segmentos(PID);
 
     list_replace_and_destroy_element(tabla_segmentos_global, index, ts, (void *)liberar_tabla_segmentos);
-}
-
-void serializar_todas_las_tablas_segmentos(t_list* tablas_segmentos, t_paquete* paquete){
-	agregar_a_paquete_dato_serializado(paquete, &tablas_segmentos->elements_count, sizeof(int));
-	for(int i = 0; i < list_size(tablas_segmentos); i++){
-		t_tabla_segmentos* tabla_segmentos = list_get(tablas_segmentos, i);
-		agregar_a_paquete_dato_serializado(paquete, &(tabla_segmentos->PID), sizeof(int));
-		serializar_tabla_segmentos(tabla_segmentos->segmentos, paquete);
-	}
 }
 
 void compactar()
@@ -753,7 +745,7 @@ void crear_segmento(PCB *proceso){
         pthread_mutex_unlock(&m_memoria);
         log_info(LOGGER_KERNEL, "PID: <%d> - Crear Segmento - Id: <%d> - Tamaño: <%d>", proceso->contexto->PID, segmento->id_segmento, segmento->tamanio);
         break;
-    case COMPACTAR:
+    case COMPACT
 
         log_info(LOGGER_KERNEL, "Compactación: <Se solicitó compactación / Esperando Fin de Operaciones de FS>");
         pthread_mutex_lock(&SOLICITUD_FS);
