@@ -55,6 +55,7 @@ extern t_config_file_system* configFileSystem;
 extern t_bitmap* bitmap;
 extern t_dictionary* dictionaryFcbs;
 extern uint32_t SIZE_BLOQUE;
+extern uint32_t CANTIDAD_BLOQUES;
 
 void inicializar_estructuras(t_config* config);
 
@@ -63,7 +64,7 @@ t_superbloque* crear_superbloque (char *pathSuperbloque);
 t_bitarray* create_bitmap(int entries);
 void abrir_bitmap (char* pathBitmap, uint32_t blockCount);
 void crear_archivo_de_bloques(char* pathArchivoDeBloques, uint32_t blockCount, uint32_t blockSize);
-uint32_t redondear_hacia(uint32_t nuevoSize, codigo_redondear ABAJO_ARRIBA);
+uint32_t dividir_por_size_bloque_y_redondear_hacia(uint32_t nuevoSize, codigo_redondear ABAJO_ARRIBA);
 t_fcb* cargar_fcb(char *pathFcb);
 void abrir_fcbs(char *pathFcb);
 FILE* abrir_archivo_de_bloques(char* pathArchivoDeBloques);

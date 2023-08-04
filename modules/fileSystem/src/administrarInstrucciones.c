@@ -62,15 +62,101 @@ bool truncar_archivo(char* nombreArchivo, uint32_t tamanioNuevo) {
 
     actualizar_tamanio_bloques(fcb, tamanioNuevo);
     log_info(loggerFileSystem, "Completado Truncado de Archivo: <%s>", nombreArchivo);
+    sleep(configFileSystem->RETARDO_ACCESO_BLOQUE); // Borrar
     return true;
 }
 
+/*
+void f_write(char *direccion, int posicion_archivo, int tamanio_a_escribir, int pid, char* nombre_archivo)
+{
+    long dir_fisica = strtol(direccion, NULL, 10);
+
+    log_info(loggerFileSystem, "Escribir Archivo: %s - Puntero: %d - Memoria: %p - Tamaño: %d", nombre_archivo, posicion_archivo, (void *)dir_fisica, tamanio_a_escribir);
+
+    char *tamanio_a_escribir_string = string_itoa(tamanio_a_escribir);
+    char *valor_leido = leer_direccion_de_memoria(direccion, tamanio_a_escribir_string, pid);
+    free(tamanio_a_escribir_string);
+    log_info(loggerFileSystem, "Valor leido de Memoria: %s", valor_leido);
+
+    if (tamanio_a_escribir + posicion_archivo > 64)
+    {
+        // Se carga el puntero indirecto en la memoria
+        cargar_puntero_indirecto(nombre_archivo);
+    }
+
+    void *contenido = malloc(tamanio_a_escribir);
+    memcpy(contenido, valor_leido, tamanio_a_escribir);
+    free(valor_leido);
+
+    void *contenido_original = contenido; // Mantener una copia del puntero original
+
+    while (tamanio_a_escribir > 0)
+    {
+        int tamanio_a_escribir_del_bloque = MIN(tamanio_a_escribir, SIZE_BLOQUE - posicion_archivo % SIZE_BLOQUE);
+        int bloque_archivo = posicion_archivo / SIZE_BLOQUE;
+        int offset = posicion_archivo % SIZE_BLOQUE;
+
+        escribir_bloque(nombre_archivo, bloque_archivo, offset, tamanio_a_escribir_del_bloque, contenido);
+        contenido = contenido + tamanio_a_escribir_del_bloque;
+
+        posicion_archivo += tamanio_a_escribir_del_bloque;
+        tamanio_a_escribir -= tamanio_a_escribir_del_bloque;
+    }
+
+    contenido = contenido_original; // Restaurar el puntero original antes de liberar la memoria
+    free(contenido);
+    munmap(archivo_de_bloques, CANTIDAD_BLOQUES * SIZE_BLOQUE);
+}
+
+void f_read(char *direccion, int posicion_archivo, int tamanio_a_leer, int pid, char* nombre_archivo) {
+    void *buffer = malloc(tamanio_a_leer);
+
+    long dir_fisica = strtol(direccion, NULL, 10);
+
+    log_info(loggerFileSystem, "Leer Archivo: %s - Puntero: %d - Memoria: %p - Tamaño: %d", nombre_archivo, posicion_archivo, (void *)dir_fisica, tamanio_a_leer);
+
+    if (tamanio_a_leer + posicion_archivo > 64)
+    {
+        // Se carga el puntero indirecto en la memoria
+        cargar_puntero_indirecto(nombre_archivo);
+    }
+
+    int tamanio_total = tamanio_a_leer;
+
+    while (tamanio_a_leer > 0)
+    {
+        int tamanio_a_leer_del_bloque = MIN(tamanio_a_leer, SIZE_BLOQUE - posicion_archivo % SIZE_BLOQUE);
+        int bloque_archivo = posicion_archivo / SIZE_BLOQUE;
+        int offset = posicion_archivo % SIZE_BLOQUE;
+
+        void *leido = leer_bloque(nombre_archivo, bloque_archivo, offset, tamanio_a_leer_del_bloque);
+        memcpy(buffer + (tamanio_total - tamanio_a_leer), leido, tamanio_a_leer_del_bloque);
+        free(leido);
+
+
+        posicion_archivo += tamanio_a_leer_del_bloque;
+        tamanio_a_leer -= tamanio_a_leer_del_bloque;
+    }
+
+    char *buffer_como_char = malloc(tamanio_total + 1);
+    memcpy(buffer_como_char, buffer, tamanio_total);
+    buffer_como_char[tamanio_total] = '\0';
+
+    log_info(loggerFileSystem, "Valor Leido de File System: %s", buffer_como_char);
+    escribir_valor_en_memoria(direccion, buffer_como_char, pid);
+    free(buffer);
+    free(buffer_como_char);
+
+    munmap(loggerFileSystem, CANTIDAD_BLOQUES * SIZE_BLOQUE);
+}
+*/
 /*
 Esta operación deberá leer la información correspondiente de los bloques a partir del puntero y el tamaño recibidos.
 Esta información se deberá enviar a la Memoria para ser escrita a partir de la dirección física recibida por parámetro
 y esperar su finalización para poder confirmar el éxito de la operación al Kernel.
 */
-bool leer_archivo(char* nombreArchivo, uint32_t puntero, void* direccionFisica, uint32_t bytesQueFaltanPorLeer, uint32_t pidProceso) {
+
+char* leer_archivo(char* nombreArchivo, uint32_t puntero, void* direccionFisica, uint32_t bytesQueFaltanPorLeer, uint32_t pidProceso) {
     log_info(loggerFileSystem, LEER_ARCHIVO, nombreArchivo, puntero, direccionFisica, bytesQueFaltanPorLeer);
 
     t_fcb* fcb = dictionary_get(dictionaryFcbs, nombreArchivo);
@@ -135,14 +221,12 @@ bool leer_archivo(char* nombreArchivo, uint32_t puntero, void* direccionFisica, 
         log_info(loggerFileSystem,"Faltan leer <%u> bytes.", bytesQueFaltanPorLeer);
     }
 
-    // TODO: Enviar información a memoria para ser escrita a partir de la dirección física
-    free(informacion);
-    free(buffer);
-
-    return true;
+	return informacion;
 }
 
 bool escribir_archivo(char* informacionAEscribir, char *nombreArchivo, uint32_t puntero, uint32_t cantidadBytesAEscribir, void* direccionFisica) {
+
+    // char informacion[cantidadBytesAEscribir] = informacionAEscribir;
     bool primeraVez = true;
     uint32_t bloqueActual, bloqueRelativo, nuevoBloque, espacioDisponible, posicion;
     uint32_t bytesPorEscribir = cantidadBytesAEscribir;
@@ -152,14 +236,6 @@ bool escribir_archivo(char* informacionAEscribir, char *nombreArchivo, uint32_t 
     bloqueRelativo = obtener_bloque_relativo(fcbArchivo, puntero);
     posicion = obtener_posicion_absoluta(fcbArchivo, puntero);
     espacioDisponible = SIZE_BLOQUE - obtener_posicion_en_bloque(puntero);
-
-    //informacionAEscribir = leer_espacio_usuario(direccionFisica, cantidadBytesAEscribir, 0);
-    // informacionAEscribir = "sonicthehedgedogTextoExtensoVamosLosPIbesCOnsolasonicthehedgedogTextoExtensoVamosLosPIbesCOnsolasonicthehedgedogTextoExtensoVamosLosPIbesCOnsola";
-    // TODO: OBTENER TEXTO DE MEMORIA
-    informacionAEscribir = "sonicthehedgedog";
-
-    cantidadBytesAEscribir = strlen(informacionAEscribir)-2;
-    log_info(loggerFileSystem, "Lo que tiene que escribir es: %s", informacionAEscribir);
 
     if (cantidadBytesAEscribir <= espacioDisponible)
     {
@@ -218,6 +294,8 @@ bool escribir_archivo(char* informacionAEscribir, char *nombreArchivo, uint32_t 
     return true;
 }
 
+
+
 /*
 Se deberá solicitar a la Memoria la información que se encuentra a partir de la dirección física y
 escribirlo en los bloques correspondientes del archivo a partir del puntero recibido.
@@ -231,17 +309,17 @@ uint32_t obtener_bloque_relativo(t_fcb* fcbArchivo, uint32_t punteroFseek) {
     if ( ( punteroFseek % SIZE_BLOQUE == 0) && punteroFseek != 0) {
         return (punteroFseek / SIZE_BLOQUE)+1;
     }
-    return redondear_hacia(punteroFseek, ARRIBA);
+    return dividir_por_size_bloque_y_redondear_hacia(punteroFseek, ARRIBA);
 }
 
 uint32_t obtener_bloque_absoluto(t_fcb* fcb, uint32_t punteroFseek) {
-    uint32_t bloque = redondear_hacia(punteroFseek, ABAJO);
+    uint32_t bloque = dividir_por_size_bloque_y_redondear_hacia(punteroFseek, ABAJO);
     return (bloque == 0) ? fcb->puntero_directo:
             archivo_de_bloques_leer_n_puntero_de_bloque_de_punteros(fcb->puntero_indirecto, bloque-1);
 }
 
 uint32_t obtener_posicion_en_bloque(uint32_t punteroFseek) {
-    return punteroFseek - SIZE_BLOQUE * redondear_hacia(punteroFseek, ABAJO);
+    return punteroFseek - SIZE_BLOQUE * dividir_por_size_bloque_y_redondear_hacia(punteroFseek, ABAJO);
 }
 
 // Funcion que sirve para saber desde donde empezar a leer/escribir.

@@ -6,6 +6,7 @@ t_config_file_system* configFileSystem;
 t_bitmap* bitmap;
 t_dictionary* dictionaryFcbs;
 uint32_t SIZE_BLOQUE;
+uint32_t CANTIDAD_BLOQUES;
 
 /*
 * Funciona como un main, usa todas las funciones que estan debajo
@@ -15,6 +16,7 @@ void inicializar_estructuras(t_config* config) {
     superbloque = crear_superbloque(DEFAULT_SUPERBLOQUE_PATH);
 
     SIZE_BLOQUE = superbloque->block_size;
+    CANTIDAD_BLOQUES = superbloque->block_count;
 
     abrir_bitmap(configFileSystem->PATH_BITMAP, superbloque->block_count);
 
@@ -156,17 +158,15 @@ t_fcb* cargar_fcb(char *pathFcb) {
     fcb->tamanio_archivo = (uint32_t) extraer_int_de_config(config_fcb, "TAMANIO_ARCHIVO", loggerFileSystem);
     fcb->puntero_directo = (uint32_t) extraer_int_de_config(config_fcb, "PUNTERO_DIRECTO", loggerFileSystem);
     fcb->puntero_indirecto = (uint32_t) extraer_int_de_config(config_fcb, "PUNTERO_INDIRECTO", loggerFileSystem);
-    fcb->cantidad_bloques_asignados = redondear_hacia(fcb->tamanio_archivo, ARRIBA);
+    fcb->cantidad_bloques_asignados = dividir_por_size_bloque_y_redondear_hacia(fcb->tamanio_archivo, ARRIBA);
 
     return fcb;
 }
 
-uint32_t redondear_hacia(uint32_t nuevoSize, codigo_redondear ABAJO_ARRIBA) {
+uint32_t dividir_por_size_bloque_y_redondear_hacia(uint32_t nuevoSize, codigo_redondear ABAJO_ARRIBA) {
     uint32_t cantidadBLoques = nuevoSize / SIZE_BLOQUE;
 
     cantidadBLoques = (nuevoSize%SIZE_BLOQUE == 0) ? cantidadBLoques : cantidadBLoques + ABAJO_ARRIBA;
-
-    log_debug(loggerFileSystem, "Bloques nuevos: %d, quedando con bloques asignados: %d.", nuevoSize, cantidadBLoques);
 
     return cantidadBLoques;
 }

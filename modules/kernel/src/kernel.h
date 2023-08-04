@@ -74,9 +74,12 @@ typedef struct {
 }t_semaforo_recurso;
 
 pthread_mutex_t permiso_compactacion;
+pthread_mutex_t mutex_memoria;
 
 /*----------------- FUNCIONES ------------------*/
 
+void iteratorConLog(char* value);
+t_segmento* buscar_segmento(t_list* listaSegmentos, int id_segmento);
 void inicializar_estructuras();
 void _planificador_largo_plazo();
 void destruir_pcb(PCB* pcb);
@@ -132,7 +135,11 @@ PCB *__estado_obtener_pcb_segun_maximo_hrrn(pcb_estado *estado);
 double __calcular_valor_hrrn(PCB *pcb, double tiempoActual);
 PCB* obtener_maximo_por_R(t_list* lista_procesos);
 //double obtener_diferencial_de_tiempo_en_milisegundos(timestamp *end, timestamp *start);
+t_list* recibir_todas_las_tablas_segmentos(int socket_cliente);
+void actualizar_todas_las_tablas_de_segmentos(t_list* nuevas_tablas);
 
+t_list* recibir_tabla_segmentos(int socket_cliente);
+PCB *buscar_proceso(int pid_buscado);
 
 
 // t_semaforo_recurso* diccionario_semaforos_recursos_get_semaforo_recurso(tablaArchivosAbiertos, nombreArchivo);
@@ -217,7 +224,7 @@ t_dictionary* tablaArchivosAbiertos;
 #define E__PERMISOS_INSUFICIENTES   "Permisos insuficientes para <PID:%d>"
 ////////////////////////////////////
 
-#define PATH_LOG_KERNEL             "../../../logs/kernel.log"
+#define PATH_LOG_KERNEL             "logs/kernel.log"
 #define PATH_CONFIG_KERNEL          "tuki-pruebas/prueba-memoria/kernel.config"
 
 #endif

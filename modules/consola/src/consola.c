@@ -27,6 +27,7 @@ int main(int argc, char** argv) {
  */
 
 void enviarInstrucciones(char* pathInstrucciones, int conexion_kernel, t_log* logger){
+
 	t_paquete* paquete = crear_paquete(AUX_NEW_PROCESO);
 
 	FILE *instrucciones;
@@ -39,8 +40,11 @@ void enviarInstrucciones(char* pathInstrucciones, int conexion_kernel, t_log* lo
 		size_t length;
 
 		while (getline(&instruccion, &length, instrucciones) != -1) {
+			log_warning(logger, "entra al while");
 			agregar_a_paquete(paquete, instruccion, strlen(instruccion) + 1); // +1 para incluir el '\0'
+			log_warning(logger, "sale del while");
 		}
+		log_warning(logger, "llega");
 	    enviar_paquete(paquete, conexion_kernel);
 	}
 

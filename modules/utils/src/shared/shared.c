@@ -156,7 +156,6 @@ char* extraer_de_modulo_config(t_config* config, char* valorIncompleto, char* mo
     return extraer_string_de_config(config, property, logger);
 }
 
-// TODO: volverla funcion que acepte infinitos parametros
 char* concatenar_strings(char *p1, char *p2 ) {
     char *concatenacion = malloc( sizeof( char ) * ( strlen( p1 ) + strlen( p2 ) ) + 1 );
 
@@ -214,11 +213,13 @@ t_log* iniciar_logger(char* pathLog, int moduloPos) {
 
     t_log *logger;
     char *directorioActual = get_current_dir_name();
-    free(directorioActual);
+
     if (( logger = log_create(pathLog, modulo, mostrarConsola, log_level)) == NULL ) {
-        printf(cantidad_strings_a_mostrar(2), E__LOGGER_CREATE, ENTER);
+        printf(cantidad_strings_a_mostrar(3), E__LOGGER_CREATE, directorioActual, ENTER);
+        free(directorioActual);
         exit(1);
     }
+    free(directorioActual);
     /*
     if (valoresPorDefecto) {
     	log_warning(logger, cantidad_strings_a_mostrar(4), D__LOG_CREADO, "-> ", pathLog, " con valores por defecto");
@@ -358,16 +359,6 @@ char* leer_registro_16_bytes(char* buffer, int* desp){
 	return leer_texto(buffer, desp, 16);
 }
 
-char* leer_string(char* buffer, int* desp) {
-	int size = leer_int(buffer, desp);
-
-	char* respuesta = malloc(size);
-	memcpy(respuesta, buffer+(*desp), size);
-	(*desp)+=size;
-
-	return respuesta;
-}
-
 t_list* leer_string_array(char* buffer, int* desp) {
     int cantidadElementos = leer_int(buffer, desp);
     t_list* lista_instrucciones = list_create();
@@ -475,7 +466,7 @@ char* encode_instruccion(char** strings) {
 
 
 int armar_conexion(t_config* config, char* modulo, t_log* logger) {
-    char* ip = extraer_de_modulo_config(config, IP_CONFIG, modulo, logger);
+	char* ip = extraer_de_modulo_config(config, IP_CONFIG, modulo, logger);
     char* puerto = extraer_de_modulo_config(config, PUERTO_CONFIG, modulo, logger);
 
     //log_debug(logger, D__ESTABLECIENDO_CONEXION, modulo);
@@ -523,6 +514,34 @@ void agregar_registros_a_paquete(t_paquete* paquete, registros_cpu* registrosCpu
     agregar_registro16bytes_a_paquete(paquete, registrosCpu->RBX);
     agregar_registro16bytes_a_paquete(paquete, registrosCpu->RCX);
     agregar_registro16bytes_a_paquete(paquete, registrosCpu->RDX);
+}
+
+void agregar_registro_a_paquete(t_paquete* paquete, char* registro, int tamanio_registro) {
+	agregar_int_a_paquete(paquete, tamanio_registro);
+	if (tamanio_registro == 16) {
+		agregar_registro16bytes_a_paquete(paquete, registro);
+	}
+	if (tamanio_registro == 8) {
+		agregar_registro8bytes_a_paquete(paquete, registro);
+	}
+	if (tamanio_registro == 4) {
+		agregar_registro4bytes_a_paquete(paquete, registro);
+	}
+	return;
+}
+
+
+char* leer_registro_de_buffer(char* buffer, int desplazamiento) {
+    int tamanioRegistro = leer_int(buffer, &desplazamiento);
+    if (tamanioRegistro == 16) {
+        return leer_registro_16_bytes(buffer, &desplazamiento);
+    }
+    if (tamanioRegistro == 8) {
+        return leer_registro_8_bytes(buffer, &desplazamiento);
+    }
+    if (tamanioRegistro == 4) {
+        return leer_registro_4_bytes(buffer, &desplazamiento);
+    }
 }
 
 void agregar_registro4bytes_a_paquete(t_paquete* paquete, char valor[4]) {
@@ -584,7 +603,7 @@ void agregar_lista_segmentos_a_paquete(t_paquete* paquete, int cliente, t_list* 
 	agregar_int_a_paquete(paquete, list_size(segmentosTabla));
     for (int i = 0; i < list_size(segmentosTabla); i++) {
         t_segmento* segmento = list_get(segmentosTabla, i);
-        log_trace(logger, D__LOG_SEGMENTO, segmento->id, segmento->direccionBase, segmento->size);
+        //log_trace(logger, D__LOG_SEGMENTO, segmento->id, segmento->direccionBase, segmento->size);
         agregar_int_a_paquete(paquete, segmento->id);
         agregar_size_a_paquete(paquete, segmento->size);
         agregar_puntero_a_paquete(paquete, segmento->direccionBase);
@@ -669,6 +688,58 @@ void iteratorSinLog(char* value) {
     printf("%s \n", value);
 }
 
+void serializar_todas_las_tablas_segmentos(t_list* tablas_segmentos, t_paquete* paquete){
+    agregar_int_a_paquete(paquete, tablas_segmentos->elements_count); // TODO: TENER CUIDADO
+	for(int i = 0; i < tablas_segmentos->elements_count; i++){
+		t_tabla_segmentos* tabla_segmentos = list_get(tablas_segmentos, i);
+        agregar_int_a_paquete(paquete, tabla_segmentos->PID);
+		serializar_tabla_segmentos(tabla_segmentos->segmentos, paquete);
+	}
+}
+
+t_list* deserealizar_todas_las_tablas_segmentos(void* buffer, int* desplazamiento){
+	t_list* tablas_segmentos = list_create();
+	int cantidad_tablas_segmentos = leer_int(buffer, desplazamiento);
+	for(int i = 0; i < cantidad_tablas_segmentos; i++){
+		t_tabla_segmentos* elemento_tabla_segmentos = malloc(sizeof(t_tabla_segmentos));
+        elemento_tabla_segmentos->PID = leer_int(buffer, desplazamiento);
+		elemento_tabla_segmentos->segmentos = deserializar_tabla_segmentos(buffer, desplazamiento);
+		list_add(tablas_segmentos, elemento_tabla_segmentos);
+	}
+	return tablas_segmentos;
+}
+
+
+t_list* deserializar_tabla_segmentos(void* buffer, int* desplazamiento){
+	t_list* tabla_segmentos = list_create();
+
+	int cantsegmento_ts = leer_int(buffer, desplazamiento);
+
+	for (int i = 0; i < cantsegmento_ts; i++) {
+        t_segmento* segmento = malloc(sizeof(t_segmento));
+
+	    segmento->id = leer_int(buffer, desplazamiento);
+	    segmento->size = leer_int(buffer, desplazamiento);
+	    segmento->direccionBase = leer_puntero(buffer, desplazamiento);
+
+	    list_add(tabla_segmentos, segmento);
+    }
+    return tabla_segmentos;
+}
+
+void serializar_tabla_segmentos(t_list *tabla_segmentos, t_paquete *paquete){
+	agregar_int_a_paquete(paquete, tabla_segmentos->elements_count);
+//    agregar_a_paquete_dato_serializado(paquete, &(tabla_segmentos->elements_count), sizeof(int));
+    for (int i = 0; i < tabla_segmentos->elements_count; i++)
+    {
+        t_segmento *segmento = list_get(tabla_segmentos, i);
+		// agregar_a_paquete
+        agregar_int_a_paquete(paquete, segmento->id);
+        agregar_int_a_paquete(paquete, segmento->size);
+        agregar_puntero_a_paquete(paquete, segmento->direccionBase);
+    }
+}
+
 void mostrarListaSegmentos(t_list* segmentos) {
 	for (int indice = 0; indice < list_size(segmentos); indice++) {
 		t_segmento* segmento = list_get(segmentos, indice);
@@ -711,6 +782,7 @@ void enviar_pcb(int conexion, PCB* pcb_a_enviar, codigo_operacion codigo, t_log*
     eliminar_paquete(paquete);
 }
 
+
 void agregar_pcb_a_paquete(t_paquete* paquete, PCB* pcb, t_log* log) {
     agregar_registros_a_paquete(paquete, pcb->registrosCpu);
     agregar_int_a_paquete(paquete, pcb->id_proceso);
@@ -745,6 +817,15 @@ void agregar_valor_a_paquete(t_paquete* paquete, void* valor, int tamanio) {
     paquete->buffer->size += tamanio;
 }
 
+char* leer_string(char* buffer, int* desp) {
+	int size = leer_int(buffer, desp);
+
+	char* respuesta = malloc(size);
+	memcpy(respuesta, buffer+(*desp), size);
+	(*desp)+=size;
+
+	return respuesta;
+}
 
 PCB* recibir_pcb(int clienteAceptado) {
 	PCB* pcb = malloc(sizeof(PCB));
@@ -813,6 +894,9 @@ int crear_conexion(char *ip, char* puerto, char* modulo, t_log* logger) {
     int clienteAceptado = socket(server_info->ai_family,
             server_info->ai_socktype,
             server_info->ai_protocol);
+
+    int val = 1;
+    setsockopt(clienteAceptado, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val));
 
     // Ahora que tenemos el socket, vamos a conectarlo
     if (connect(clienteAceptado, server_info->ai_addr, server_info->ai_addrlen) != -1) {
@@ -1098,12 +1182,12 @@ void enviar_operacion(int conexion, codigo_operacion codOperacion, size_t tamani
 /*
  * Variable auxiliar, si solo me quiero identificar no hace falta que agregue ningun valor al paquete
  */
+
 void enviar_codigo_operacion(int conexion, codigo_operacion codigoOperacion) {
 	if (conexion > 0) {
 		enviar_operacion(conexion, codigoOperacion, 0, 0);
 	}
 }
-
 /*----------------------- FUNCIONES SERVIDOR -------------------*/
 int iniciar_servidor(t_config* config, t_log* logger) {
     int socket_servidor;
@@ -1116,7 +1200,7 @@ int iniciar_servidor(t_config* config, t_log* logger) {
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE;
 
-    getaddrinfo(LOCALHOST, puerto, &hints, &servinfo);
+    getaddrinfo(NULL, puerto, &hints, &servinfo);
 
     // Creamos el socket de escucha del servidor
     socket_servidor = socket(servinfo->ai_family,

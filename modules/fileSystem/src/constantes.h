@@ -2,7 +2,6 @@
 #define CONSTANTES_FILE_SYSTEM_H_
 
 // Paths
-#define DEFAULT_LOG_PATH        "logs/file_system.log"
 #define DEFAULT_CONFIG_PATH     "tuki-pruebas/prueba-memoria/fileSystem.config"
 #define CONFIG_PROPIO_PATH      "tuki-pruebas/prueba-base/fileSystem_propio.config"
 

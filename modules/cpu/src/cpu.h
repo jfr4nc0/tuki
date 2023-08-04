@@ -41,8 +41,8 @@ typedef enum registro t_registro;
 
 typedef struct ParametrosLectura {
     int id_proceso;
-	uint32_t direccionFisica;
-	uint32_t tamanio;
+	int direccionFisica;
+	int tamanio;
 } t_parametros_lectura;
 
 typedef struct ParametrosEScritura {
@@ -66,6 +66,10 @@ void handshake_memoria(int);
 void inicializar_registros();
 void set_registro(char*, char*);
 void set_registros(PCB* pcb);
+int obtener_tamanio_registro(char* registro);
+int codigo_registro(char* registro);
+long obtener_direcc_fisica(PCB* pcb, int dirLogica, int tamanio_registro);
+int division_entera(int operando1, int operando2);
 void instruccion_set(char* registro,char* valor);
 
 char* recibir_valor_a_escribir(int clienteAceptado);
@@ -94,7 +98,7 @@ pthread_mutex_t m_recibir_pcb;
 #define ERROR_SEGMENTATION_FAULT     "PID: <%d> - Error SEG_FAULT- Segmento: <NUMERO SEGMENTO> - Offset: <OFFSET> - Tamaño: <TAMAÑO>"
 ////////////////////////////////
 
-#define DEFAULT_LOG_PATH      "../../../logs/cpu.log"
+#define DEFAULT_LOG_PATH      "logs/cpu.log"
 #define DEFAULT_CONFIG_PATH   "tuki-pruebas/prueba-memoria/cpu.config"
 
 
@@ -109,5 +113,6 @@ int get_int_registro(char* );
 void* convertir_dir_logica_a_fisica(PCB *pcb, char* dirLogica);
 void* obtener_base_segmento_puntero(PCB *pcb, uint32_t numeroSegmento,  uint32_t *tamanio);
 void* obtener_puntero_direccion_fisica(PCB *pcb,uint32_t dirLogica, uint32_t *numeroSegmento, uint32_t *offset, uint32_t *tamanioSegmento);
+void loggear_instruccion(PCB* pcb, char** instruccion);
 
 #endif
