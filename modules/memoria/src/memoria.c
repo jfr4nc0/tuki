@@ -592,14 +592,14 @@ void finalizar_proceso(t_list *tabla_segmentos, int PID){
             }
             comprobar_consolidacion_huecos_aledanios(index_hueco);
         }
-        list_remove_and_destroy_element(tabla_segmentos, i, (void *)liberar_segmento);
+        // list_remove_and_destroy_element(tabla_segmentos, i, (void *)liberar_segmento);
         i--;
     }
 
     for (int i = 0; i < tabla_segmentos_global->elements_count; i++){
         t_tabla_segmentos* ts = list_get(tabla_segmentos_global, i);
         if (ts->PID == PID){
-            list_remove_and_destroy_element(tabla_segmentos_global, i, (void *)liberar_tabla_segmentos);
+            list_destroy_and_destroy_elements(tabla_segmentos_global, free);
             break;
         }
     }

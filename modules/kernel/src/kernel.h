@@ -172,7 +172,6 @@ void crear_segmento(PCB* pcb_recibido, char* id_segmento, char* tamanio);
 /*----------------- SEMAFOROS / HILOS ------------------*/
 sem_t sem_proceso_a_ready_inicializar;
 sem_t sem_proceso_a_ready_terminado;
-sem_t sem_proceso_a_executing;
 sem_t sem_grado_multiprogamacion;
 sem_t sem_cpu_disponible;
 sem_t proceso_para_finalizar;
@@ -189,6 +188,7 @@ sem_t sem_lista_estados[CANTIDAD_ESTADOS];
 pthread_mutex_t* mutex_lista_estados[CANTIDAD_ESTADOS];
 
 pthread_mutex_t* mutexTablaAchivosAbiertos;
+pthread_mutex_t sem_proceso_a_executing;
 
 t_dictionary* diccionario_recursos;
 t_dictionary* tablaArchivosAbiertos;

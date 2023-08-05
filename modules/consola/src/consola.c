@@ -41,6 +41,7 @@ void enviarInstrucciones(char* pathInstrucciones, int conexion_kernel, t_log* lo
 
 		while (getline(&instruccion, &length, instrucciones) != -1) {
 			strtok(instruccion, "\n");
+			concatenar_strings(instruccion, " ");
 			agregar_a_paquete(paquete, instruccion, strlen(instruccion) + 1); // +1 para incluir el '\0'
 		}
 	    enviar_paquete(paquete, conexion_kernel);

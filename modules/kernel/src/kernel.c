@@ -242,7 +242,7 @@ void _planificador_corto_plazo() {
 
         log_info(kernelLogger,"PID: %d - Estado Anterior: %s - Estado Actual: %s", pcbParaEjecutar->id_proceso, nombres_estados[ENUM_READY], nombres_estados[ENUM_EXECUTING]);
 
-        sem_post(&sem_proceso_a_executing);
+        pthread_mutex_unlock(&sem_proceso_a_executing);
 
     }
 }
@@ -250,7 +250,7 @@ void _planificador_corto_plazo() {
 void manejo_desalojo_pcb() {
     while(1) {
 
-        sem_wait(&sem_proceso_a_executing);
+        pthread_mutex_lock(&sem_proceso_a_executing);
 
         sem_wait(&sem_lista_estados[ENUM_EXECUTING]);
 
@@ -374,7 +374,7 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
                 agregar_a_lista_con_sem((void*)pcb, ENUM_EXECUTING);
 
                 log_info(kernelLogger, ABRIR_ARCHIVO, pcb->id_proceso, nombreArchivo);
-                sem_post(&sem_proceso_a_executing);
+                pthread_mutex_unlock(&sem_proceso_a_executing);
                 sem_post(&sem_cpu_disponible);
                 break;
             }
@@ -406,7 +406,7 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
 
                 log_info(kernelLogger, CERRAR_ARCHIVO, pcb->id_proceso, nombreArchivo);
 
-                sem_post(&sem_proceso_a_executing);
+                pthread_mutex_unlock(&sem_proceso_a_executing);
                 sem_post(&sem_cpu_disponible);
                 break;
             }
@@ -441,7 +441,7 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
                 archivoAbierto->puntero = puntero;
                 log_debug(kernelLogger, F_SEEK_HECHO, pcb->id_proceso, nombreArchivo, puntero);
                 agregar_a_lista_con_sem((void*)pcb, ENUM_EXECUTING);
-                sem_post(&sem_proceso_a_executing);
+                pthread_mutex_unlock(&sem_proceso_a_executing);
                 sem_post(&sem_cpu_disponible);
                 break;
             }
@@ -539,7 +539,7 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
                     log_info(kernelLogger, "PID: %d - Crear Segmento - Id: %d - Tamaño: %d Realizado", pcb->id_proceso, segmento->id, segmento->size);
                     agregar_a_lista_con_sem((void*)pcb, ENUM_EXECUTING);
                     pthread_mutex_unlock(&mutex_memoria);
-                    sem_post(&sem_proceso_a_executing);
+                    pthread_mutex_unlock(&sem_proceso_a_executing);
                     return AUX_OK;
 
                 }else if(codigoRespuesta == COMPACTACION){
@@ -558,7 +558,7 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
                     log_info(kernelLogger, "Se finalizó el proceso de compactación");
                     pthread_mutex_unlock(&permiso_compactacion);
                     pthread_mutex_unlock(&mutex_memoria);
-                    sem_post(&sem_proceso_a_executing);
+                    pthread_mutex_unlock(&sem_proceso_a_executing);
                     return I_CREATE_SEGMENT;
                     break;
                 }else if(codigoRespuesta == OUT_OF_MEMORY){
@@ -567,6 +567,7 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
                 	return OUT_OF_MEMORY;
                 	break;
                 }
+
 				break;
 			 }
 			 case I_DELETE_SEGMENT: {
@@ -606,7 +607,7 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
 				 }
 
 				 agregar_a_lista_con_sem(pcb, ENUM_EXECUTING);
-				 sem_post(&sem_proceso_a_executing);
+				 pthread_mutex_unlock(&sem_proceso_a_executing);
 
 				break;
 			 }
@@ -684,7 +685,6 @@ PCB *buscar_proceso(int idProceso){
     int resulatdo_buesqueda; // en -1 entoces no lo encontro
     if (EJECUTANDO->contexto->PID == pid_buscado)
         return EJECUTANDO;
->>>>>>> 62b4dda1182d158e7e1665d28304fd3283c60d34
 
     int indice;
     int estado;
@@ -807,7 +807,7 @@ void instruccion_wait(PCB *pcb_en_ejecucion, char *nombre_recurso){
 
         } else { // Si el proceso no se bloquea en el if anterior, puede usar el recurso
         	agregar_a_lista_con_sem((void*)pcb_en_ejecucion, ENUM_EXECUTING);
-        	sem_post(&sem_proceso_a_executing);
+        	pthread_mutex_unlock(&sem_proceso_a_executing);
         }
     }
     return;
@@ -823,7 +823,7 @@ void instruccion_signal(PCB *pcb_en_ejecucion, char *nombre_recurso){
 		t_recurso *recurso = dictionary_get(diccionario_recursos, nombre_recurso);
 		recurso->instancias++;
 		agregar_a_lista_con_sem((void*)pcb_en_ejecucion, ENUM_EXECUTING);
-		sem_post(&sem_proceso_a_executing);
+		pthread_mutex_unlock(&sem_proceso_a_executing);
 
 		log_info(kernelLogger, "PID: %d - Signal: %s - Instancias: %d", pcb_en_ejecucion->id_proceso, nombre_recurso, recurso->instancias);
 		//if(recurso->instancias == 0){
@@ -1312,7 +1312,8 @@ void inicializar_semaforos() {
     sem_init(&sem_cpu_disponible, 0, 1);
     sem_init(&sem_proceso_a_ready_inicializar, 0, 0);
     sem_init(&sem_proceso_a_ready_terminado, 0, 0);
-    sem_init(&sem_proceso_a_executing, 0, 0);
+    pthread_mutex_init(&sem_proceso_a_executing, NULL);
+    pthread_mutex_lock(&sem_proceso_a_executing);
     pthread_mutex_init(&permiso_compactacion,NULL);
     sem_init(&proceso_para_finalizar, 0, 0);
     sem_init(&proceso_en_exit, 0, 0);
