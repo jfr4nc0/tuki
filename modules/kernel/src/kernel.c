@@ -452,7 +452,13 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
             }
             case I_F_READ: {
             	codigo_operacion cod_op = recibir_operacion(conexionCPU); // basura
-				void* direccionFisica = recibir_puntero(conexionCPU);
+
+                char* buffer;
+                int tamanio = 0;
+                int desplazamiento = 0;
+                buffer = recibir_buffer(&tamanio, conexionCPU);
+
+                int direccionFisica = leer_int(buffer, &desplazamiento);
 				agregar_a_lista_con_sem((void*)pcb, ENUM_BLOCKED);
 				enviar_f_read_write(pcb, instruccion, operacionNoSobreEscribir, direccionFisica);
 				mover_de_lista_con_sem(pcb->id_proceso, ENUM_READY, ENUM_BLOCKED);
@@ -462,7 +468,12 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
             }
             case I_F_WRITE: {
                 codigo_operacion cod_op = recibir_operacion(conexionCPU); // basura
-                void* direccionFisica = recibir_puntero(conexionCPU);
+                char* buffer;
+                int tamanio = 0;
+                int desplazamiento = 0;
+                buffer = recibir_buffer(&tamanio, conexionCPU);
+
+                int direccionFisica = leer_int(buffer, &desplazamiento);
             	agregar_a_lista_con_sem((void*)pcb, ENUM_BLOCKED);
             	enviar_f_read_write(pcb, instruccion, operacionNoSobreEscribir, direccionFisica);
             	mover_de_lista_con_sem(pcb->id_proceso, ENUM_READY, ENUM_BLOCKED);
@@ -851,7 +862,7 @@ void instruccion_signal(PCB *pcb_en_ejecucion, char *nombre_recurso){
 	return;
 }
 
-void enviar_f_read_write(PCB* pcb, char** instruccion, codigo_operacion codigoOperacion, void* direccionFisica) {
+void enviar_f_read_write(PCB* pcb, char** instruccion, codigo_operacion codigoOperacion, int direccionFisica) {
     pthread_mutex_lock(&permiso_compactacion);
     t_paquete* paquete = crear_paquete(codigoOperacion);
 
@@ -864,7 +875,7 @@ void enviar_f_read_write(PCB* pcb, char** instruccion, codigo_operacion codigoOp
     t_archivo_abierto* archivoAbierto = encontrar_archivo_abierto(pcb->lista_archivos_abiertos, nombreArchivo);
 
     agregar_a_paquete(paquete, (void*)nombreArchivo, strlen(nombreArchivo));
-    agregar_puntero_a_paquete(paquete, direccionFisica);
+    agregar_int_a_paquete(paquete, direccionFisica);
     agregar_a_paquete(paquete, (void*)cantidadBytes, strlen(cantidadBytes));
     agregar_int_a_paquete(paquete, pcb->id_proceso);
     agregar_uint32_a_paquete(paquete, archivoAbierto->puntero);

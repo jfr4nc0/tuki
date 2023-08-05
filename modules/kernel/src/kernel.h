@@ -152,7 +152,7 @@ void instruccion_wait(PCB *, char *);
 
 int obtener_recursos(int);
 
-void enviar_f_read_write(PCB* pcb, char** instruccion, codigo_operacion codigoOperacion, void* direccionFisica);
+void enviar_f_read_write(PCB* pcb, char** instruccion, codigo_operacion codigoOperacion, int direccionFisica);
 
 void terminar_proceso(PCB* , codigo_operacion);
 void instruccion_signal(PCB *pcb_en_ejecucion, char *nombre_recurso);

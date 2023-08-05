@@ -99,7 +99,7 @@ t_paquete* crear_segmento(int id_segmento, int tamanio, PCB* pcb, int socket);
 
 void terminar_programa_memoria(int conexion, t_log* logger, t_config* config);
 
-void escribir_valor_en_memoria(long dirFisica, void* bytesRecibidos, uint32_t tamanio, int pid, char *origen);
+void escribir_valor_en_memoria(int dirFisica, void* bytesRecibidos, uint32_t tamanio, int pid, char *origen);
 
 char* leer_espacio_usuario(void* direccion, size_t size);
 

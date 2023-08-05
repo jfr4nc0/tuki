@@ -68,7 +68,7 @@ void set_registro(char*, char*);
 void set_registros(PCB* pcb);
 int obtener_tamanio_registro(char* registro);
 int codigo_registro(char* registro);
-long obtener_direcc_fisica(PCB* pcb, int dirLogica, int tamanio_registro);
+int obtener_direcc_fisica(PCB* pcb, int dirLogica, int tamanio_registro);
 int division_entera(int operando1, int operando2);
 void instruccion_set(char* registro,char* valor);
 

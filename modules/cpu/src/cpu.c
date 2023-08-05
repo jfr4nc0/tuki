@@ -120,11 +120,18 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
 
 	// Si tiene que calcular direccion fisica se la mando aparte
 	if (ultimaOperacion == I_F_READ || ultimaOperacion == I_F_WRITE) {
+			int dirLogica = atoi(instruccion_decodificada[2]); // pasa de string a int
+			int tamanio = atoi(instruccion_decodificada[3]);
+
+			int dirFisica = obtener_direcc_fisica(pcb, dirLogica, tamanio);
+
+			log_trace(loggerCpu, "la direcc fisica es: %d", dirFisica);
 		// Reescribo la instruccion usando dir fisica en vez de logica
-		void* direccionFisica = convertir_dir_logica_a_fisica(pcb, instruccion_decodificada[2]);
+		// long direccionFisica = convertir_dir_logica_a_fisica(pcb, instruccion_decodificada[2]);
 
 		t_paquete* paquete = crear_paquete(AUX_OK);
-		agregar_puntero_a_paquete(paquete, direccionFisica);
+		// agregar_puntero_a_paquete(paquete, direccionFisica);
+		agregar_int_a_paquete(paquete, dirFisica);
 		enviar_paquete(paquete, clienteKernel);
 		eliminar_paquete(paquete);
 		// enviar_operacion(clienteKernel, AUX_OK, sizeof(uintptr_t), direccionFisica);
@@ -323,6 +330,7 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 
 			t_paquete* paquete = crear_paquete(I_MOV_OUT);
 			agregar_int_a_paquete(paquete, pcb->id_proceso);
+			// agregar_puntero_a_paquete(paquete, dirFisicaPuntero);
 			agregar_int_a_paquete(paquete, dirFisica);
 			agregar_int_a_paquete(paquete, tamanio_registro);
 			agregar_registro_a_paquete(paquete, valor_registro, tamanio_registro);
@@ -396,7 +404,7 @@ int codigo_registro(char* registro){
 		return RDX;
 	}
 }
-long obtener_direcc_fisica(PCB* pcb, int dirLogica, int tamanio_registro){
+int obtener_direcc_fisica(PCB* pcb, int dirLogica, int tamanio_registro){
 
 	int numero_segmento = floor(dirLogica/configCpu->TAM_MAX_SEGMENTO);
 	//log_warning(loggerCpu, "el nro de seg es %d", numero_segmento);
@@ -413,10 +421,9 @@ long obtener_direcc_fisica(PCB* pcb, int dirLogica, int tamanio_registro){
 	//log_warning(loggerCpu, "size segmento %d", segmento->tamanio_segmento);
 	//log_warning(loggerCpu, "direcc base segmento %p", segmento->direccion_base);
 
-	long direccion_fisica = (long)(segmento->direccionBase + desplazamiento_segmento);
-
-	return direccion_fisica;
-
+	// long direccion_fisica = (long)(segmento->direccionBase + desplazamiento_segmento);
+	return desplazamiento_segmento;
+	// return direccion_fisica;
 }
 
 int obtener_tamanio_segmento(t_list* lista_segmentos, int numero_segmento){

@@ -156,7 +156,7 @@ Esta información se deberá enviar a la Memoria para ser escrita a partir de la
 y esperar su finalización para poder confirmar el éxito de la operación al Kernel.
 */
 
-char* leer_archivo(char* nombreArchivo, uint32_t puntero, void* direccionFisica, uint32_t bytesQueFaltanPorLeer, uint32_t pidProceso) {
+char* leer_archivo(char* nombreArchivo, uint32_t puntero, int direccionFisica, uint32_t bytesQueFaltanPorLeer, uint32_t pidProceso) {
     log_info(loggerFileSystem, LEER_ARCHIVO, nombreArchivo, puntero, direccionFisica, bytesQueFaltanPorLeer);
 
     t_fcb* fcb = dictionary_get(dictionaryFcbs, nombreArchivo);

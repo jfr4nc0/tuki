@@ -72,10 +72,11 @@ void ejecutar_filesystem_pedido(void* socket){
 				int desp = 0;
 				char* buffer = recibir_buffer(&tamanio, socket_modulo);
 				int pid = leer_int(buffer, &desp);
-				void* direccionFisica = leer_puntero(buffer, &desp);
+				int direccionFisica = leer_int(buffer, &desp);
 				uint32_t cantidadBytes = leer_uint32(buffer, &desp);
 				char* valorParaEscribir = leer_string(buffer, &desp);
-				escribir_espacio_usuario(direccionFisica, cantidadBytes, valorParaEscribir);
+                escribir_valor_en_memoria(direccionFisica, valorParaEscribir, cantidadBytes, pid, "CPU");
+				// escribir_espacio_usuario(direccionFisica, cantidadBytes, valorParaEscribir);
 
 				t_paquete* paquete = crear_paquete(AUX_OK);
 				enviar_paquete(paquete, socket_modulo);
@@ -93,12 +94,15 @@ void ejecutar_filesystem_pedido(void* socket){
 				int desp = 0;
 				char* buffer = recibir_buffer(&tamanio, socket_modulo);
 				int pid = leer_int(buffer, &desp);
-				void* direccionFisica = leer_puntero(buffer, &desp);
+				int direccionFisica = leer_int(buffer, &desp);
 				uint32_t cantidadBytes = leer_uint32(buffer, &desp);
 				free(buffer);
-				char* respuesta = leer_espacio_usuario(direccionFisica, cantidadBytes);
-				t_paquete* paquete = crear_paquete(AUX_OK);
-				agregar_a_paquete(paquete, (void*) respuesta, cantidadBytes);
+                char* respuesta = leer_valor_direccion_fisica(direccionFisica, cantidadBytes, pid, "CPU");
+				// char* respuesta = leer_valor_direccion_fisica(direccionFisica, cantidadBytes);
+
+                // char respuestaEnviar[cantidadBytes] = respuesta;
+                t_paquete* paquete = crear_paquete(AUX_OK);
+				agregar_a_paquete(paquete, (void*) respuesta, strlen(respuesta)+1);
 				enviar_paquete(paquete, socket_modulo);
 				eliminar_paquete(paquete);
 				break;
@@ -153,14 +157,15 @@ t_parametros_variables* deserealizar_motivos_desalojo(void *buffer, int*desplaza
 	return motivos_desalojo;
 }
 
+/*
 void escribir_espacio_usuario(void* direccion, size_t size, void* valor) {
     sleep(memoriaConfig->RETARDO_MEMORIA / 500);
-
-    memcpy(direccion, valor, size);
+    memcpy(memoria_principal, valor, size);
 
     //log_debug(loggerMemoria, "Valor escrito en memoria: %s", (char*)direccion);
     return;
 }
+*/
 
 //Escribir/leer valor de direccion fisica
 char *leer_valor_direccion_fisica(long direccion_fisica, int tamanio, int pid, char *origen){
@@ -173,17 +178,17 @@ char *leer_valor_direccion_fisica(long direccion_fisica, int tamanio, int pid, c
     return valor;
 }
 
-void escribir_valor_en_memoria(long dirFisica, void* bytesRecibidos, uint32_t tamanio, int pid, char *origen)
+void escribir_valor_en_memoria(int dirFisica, void* bytesRecibidos, uint32_t tamanio, int pid, char *origen)
 {
 	// bytesRecibidos = malloc(tamanio);
 	char* valor = (char*)bytesRecibidos;
     memcpy(memoria_principal+dirFisica, bytesRecibidos, tamanio); // cambiar
     //log_debug(loggerMemoria, "Escribió %s en memoria", valor);
-    log_info(loggerMemoria, "PID: <%d> - Acción: <ESCRIBIR> - Dirección física: <%p> - Tamaño: <%d> - Origen: <%s>", pid, dirFisica, tamanio, origen);
+    log_info(loggerMemoria, "PID: <%d> - Acción: <ESCRIBIR> - Dirección física: <%p> - Tamaño: <%d> - Origen: <%s>", pid, memoria_principal+dirFisica, tamanio, origen);
 
     return;
 }
-
+/*
 void escribir_valor_direccion_fisica(char *valor, long direccion_fisica, int pid, char *origen){
 
     sleep(memoriaConfig->RETARDO_MEMORIA / 500);
@@ -192,6 +197,7 @@ void escribir_valor_direccion_fisica(char *valor, long direccion_fisica, int pid
     memcpy(direccion, valor, tamanio);
     log_info(loggerMemoria, "PID: <%d> - Acción: <ESCRIBIR> - Dirección física: <%p> - Tamaño: <%d> - Origen: <%s>", pid, direccion, tamanio, origen);
 }
+*/
 
 //Enviar mensaje
 void enviar_mensaje_memoria(char* mensaje, int socket_cliente){
@@ -270,10 +276,12 @@ void ejecutar_cpu_pedido(void* socket){
 	        	buffer = recibir_buffer(&tamanio, socket_modulo);
 
 	        	int pid = leer_int(buffer, &desplazamiento);
-	        	long direccion_fisica = (long)leer_int(buffer, &desplazamiento);
+	        	int direccion_fisica = leer_int(buffer, &desplazamiento);
 	        	int tamanioRegistro = leer_int(buffer, &desplazamiento);
 //				char* valor_registro = leer_string(buffer, &desplazamiento);
 	        	char* valor_registro = leer_registro_de_buffer(buffer, desplazamiento);
+
+                // escribir_espacio_usuario(direccion_fisica, tamanioRegistro, valor_registro);
 
 				escribir_valor_en_memoria(direccion_fisica, valor_registro, tamanioRegistro, pid, "CPU");
 //	        	log_debug(loggerMemoria, "%d %d %s", pid, direccion_fisica, (char*)valor_registro);

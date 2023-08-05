@@ -75,10 +75,10 @@ void ejecutar_instrucciones_kernel(void* cliente) {
 				// pthread_mutex_lock(&m_instruccion);
 				char *nombreArchivo = NULL;
 				uint32_t cantidadBytes, puntero;
-                void* direccionFisica;
+                int direccionFisica;
                 int pidProceso;
 				recibir_buffer_escritura_lectura_archivo(clienteKernel, &nombreArchivo, &puntero, &direccionFisica, &cantidadBytes, &pidProceso);
-				log_info(loggerFileSystem, "Llego para LEER nombreArchivo <%s>, cantidadBytes <%d>, puntero<%d>, dir fisica <%p>, pid <%d>",
+				log_info(loggerFileSystem, "Llego para LEER nombreArchivo <%s>, cantidadBytes <%d>, puntero<%d>, dir fisica <%d>, pid <%d>",
                          nombreArchivo, cantidadBytes, puntero, direccionFisica, pidProceso);
 
                 char* lecturaHecha = leer_archivo(nombreArchivo, puntero, direccionFisica, cantidadBytes, pidProceso);
@@ -86,7 +86,7 @@ void ejecutar_instrucciones_kernel(void* cliente) {
 
                 t_paquete* paquete = crear_paquete(I_F_WRITE);
 				agregar_int_a_paquete(paquete, pidProceso);
-				agregar_puntero_a_paquete(paquete, direccionFisica);
+				agregar_int_a_paquete(paquete, direccionFisica);
 				agregar_uint32_a_paquete(paquete, cantidadBytes);
 				agregar_a_paquete(paquete, lecturaHecha, strlen(lecturaHecha)+1);
 				enviar_paquete(paquete, conexionMemoria);
@@ -104,7 +104,7 @@ void ejecutar_instrucciones_kernel(void* cliente) {
 				// pthread_mutex_lock(&m_instruccion);
 				char *nombreArchivo = NULL;
 				uint32_t cantidadBytes, puntero;
-                void* direccionFisica;
+                int direccionFisica;
                 int pidProceso;
 				recibir_buffer_escritura_lectura_archivo(clienteKernel, &nombreArchivo, &puntero, &direccionFisica, &cantidadBytes, &pidProceso);
 				log_info(loggerFileSystem, "Llego para escribir nombreArchivo <%s>, cantidadBytes <%d>, puntero<%d>, dir fisica <%p>, pid <%d>", nombreArchivo, cantidadBytes, puntero, direccionFisica, pidProceso);
@@ -112,7 +112,7 @@ void ejecutar_instrucciones_kernel(void* cliente) {
 				// Pide lectura a memoria para saber que tiene que escribir
 				t_paquete* paquete = crear_paquete(I_F_READ);
 				agregar_int_a_paquete(paquete, pidProceso);
-				agregar_puntero_a_paquete(paquete, direccionFisica);
+				agregar_int_a_paquete(paquete, direccionFisica);
 				agregar_uint32_a_paquete(paquete, cantidadBytes);
 				enviar_paquete(paquete, conexionMemoria);
 				eliminar_paquete(paquete);
@@ -121,6 +121,7 @@ void ejecutar_instrucciones_kernel(void* cliente) {
 	            int desplazamiento = 0;
 
 	            codigo_operacion operacionOK = recibir_operacion(conexionMemoria);
+	            recibir_operacion(conexionMemoria);
 	            recibir_operacion(conexionMemoria);
                 void* buffer = recibir_buffer(&tamanio, conexionMemoria);
                 char* respuesta = leer_string(buffer, &desplazamiento);
@@ -214,7 +215,7 @@ void* recibir_buffer_informacion_memoria(uint32_t cantidadBytes) {
 }
 
 
-void recibir_buffer_escritura_lectura_archivo(int cliente, char **nombreArchivo, uint32_t *puntero, void** direccionFisica, uint32_t *cantidadBytes, int* pid) {
+void recibir_buffer_escritura_lectura_archivo(int cliente, char **nombreArchivo, uint32_t *puntero, int* direccionFisica, uint32_t *cantidadBytes, int* pid) {
     char *variableAlmacenadora1;
     void* buffer;
 	int tamanio = 0;
@@ -223,7 +224,7 @@ void recibir_buffer_escritura_lectura_archivo(int cliente, char **nombreArchivo,
 	buffer = recibir_buffer(&tamanio, cliente);
 
     *nombreArchivo = leer_string(buffer, &desp);
-    *direccionFisica = leer_puntero(buffer, &desp);
+    *direccionFisica = leer_int(buffer, &desp);
     *cantidadBytes = strtoul(leer_string(buffer, &desp), &variableAlmacenadora1, 10);
     *pid = leer_int(buffer, &desp);
     *puntero = leer_uint32(buffer, &desp);

@@ -26,7 +26,7 @@ t_fcb* crear_fcb_inicial(char *nombreArchivo);
 bool crear_archivo(char *nombreArchivo);
 bool existe_archivo(char *nombreArchivo);
 bool truncar_archivo(char *nombreArchivo, uint32_t tamanioNuevo);
-char* leer_archivo(char* nombreArchivo, uint32_t puntero, void* direccionFisica, uint32_t bytesQueFaltanPorLeer, uint32_t pidProceso);
+char* leer_archivo(char* nombreArchivo, uint32_t puntero, int direccionFisica, uint32_t bytesQueFaltanPorLeer, uint32_t pidProceso);
 bool escribir_archivo(char* informacionAEscribir, char *nombreArchivo, uint32_t puntero, uint32_t cantidadBytesAEscribir, void* direccionFisica);
 
 // Auxiliares

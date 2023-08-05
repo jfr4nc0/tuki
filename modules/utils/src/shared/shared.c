@@ -572,6 +572,12 @@ void agregar_int_a_paquete(t_paquete* paquete, int valor) {
     paquete->buffer->size += sizeof(int);
 }
 
+void agregar_long_a_paquete(t_paquete* paquete, long valor) {
+    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(long));
+    memcpy(paquete->buffer->stream + paquete->buffer->size, &valor, sizeof(long));
+    paquete->buffer->size += sizeof(long);
+}
+
 void agregar_puntero_a_paquete(t_paquete* paquete, void* valor) {
     uintptr_t puntero = (uintptr_t)valor;
     paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(uintptr_t));
