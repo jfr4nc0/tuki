@@ -63,18 +63,18 @@ void cargar_config(t_config* config) {
 
 void inicializar_registros() {
 	registrosCpu = malloc(sizeof(registros_cpu));
-	strcpy(registrosCpu->AX, "");
-    strcpy(registrosCpu->BX, "");
-    strcpy(registrosCpu->CX, "");
-    strcpy(registrosCpu->DX, "");
-    strcpy(registrosCpu->EAX, "");
-    strcpy(registrosCpu->EBX, "");
-    strcpy(registrosCpu->ECX, "");
-    strcpy(registrosCpu->EDX, "");
-    strcpy(registrosCpu->RAX, "");
-    strcpy(registrosCpu->RBX, "");
-    strcpy(registrosCpu->RCX, "");
-    strcpy(registrosCpu->RDX, "");
+	strcpy(registrosCpu->AX, "AX");
+    strcpy(registrosCpu->BX, "BX");
+    strcpy(registrosCpu->CX, "CX");
+    strcpy(registrosCpu->DX, "DX");
+    strcpy(registrosCpu->EAX, "EAX");
+    strcpy(registrosCpu->EBX, "EBX");
+    strcpy(registrosCpu->ECX, "ECX");
+    strcpy(registrosCpu->EDX, "EDX");
+    strcpy(registrosCpu->RAX, "RAX");
+    strcpy(registrosCpu->RBX, "RBX");
+    strcpy(registrosCpu->RCX, "RCX");
+    strcpy(registrosCpu->RDX, "RDX");
 
 }
 
@@ -403,7 +403,7 @@ long obtener_direcc_fisica(PCB* pcb, int dirLogica, int tamanio_registro){
 	int desplazamiento_segmento=dirLogica % configCpu->TAM_MAX_SEGMENTO;
 	//log_warning(loggerCpu, "el desplazamiento dentro del seg es %d", desplazamiento_segmento);
 
-	if (desplazamiento_segmento + tamanio_registro > obtener_tamanio_segmento(pcb->lista_segmentos, numero_segmento)){
+	if (desplazamiento_segmento + tamanio_registro > obtener_tamanio_segmento(pcb->lista_segmentos, numero_segmento) ){
 			log_error(loggerCpu, "PID: %d - Error SEG_FAULT- Segmento: %d - Offset: %d - Tamaño: %d", pcb->id_proceso, numero_segmento, desplazamiento_segmento, tamanio_registro);
 			return -1;
 	}
@@ -423,7 +423,7 @@ int obtener_tamanio_segmento(t_list* lista_segmentos, int numero_segmento){
 
 	for(int i = 0; i < list_size(lista_segmentos); i++){
 		t_segmento* segmento = list_get(lista_segmentos, i);
-		if(segmento->id = numero_segmento){
+		if(segmento->id == numero_segmento){
 			return segmento->size;
 		}
 	}

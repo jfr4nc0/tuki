@@ -319,6 +319,7 @@ void ejecutar_kernel_pedido(void* socket){
 	            tabla_segmentos->PID = pid;
 	            tabla_segmentos->segmentos = crear_tabla_segmentos();
 	            list_add(tabla_segmentos_global, tabla_segmentos);
+                mostrarListaSegmentos(tabla_segmentos_global);
 	            log_info(loggerMemoria, "Creación de Proceso PID: <%d>", pid);
 
 	            // envia
@@ -976,6 +977,8 @@ void agregar_segmento_0(t_list* tabla_segmentos){
     segmento_0 = list_get(tabla_segmentos, 0);
     segmento_0->direccionBase = memoria_principal;
     segmento_0->size = memoriaConfig->TAM_SEGMENTO_0;
+    list_replace(tabla_segmentos, 0, segmento_0);
+    mostrarListaSegmentos(tabla_segmentos);
 }
 
 void terminar_programa_memoria(int conexion, t_log* logger, t_config* config){ //TODO: faltaria liberar la conexion

@@ -101,8 +101,13 @@ void enviar_proceso_a_ready() {
         	enviar_paquete(paquete, conexionMemoria);
         	eliminar_paquete(paquete);
 
+        	int tamanio = 0;
+        	int desplazamiento = 0;
+
         	recibir_operacion(conexionMemoria);
-        	pcb->lista_segmentos = recibir_lista_segmentos(conexionMemoria);
+        	char* buffer = recibir_buffer(&tamanio, conexionMemoria);
+        	pcb->lista_segmentos = deserializar_tabla_segmentos(buffer, &desplazamiento);
+        	free(buffer);
 
             //list_iterate(pcb->lista_segmentos, (void*)iteratorConLog);
         	/*
@@ -1111,6 +1116,19 @@ PCB* nuevo_proceso(t_list* listaInstrucciones, int clienteAceptado) {
     pcb->contador_instrucciones = 0;
 
     pcb->registrosCpu = malloc(sizeof(registros_cpu));
+    strcpy(pcb->registrosCpu->AX, "AX");
+    strcpy(pcb->registrosCpu->BX, "BX");
+    strcpy(pcb->registrosCpu->CX, "CX");
+    strcpy(pcb->registrosCpu->DX, "DX");
+    strcpy(pcb->registrosCpu->EAX, "EAX");
+    strcpy(pcb->registrosCpu->EBX, "EBX");
+    strcpy(pcb->registrosCpu->ECX, "ECX");
+    strcpy(pcb->registrosCpu->EDX, "EDX");
+    strcpy(pcb->registrosCpu->RAX, "RAX");
+    strcpy(pcb->registrosCpu->RBX, "RBX");
+    strcpy(pcb->registrosCpu->RCX, "RCX");
+    strcpy(pcb->registrosCpu->RDX, "RDX");
+/*
     strcpy(pcb->registrosCpu->AX, "");
     strcpy(pcb->registrosCpu->BX, "");
     strcpy(pcb->registrosCpu->CX, "");
@@ -1123,7 +1141,7 @@ PCB* nuevo_proceso(t_list* listaInstrucciones, int clienteAceptado) {
     strcpy(pcb->registrosCpu->RBX, "");
     strcpy(pcb->registrosCpu->RCX, "");
     strcpy(pcb->registrosCpu->RDX, "");
-
+*/
     //pcb->lista_segmentos = list_create();
     pcb->lista_archivos_abiertos = list_create();
     pcb->estimacion_rafaga = kernelConfig->ESTIMACION_INICIAL / 1000;
