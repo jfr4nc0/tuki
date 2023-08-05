@@ -32,7 +32,7 @@ void enviarInstrucciones(char* pathInstrucciones, int conexion_kernel, t_log* lo
 
 	FILE *instrucciones;
 	if( (instrucciones = fopen(pathInstrucciones, MODO_LECTURA_ARCHIVO)) == NULL ){
-		log_error(logger, E__ARCHIVO_CREATE);
+		log_error(logger, E__ARCHIVO_CREATE, pathInstrucciones);
 
 	} else {
 

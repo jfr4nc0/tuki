@@ -688,6 +688,10 @@ void iteratorSinLog(char* value) {
     printf("%s \n", value);
 }
 
+void iteratorStrtok(char* instruccion) {
+	strtok(instruccion, "\n");
+}
+
 void serializar_todas_las_tablas_segmentos(t_list* tablas_segmentos, t_paquete* paquete){
     agregar_int_a_paquete(paquete, tablas_segmentos->elements_count); // TODO: TENER CUIDADO
 	for(int i = 0; i < tablas_segmentos->elements_count; i++){
@@ -853,6 +857,7 @@ PCB* recibir_pcb(int clienteAceptado) {
 	pcb->id_proceso = leer_int(buffer, &desplazamiento);
 	pcb->estado = leer_int(buffer, &desplazamiento);
 	pcb->lista_instrucciones = leer_string_array(buffer, &desplazamiento);
+	list_iterate(pcb->lista_instrucciones, (void*)iteratorStrtok);
 	pcb->contador_instrucciones = leer_int(buffer, &desplazamiento);
 	pcb->estimacion_rafaga = leer_double(buffer, &desplazamiento);
 	pcb->ready_timestamp = leer_double(buffer, &desplazamiento);
@@ -903,10 +908,11 @@ int crear_conexion(char *ip, char* puerto, char* modulo, t_log* logger) {
         uint32_t handshake = 1;
         uint32_t result;
 
-        log_warning(logger, I__CONEXION_CREATE, modulo);
+        log_info(logger, I__CONEXION_CREATE, modulo);
 
         send(clienteAceptado, &handshake, sizeof(uint32_t), 0);
         recv(clienteAceptado, &result, sizeof(uint32_t), MSG_WAITALL);
+
     } else {
         log_error(logger, E__CONEXION_CONNECT, modulo);
         clienteAceptado = -1;
@@ -1239,13 +1245,14 @@ int esperar_cliente(int socket_servidor, t_log* logger) {
     //log_info(logger, I__CONEXION_ACCEPT);
 
     log_debug(logger, "Se realiza un handshake de parte del servidor");
+
     recv(clienteAceptado, &handshake, sizeof(uint32_t), MSG_WAITALL);
 
     if(handshake == 1) {
         send(clienteAceptado, &resultOk, sizeof(uint32_t), 0);
-        //log_info(logger, HANDSHAKE, OK);
+        log_info(logger, HANDSHAKE, OK);
     } else {
-        //log_error(logger, HANDSHAKE, ERROR);
+        log_error(logger, HANDSHAKE, ERROR);
         send(clienteAceptado, &resultError, sizeof(uint32_t), 0);
     }
 

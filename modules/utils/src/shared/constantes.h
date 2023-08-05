@@ -95,7 +95,7 @@ int keyFromString(char *key);
 #define I__CONFIG_GENERIDO_CARGADO  "Config generico creado: %s"
 
 // ERROR MENSAJES
-#define E__ARCHIVO_CREATE      "Error al crear/leer archivo"
+#define E__ARCHIVO_CREATE      "Error al crear/leer archivo %s"
 #define E__BAD_REQUEST         "BAD REQUEST"
 #define E__CONEXION_CREATE     "Error al crear conexion con %s" // No se esta usando
 #define E__CONEXION_CONNECT    "Error al conectar conexion con %s"

@@ -247,7 +247,7 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 
 			int dirFisica = obtener_direcc_fisica(pcb, dirLogica, tamanio_registro);
 
-			log_warning(loggerCpu, "la direcc fisica es: %d", dirFisica);
+			log_trace(loggerCpu, "la direcc fisica es: %d", dirFisica);
 
 			if (dirFisica == -1){
 				return SEGMENTATION_FAULT;
@@ -306,9 +306,9 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 			int tamanio_registro = obtener_tamanio_registro(registro);
 
 			int dirFisica = obtener_direcc_fisica(pcb, dirLogica, tamanio_registro);
-			void* dirFisicaPuntero = (void*) dirFisica;
+			void* dirFisicaPuntero = (void*) (intptr_t)dirFisica;
 
-			log_warning(loggerCpu, "la direccion fisica es %d", dirFisica);
+			log_trace(loggerCpu, "la direccion fisica es %d", dirFisica);
 
 			char* valor_registro = obtener_valor_registro(registro, pcb->registrosCpu);
 

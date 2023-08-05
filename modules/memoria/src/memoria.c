@@ -28,7 +28,7 @@ void atender_conexiones(int socket_servidor){
     codigo_operacion codigo;
 
     //for (int i = 0; i < 3; i++)
-    for (int i = 0; i < 4; i++){
+    for (int i = 0; i < 8; i++){
 
     	cliente = esperar_cliente(socket_servidor, loggerMemoria);
     	codigo = recibir_operacion(cliente);

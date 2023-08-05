@@ -13,14 +13,15 @@ int main(int argc, char** argv) {
     kernelLogger = iniciar_logger(PATH_LOG_KERNEL, ENUM_KERNEL);
     t_config* config = iniciar_config(argv[1], kernelLogger);
     conexionMemoria = armar_conexion(config, MEMORIA, kernelLogger);
+    if(conexionMemoria > 0){
+    	enviar_codigo_operacion(conexionMemoria, AUX_SOY_KERNEL);
+    }
     conexionCPU = armar_conexion(config, CPU, kernelLogger);
 
     cargar_config_kernel(config, kernelLogger);
 
     conexionFileSystem = armar_conexion(config, FILE_SYSTEM, kernelLogger);
-    if(conexionMemoria > 0){
-    	enviar_codigo_operacion(conexionMemoria, AUX_SOY_KERNEL);
-    }
+
 
     int servidorKernel = iniciar_servidor(config, kernelLogger);
 
@@ -76,7 +77,7 @@ void inicializar_escucha_conexiones_consolas(int servidorKernel) {
     while(1) {
 
         int conexionConConsola = esperar_cliente(servidorKernel, kernelLogger);
-        log_warning(kernelLogger, "Se conecto una consola");
+        log_debug(kernelLogger, "Se conecto una consola");
         pthread_t hilo_consola;
         pthread_create(&hilo_consola, NULL, (void*) recibir_de_consola, (void*) (intptr_t) conexionConConsola);
         pthread_detach(hilo_consola);  //Los recursos asociados se liberan automáticamente al finalizar.
@@ -134,11 +135,11 @@ void enviar_proceso_a_ready() {
 }
 
 void iteratorConLog(char* value) {
-    log_warning(kernelLogger, "%s", value);
+    log_debug(kernelLogger, "%s", value);
 }
 
 void iterator_id_proceso(PCB* pcb) {
-    log_warning(kernelLogger, "%d ", pcb->id_proceso);
+    log_debug(kernelLogger, "%d ", pcb->id_proceso);
 }
 
 void recibir_de_consola(void *clienteAceptado) {
@@ -147,8 +148,8 @@ void recibir_de_consola(void *clienteAceptado) {
     recibir_operacion(conexionConConsola);
     t_list* listaInstrucciones = recibir_paquete(conexionConConsola);
 
-    // log_info(kernelLogger, "Me llegaron los siguientes valores: ");
-    // list_iterate(listaInstrucciones, (void*) iteratorSinLog);
+    log_info(kernelLogger, "Me llegaron los siguientes valores: ");
+    list_iterate(listaInstrucciones, (void*) iteratorSinLog);
 
     nuevo_proceso(listaInstrucciones, conexionConConsola);
 
@@ -178,16 +179,15 @@ void _planificador_largo_plazo() {
 
 void destruir_pcb(PCB* pcb) {
     //pthread_mutex_lock(pcb_get_mutex(pcb));
-	log_warning(kernelLogger, "ppio de destruir_pcb");
+	log_trace(kernelLogger, "Principio de destruir_pcb");
     list_destroy_and_destroy_elements(pcb->lista_instrucciones, (void*)free);
 
     free(pcb->registrosCpu);
-    log_warning(kernelLogger, "miti de destruir_pcb");
     //list_destroy_and_destroy_elements(pcb->lista_segmentos, (void*)destruir_segmento);
 
     list_destroy_and_destroy_elements(pcb->lista_archivos_abiertos, (void*)free);
 
-    log_warning(kernelLogger, "fin de destruir_pcb");
+    log_trace(kernelLogger, "fin de destruir_pcb");
 
     free(pcb);
 }
@@ -708,7 +708,7 @@ PCB *buscar_proceso(int idProceso){
 			for (int index = 0; index < list_size(listaPorEstado); index++) {
 				PCB* pcb = list_get(listaPorEstado, index);
 				if (pcb->id_proceso == idProceso) {
-					log_warning(kernelLogger, "PCB con id %d Lista encontrada en lista de estados: %s", pcb->id_proceso, nombres_estados[estado]);
+					log_trace(kernelLogger, "PCB con id %d Lista encontrada en lista de estados: %s", pcb->id_proceso, nombres_estados[estado]);
 					return pcb;
 				}
 			}
