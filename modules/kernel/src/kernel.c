@@ -179,7 +179,7 @@ void _planificador_largo_plazo() {
 
 void destruir_pcb(PCB* pcb) {
     //pthread_mutex_lock(pcb_get_mutex(pcb));
-	log_trace(kernelLogger, "Principio de destruir_pcb");
+
     list_destroy_and_destroy_elements(pcb->lista_instrucciones, (void*)free);
 
     free(pcb->registrosCpu);
@@ -187,7 +187,6 @@ void destruir_pcb(PCB* pcb) {
 
     list_destroy_and_destroy_elements(pcb->lista_archivos_abiertos, (void*)free);
 
-    log_trace(kernelLogger, "fin de destruir_pcb");
 
     free(pcb);
 }
@@ -470,7 +469,8 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
         		break;
         	}
         	case SEGMENTATION_FAULT:{
-        	    terminar_proceso(pcb, EXIT_SEGMENTATION_FAULT);
+        	    log_warning(kernelLogger, "entra en SEG FAULT");
+        		terminar_proceso(pcb, EXIT_SEGMENTATION_FAULT);
         		break;
         	}
         	case I_IO: {

@@ -27,18 +27,17 @@ void atender_conexiones(int socket_servidor){
     int conexion_cpu, conexion_fs, conexion_kernel, cliente;
     codigo_operacion codigo;
 
-    //for (int i = 0; i < 3; i++)
-    for (int i = 0; i < 8; i++){
+    for (int i = 0; i < 3; i++){
 
     	cliente = esperar_cliente(socket_servidor, loggerMemoria);
     	codigo = recibir_operacion(cliente);
         switch (codigo){
-        /*case AUX_SOY_FILE_SYSTEM:
+        case AUX_SOY_FILE_SYSTEM:
             log_info(loggerMemoria, "Se conecto el file system");
             conexion_fs = cliente;
-            pthread_create(&hilo_fs, NULL, (void *)ejecutar_filesystem_pedido, &conexion_fs);
+            pthread_create(&hilo_fs, NULL, (void *)ejecutar_filesystem_pedido, (void*)(intptr_t)conexion_fs);
             pthread_detach(hilo_fs);
-            break;*/
+            break;
         case AUX_SOY_KERNEL:
             log_info(loggerMemoria, "Se conecto el kernel");
             conexion_kernel = cliente;
@@ -53,12 +52,6 @@ void atender_conexiones(int socket_servidor){
             pthread_create(&hilo_cpu, NULL, (void *)ejecutar_cpu_pedido, (void*)(intptr_t)conexion_cpu);
             pthread_detach(hilo_cpu);
             break;
-        case AUX_SOY_FILE_SYSTEM:
-			log_info(loggerMemoria, "Se conecto el fileSystem");
-			conexion_cpu = cliente;
-			recibir_operacion(cliente);
-			pthread_create(&hilo_cpu, NULL, (void *)ejecutar_filesystem_pedido, (void*)(intptr_t)conexion_cpu);
-			pthread_detach(hilo_cpu);
 		break;
         }
     }
@@ -69,10 +62,11 @@ void ejecutar_filesystem_pedido(void* socket){
 	while (1){
 		//log_warning(loggerMemoria, "entra al while(1)");
 		int socket_modulo = (int)(intptr_t)socket;
-		codigo_operacion cod_op = recibir_operacion(socket_modulo);
+		codigo_operacion cod_op1 = recibir_operacion(socket_modulo);
+		codigo_operacion cod_op2 = recibir_operacion(socket_modulo);
 		//log_warning(loggerMemoria, "el cod op recibido de cpu es %d", cod_op1);
 
-	    switch (cod_op){
+	    switch (cod_op2){
         	case I_F_WRITE: {
 				int tamanio = 0;
 				int desp = 0;

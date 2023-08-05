@@ -108,6 +108,7 @@ void agregar_registros_a_paquete_para_kernel(t_paquete* , registros_cpu* );
 
 char* agregarCaracterNulo(void* , uint32_t );
 int get_int_registro(char* );
+int obtener_tamanio_segmento(t_list* lista_segmentos, int numero_segmento);
 
 // uint32_t obtener_direccion_fisica(PCB *pcb,uint32_t dirLogica, uint32_t *numeroSegmento, uint32_t *offset, uint32_t *tamanioSegmento);
 void* convertir_dir_logica_a_fisica(PCB *pcb, char* dirLogica);

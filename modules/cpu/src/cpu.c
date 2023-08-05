@@ -116,7 +116,6 @@ void ejecutar_proceso(PCB* pcb, int clienteKernel) {
 	}
 
 	//mostrar_pcb(pcb, loggerCpu);
-
 	enviar_pcb(clienteKernel, pcb, ultimaOperacion, loggerCpu);
 
 	// Si tiene que calcular direccion fisica se la mando aparte
@@ -250,6 +249,7 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 			log_trace(loggerCpu, "la direcc fisica es: %d", dirFisica);
 
 			if (dirFisica == -1){
+				hubo_interrupcion = true;
 				return SEGMENTATION_FAULT;
 			}
 
@@ -308,13 +308,16 @@ int ejecutar_instruccion(char** instruccion, PCB* pcb) {
 			int dirFisica = obtener_direcc_fisica(pcb, dirLogica, tamanio_registro);
 			void* dirFisicaPuntero = (void*) (intptr_t)dirFisica;
 
-			log_trace(loggerCpu, "la direccion fisica es %d", dirFisica);
+			//log_trace(loggerCpu, "la direccion fisica es %d", dirFisica);
 
 			char* valor_registro = obtener_valor_registro(registro, pcb->registrosCpu);
 
 			// char* valor_registro = registros_cpu_get_valor_registro("escribiendoTextoDePrueba", 16);
+			int numero_segmento = floor(dirLogica/configCpu->TAM_MAX_SEGMENTO);
 			int desplazamiento_segmento=dirLogica % configCpu->TAM_MAX_SEGMENTO;
-			if (desplazamiento_segmento + tamanio_registro > configCpu->TAM_MAX_SEGMENTO){
+
+			if (desplazamiento_segmento + tamanio_registro > obtener_tamanio_segmento(pcb->lista_segmentos, numero_segmento)){
+				hubo_interrupcion = true;
 				return SEGMENTATION_FAULT;
 			}
 
@@ -399,7 +402,8 @@ long obtener_direcc_fisica(PCB* pcb, int dirLogica, int tamanio_registro){
 	//log_warning(loggerCpu, "el nro de seg es %d", numero_segmento);
 	int desplazamiento_segmento=dirLogica % configCpu->TAM_MAX_SEGMENTO;
 	//log_warning(loggerCpu, "el desplazamiento dentro del seg es %d", desplazamiento_segmento);
-	if (desplazamiento_segmento + tamanio_registro > configCpu->TAM_MAX_SEGMENTO){
+
+	if (desplazamiento_segmento + tamanio_registro > obtener_tamanio_segmento(pcb->lista_segmentos, numero_segmento)){
 			log_error(loggerCpu, "PID: %d - Error SEG_FAULT- Segmento: %d - Offset: %d - Tamaño: %d", pcb->id_proceso, numero_segmento, desplazamiento_segmento, tamanio_registro);
 			return -1;
 	}
@@ -414,6 +418,19 @@ long obtener_direcc_fisica(PCB* pcb, int dirLogica, int tamanio_registro){
 	return direccion_fisica;
 
 }
+
+int obtener_tamanio_segmento(t_list* lista_segmentos, int numero_segmento){
+
+	for(int i = 0; i < list_size(lista_segmentos); i++){
+		t_segmento* segmento = list_get(lista_segmentos, i);
+		if(segmento->id = numero_segmento){
+			return segmento->size;
+		}
+	}
+	return -1;
+
+}
+
 int division_entera(int operando1, int operando2){
 	return (operando1 - (operando1 % operando2)) / operando2;
 }
