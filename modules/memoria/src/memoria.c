@@ -382,8 +382,6 @@ void ejecutar_kernel_pedido(void* socket){
 	        	int id_segmento = leer_int(buffer, &desplazamiento);
 	        	int tamanio_segmento = leer_int(buffer, &desplazamiento);
 
-	        	log_debug(loggerMemoria, "%d %d %d", pcb->id_proceso, id_segmento, tamanio_segmento);
-
 				t_paquete* paquete = crear_segmento(id_segmento, tamanio_segmento, pcb, socket_modulo);
 
 				enviar_paquete(paquete, socket_modulo);
@@ -876,7 +874,7 @@ t_paquete* crear_segmento(int id_segmento, int tamanio, PCB* pcb, int socket) {
     //enviar_paquete(paquete, socket);
     //eliminar_paquete(paquete);
 
-	log_info(loggerMemoria, "PID: <%d> - Crear Segmento: <%d> - Base: <%p> - TAMAÑO: <%d>", pcb->id_proceso, id_segmento, hueco->base, tamanio);
+	log_info(loggerMemoria, "PID: %d - Crear Segmento: %d - Base: %d - TAMAÑO: %d", pcb->id_proceso, id_segmento, *((int*)hueco->base), tamanio);
     return paquete;
 }
 

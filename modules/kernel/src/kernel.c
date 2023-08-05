@@ -86,7 +86,7 @@ void inicializar_escucha_conexiones_consolas(int servidorKernel) {
 
 void enviar_proceso_a_ready() {
     while(1) {
-
+    	log_info(kernelLogger, "esperando nuevas consolas");
         sem_wait(&sem_proceso_a_ready_inicializar);
         sem_wait(&sem_lista_estados[ENUM_NEW]);
 
@@ -222,6 +222,7 @@ void _planificador_corto_plazo() {
 
     //Dispatcher
     while(1) {
+
     	sem_wait(&sem_cpu_disponible);
         sem_wait(&sem_proceso_a_ready_terminado);
         PCB* pcbParaEjecutar;
@@ -469,7 +470,6 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
         		break;
         	}
         	case SEGMENTATION_FAULT:{
-        	    log_warning(kernelLogger, "entra en SEG FAULT");
         		terminar_proceso(pcb, EXIT_SEGMENTATION_FAULT);
         		break;
         	}
@@ -519,9 +519,9 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
 				enviar_paquete(paquete, conexionMemoria);
 				eliminar_paquete(paquete);
 
-                codigo_operacion codigoRespuesa = recibir_operacion(conexionMemoria);
+                codigo_operacion codigoRespuesta = recibir_operacion(conexionMemoria);
 
-                if (codigoRespuesa == AUX_OK) {
+                if (codigoRespuesta == AUX_OK) {
                     char* buffer;
                     int tamanioBuffer = 0;
                     int desplazamiento = 0;
@@ -542,13 +542,7 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
                     sem_post(&sem_proceso_a_executing);
                     return AUX_OK;
 
-                    /*
-                    int size_paquete = leer_int(buffer, &desplazamiento);
-                    //log_warning(kernelLogger, "el valor recibido de tamanio es %d", size_paquete);
-                    void* direccionBase = leer_algo(buffer, &desplazamiento, (size_t)size_paquete);
-                    //log_warning(kernelLogger, "el valor recibido de kernel de direccion_base es %p", (int)(intptr_t)direccionBase);
-                     */
-                }else if(codigoRespuesa == COMPACTACION){
+                }else if(codigoRespuesta == COMPACTACION){
                     log_info(kernelLogger, "Compactación: <Se solicitó compactación / Esperando Fin de Operaciones de FS>");
                     pthread_mutex_lock(&permiso_compactacion);
                     log_info(kernelLogger, "Inicia la compactacion");
@@ -567,41 +561,12 @@ codigo_operacion manejo_instrucciones(t_data_desalojo* data){
                     sem_post(&sem_proceso_a_executing);
                     return I_CREATE_SEGMENT;
                     break;
-                }else if(codigoRespuesa == OUT_OF_MEMORY){
+                }else if(codigoRespuesta == OUT_OF_MEMORY){
                 	pthread_mutex_unlock(&mutex_memoria);
                 	terminar_proceso(pcb, OUT_OF_MEMORY);
+                	return OUT_OF_MEMORY;
                 	break;
                 }
-
-				/*
-				t_ segmento_tabla* tabla_segmento = malloc(sizeof(tabla_segmento));
-
-                t_ segmento* segmento = malloc(sizeof(segmento));
-
-				segmento->direccionBase = (void*)(intptr_t)0;
-				segmento->id = atoi(instruccion[1]);
-				segmento->size = strtoul(instruccion[2],NULL,10);
-
-				tabla_segmento->idProceso = pcb->id_proceso;
-                tabla_segmento->segmento = segmento;
-
-                enviar_segmento_por_pid(conexionMemoria,I_CREATE_SEGMENT,tabla_segmento);
-                res = recibir_operacion(conexionMemoria);
-
-                if (res == AUX_OK){
-                    // Agregar lista de segmentos actualizada al pcb
-                    pcb->lista_segmentos = recibir_lista_segmentos(conexionMemoria);
-					log_info(kernelLogger,CREAR_SEGMENTO,pcb->id_proceso,tabla_segmento->segmento->id,tabla_segmento->segmento->size); // no loguea
-				} else if(res == AUX_SOLO_CON_COMPACTACION){
-					break;
-				} else {
-					log_error(kernelLogger,E__BAD_REQUEST);
-				}
-
-				pcb->contador_instrucciones = pcb->contador_instrucciones+1;
-				agregar_a_lista_con_sem((void*)pcb, ENUM_EXECUTING);
-				sem_post(&sem_proceso_a_executing);
-				*/
 				break;
 			 }
 			 case I_DELETE_SEGMENT: {
